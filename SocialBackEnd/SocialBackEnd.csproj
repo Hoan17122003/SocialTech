@@ -15,4 +15,12 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include=".config\" />
+    <Folder Include="Application\Services\" />
+    <Folder Include="Common\Constants\" />
+    <Folder Include="Common\DTOs\User\" />
+    <Folder Include="Common\Validations\" />
+  </ItemGroup>
+
 </Project>
