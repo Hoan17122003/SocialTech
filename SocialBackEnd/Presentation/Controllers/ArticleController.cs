@@ -8,7 +8,6 @@ namespace SocialBackEnd.Presentation.Controllers
     public class ArticleController : ControllerBase
     {
         private readonly ILogger<ArticleController> _logger;
-        private readonly 
 
 
         public ArticleController(ILogger<ArticleController> logger)

@@ -1,26 +1,20 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace SocialBackEnd.Common.Extensions;
 
 public class ExtensionsHttpClient
 {
     public static async Task<T> SendWithRetryAsync<T>(
-        string url,
+        Func<Task<T>> action,
         int maxRetries = 3,
         int delayMilliseconds = 1000
     )
     {
+        ArgumentNullException.ThrowIfNull(action);
+
         int retryCount = 0;
         while (true)
         {
             try
             {
-                var request = new HttpClient();
-                var payload = new Object
-                {
-                    header
-                };
-                // Perform the HTTP request here
                 return await action();
             }
             catch (Exception ex) when (retryCount < maxRetries)

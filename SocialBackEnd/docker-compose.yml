@@ -1,24 +1,23 @@
 services:
-  social-backend:
-    build: .
-    ports:
-      - "5000:80"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:80
-    depends_on:
-      - mysqlhost
-    networks:
-      - SocialNetwork
+  # social-backend:
+  #   build: .
+  #   ports:
+  #     - "5000:80"
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Development
+  #     - ASPNETCORE_URLS=http://+:80
+  #   depends_on:
+  #     - mysqlhost
+  #   networks:
+  #     - SocialNetwork
     
 
   mysqlhost : 
-    image: mysql:latest
+    image: mysql:8.0.45
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: socialdb
-      MYSQL_USER: socialuser
-      MYSQL_PASSWORD: socialpassword
+      MYSQL_DATABASE: Socialdb
     ports:
       - "3306:3306"
     volumes:

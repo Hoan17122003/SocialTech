@@ -47,11 +47,4 @@ public sealed class HealthRepository : IHealthRepository
 
         return entity;
     }
-
-
-    public async Task<SystemStatus> GetStatus(int statusId)
-    {
-        return AppContext.SystemStatus.AsNoTracking()
-            .FirstOrDefault(x => x.Id == statusId);
-    }
 }
