@@ -1,14 +1,22 @@
-using System;
-
 namespace SocialBackEnd.Domain.Entities;
 
-public class User
+public class User : AuditableEntity
 {
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public string Email { get; set; }
-    public string Bio { get; set; }
-    public string Password { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    public string Username { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string PasswordHash { get; set; } = string.Empty;
+    public string? Bio { get; set; }
+    public string? ProfileImageUrl { get; set; }
+    public int ReputationScore { get; set; }
+    public bool IsEmailVerified { get; set; }
+
+    public ICollection<Community> OwnedCommunities { get; set; } = new List<Community>();
+    public ICollection<CommunityMembership> CommunityMemberships { get; set; } = new List<CommunityMembership>();
+    public ICollection<Post> AuthoredPosts { get; set; } = new List<Post>();
+    public ICollection<Comment> AuthoredComments { get; set; } = new List<Comment>();
+    public ICollection<PostVote> PostVotes { get; set; } = new List<PostVote>();
+    public ICollection<CommentVote> CommentVotes { get; set; } = new List<CommentVote>();
+    public ICollection<ContentReport> SubmittedReports { get; set; } = new List<ContentReport>();
+    public ICollection<ContentReport> AssignedReports { get; set; } = new List<ContentReport>();
 }

@@ -15,6 +15,7 @@ public class Program
         builder.Services.AddSwaggerGen();
         builder.Services.AddServiceDependencies();
         builder.Services.AddRepositoryDependencies(builder.Configuration);
+        // builder.Services.AddHttpClient<JsonPlaceholderClient>();
 
         var app = builder.Build();
 
