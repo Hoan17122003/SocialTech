@@ -29,31 +29,41 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
 
     public async Task<User> CreateUserAsync(RequestCreateAccount requestCreateAccount)
     {
-        // var user = new User
-        // {
-        //     Username = requestCreateAccount.Username,
-        //     Email = requestCreateAccount.Email,
-        //     PasswordHash = requestCreateAccount.PasswordHash,
-        //     CreatedAt = DateTime.UtcNow
-        // };
-
-        // var userEntity = await CreateAsync(user);
-        // return userEntity;
-        return null;
+        var user = new User
+        {
+            Username = requestCreateAccount.Username,
+            DisplayName = requestCreateAccount.DisplayName,
+            Email = requestCreateAccount.Email,
+            PasswordHash = requestCreateAccount.Password, // In a real application, hash the password before storing
+        };
+        var userEntity = await DbContext.Users.AddAsync(user, CancellationToken.None);
+        await DbContext.SaveChangesAsync();
+        return userEntity.Entity;
     }
 
     public async Task<bool> UpdateUserAsync(int userId, RequestUpdateAccount requestUpdateAccount)
     {
-        // var user = await GetByIdAsync(userId);
-        // if (user == null)
-        // {
-        //     return false;
-        // }
+        var affectedRows = await DbContext
+            .Users
+            .Where(x => x.Id == userId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(x => x.DisplayName, requestUpdateAccount.DisplayName)
+                .SetProperty(x => x.PasswordHash, requestUpdateAccount.Password)
+                .SetProperty(x => x.Bio, requestUpdateAccount.Bio)
+                .SetProperty(x => x.ProfileImageUrl, requestUpdateAccount.ProfileImageUrl));
 
-        // user.Email = requestUpdateAccount.Email ?? user.Email;
-        // user.PasswordHash = requestUpdateAccount.PasswordHash ?? user.PasswordHash;
+        return affectedRows > 0;
+    }
 
-        // await UpdateAsync(user);
-        return true;
+    public async User GetProfileAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        return await DbContext.Users
+            .AsNoTracking()
+            .Select(x => new
+            {
+                FollwersCount = x.Followers.Count,
+                FollowingCount = x.Following.Count,
+            })
+            .FirstOrDefaultAsync();
     }
 }

@@ -13,7 +13,7 @@ public class Program
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
-        builder.Services.AddServiceDependencies();
+        builder.Services.AddServiceDependencies(builder.Configuration);
         builder.Services.AddRepositoryDependencies(builder.Configuration);
         // builder.Services.AddHttpClient<JsonPlaceholderClient>();
 

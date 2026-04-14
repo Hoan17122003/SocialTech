@@ -18,7 +18,6 @@ public static class RepositoryDependencyInjection
         services.AddDbContext<AppDbContext>(options =>
             options.UseMySQL(connectionString));
     
-        services.AddScoped<IHealthRepository, HealthRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ICommunityRepository, CommunityRepository>();
         services.AddScoped<ICommunityMembershipRepository, CommunityMembershipRepository>();

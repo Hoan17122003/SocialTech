@@ -10,6 +10,7 @@ public sealed class CommentVoteRepository : RepositoryBase<CommentVote>, ICommen
     {
     }
 
+
     public Task<CommentVote?> GetByCommentAndUserAsync(
         Guid commentId,
         Guid userId,

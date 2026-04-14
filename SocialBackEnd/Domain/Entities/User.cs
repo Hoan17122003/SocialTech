@@ -1,6 +1,6 @@
 namespace SocialBackEnd.Domain.Entities;
 
-public class User : AuditableEntity
+public class User : EntityBase
 {
     public string Username { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
@@ -11,6 +11,9 @@ public class User : AuditableEntity
     public int ReputationScore { get; set; }
     public bool IsEmailVerified { get; set; }
 
+    public ICollection<UserFollow> Followers { get; set; } = new List<UserFollow>();
+    public ICollection<UserFollow> Followings { get; set; } = new List<UserFollow>();
+
     public ICollection<Community> OwnedCommunities { get; set; } = new List<Community>();
     public ICollection<CommunityMembership> CommunityMemberships { get; set; } = new List<CommunityMembership>();
     public ICollection<Post> AuthoredPosts { get; set; } = new List<Post>();
@@ -19,4 +22,6 @@ public class User : AuditableEntity
     public ICollection<CommentVote> CommentVotes { get; set; } = new List<CommentVote>();
     public ICollection<ContentReport> SubmittedReports { get; set; } = new List<ContentReport>();
     public ICollection<ContentReport> AssignedReports { get; set; } = new List<ContentReport>();
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAtUtc { get; set; }
 }
