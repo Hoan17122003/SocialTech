@@ -5,11 +5,11 @@ namespace SocialBackEnd.Application.Ports.Outbound.Repositories;
 public interface ICommunityMembershipRepository : IRepository<CommunityMembership>
 {
     Task<CommunityMembership?> GetByCommunityAndUserAsync(
-        Guid communityId,
-        Guid userId,
+        int communityId,
+        int userId,
         CancellationToken cancellationToken = default);
 
     Task<List<CommunityMembership>> GetMembersByCommunityAsync(
-        Guid communityId,
+        int communityId,
         CancellationToken cancellationToken = default);
 }

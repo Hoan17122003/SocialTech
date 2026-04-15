@@ -11,6 +11,8 @@ public class User : EntityBase
     public int ReputationScore { get; set; }
     public bool IsEmailVerified { get; set; }
 
+    public bool IsPrivateAccount { get; set; } = false;
+
     public ICollection<UserFollow> Followers { get; set; } = new List<UserFollow>();
     public ICollection<UserFollow> Followings { get; set; } = new List<UserFollow>();
 
@@ -22,6 +24,4 @@ public class User : EntityBase
     public ICollection<CommentVote> CommentVotes { get; set; } = new List<CommentVote>();
     public ICollection<ContentReport> SubmittedReports { get; set; } = new List<ContentReport>();
     public ICollection<ContentReport> AssignedReports { get; set; } = new List<ContentReport>();
-    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
-    public DateTime? UpdatedAtUtc { get; set; }
 }

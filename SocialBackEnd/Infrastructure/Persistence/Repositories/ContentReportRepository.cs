@@ -12,7 +12,7 @@ public sealed class ContentReportRepository : RepositoryBase<ContentReport>, ICo
     }
 
     public Task<List<ContentReport>> GetPendingByCommunityAsync(
-        Guid communityId,
+        int communityId,
         CancellationToken cancellationToken = default)
     {
         return DbContext.ContentReports

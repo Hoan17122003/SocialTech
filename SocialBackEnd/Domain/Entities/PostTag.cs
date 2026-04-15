@@ -2,9 +2,9 @@ namespace SocialBackEnd.Domain.Entities;
 
 public class PostTag
 {
-    public Guid PostId { get; set; }
+    public int PostId { get; set; }
     public Post Post { get; set; } = null!;
 
-    public Guid TagId { get; set; }
+    public int TagId { get; set; }
     public Tag Tag { get; set; } = null!;
 }

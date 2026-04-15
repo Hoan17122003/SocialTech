@@ -2,12 +2,12 @@ using SocialBackEnd.Domain.Enums;
 
 namespace SocialBackEnd.Domain.Entities;
 
-public class CommunityMembership : AuditableEntity
+public class CommunityMembership : EntityBase
 {
-    public Guid CommunityId { get; set; }
+    public int CommunityId { get; set; }
     public Community Community { get; set; } = null!;
 
-    public Guid UserId { get; set; }
+    public int UserId { get; set; }
     public User User { get; set; } = null!;
 
     public CommunityMemberRole Role { get; set; } = CommunityMemberRole.Member;

@@ -10,7 +10,7 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
     {
     }
 
-    public Task<List<Post>> GetPostsByCommunityAsync(Guid communityId, CancellationToken cancellationToken = default)
+    public Task<List<Post>> GetPostsByCommunityAsync(int communityId, CancellationToken cancellationToken = default)
     {
         return DbContext.Posts
             .AsNoTracking()
@@ -22,7 +22,7 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
             .ToListAsync(cancellationToken);
     }
 
-    public Task<List<Post>> GetPostsByAuthorAsync(Guid authorId, CancellationToken cancellationToken = default)
+    public Task<List<Post>> GetPostsByAuthorAsync(int authorId, CancellationToken cancellationToken = default)
     {
         return DbContext.Posts
             .AsNoTracking()

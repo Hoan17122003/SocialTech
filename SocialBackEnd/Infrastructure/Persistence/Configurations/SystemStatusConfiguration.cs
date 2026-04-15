@@ -12,9 +12,6 @@ public sealed class SystemStatusConfiguration : IEntityTypeConfiguration<SystemS
 
         builder.HasKey(x => x.Id);
 
-        builder.Property(x => x.Id)
-            .ValueGeneratedNever();
-
         builder.Property(x => x.Name)
             .HasMaxLength(150)
             .IsRequired();
@@ -32,7 +29,7 @@ public sealed class SystemStatusConfiguration : IEntityTypeConfiguration<SystemS
 
         builder.HasData(new SystemStatus
         {
-            Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
+            Id = 1,
             Name = "SocialBackEnd",
             Version = "v1",
             Environment = "Seed",

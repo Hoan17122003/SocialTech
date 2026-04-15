@@ -2,7 +2,7 @@ namespace SocialBackEnd.Domain.Entities;
 
 public class CommunityRule : EntityBase
 {
-    public Guid CommunityId { get; set; }
+    public int CommunityId { get; set; }
     public Community Community { get; set; } = null!;
 
     public string Title { get; set; } = string.Empty;

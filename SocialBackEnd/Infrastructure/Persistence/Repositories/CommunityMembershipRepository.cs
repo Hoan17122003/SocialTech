@@ -12,8 +12,8 @@ public sealed class CommunityMembershipRepository
     }
 
     public Task<CommunityMembership?> GetByCommunityAndUserAsync(
-        Guid communityId,
-        Guid userId,
+        int communityId,
+        int userId,
         CancellationToken cancellationToken = default)
     {
         return DbContext.CommunityMemberships
@@ -24,7 +24,7 @@ public sealed class CommunityMembershipRepository
     }
 
     public Task<List<CommunityMembership>> GetMembersByCommunityAsync(
-        Guid communityId,
+        int communityId,
         CancellationToken cancellationToken = default)
     {
         return DbContext.CommunityMemberships

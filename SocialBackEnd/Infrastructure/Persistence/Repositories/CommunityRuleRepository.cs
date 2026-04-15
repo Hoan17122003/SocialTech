@@ -11,7 +11,7 @@ public sealed class CommunityRuleRepository : RepositoryBase<CommunityRule>, ICo
     }
 
     public Task<List<CommunityRule>> GetActiveRulesByCommunityAsync(
-        Guid communityId,
+        int communityId,
         CancellationToken cancellationToken = default)
     {
         return DbContext.CommunityRules

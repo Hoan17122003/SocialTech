@@ -15,7 +15,7 @@ public abstract class RepositoryBase<TEntity> : IRepository<TEntity> where TEnti
         DbSet = dbContext.Set<TEntity>();
     }
 
-    public virtual async Task<TEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public virtual async Task<TEntity?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return await DbSet.FindAsync([id], cancellationToken);
     }

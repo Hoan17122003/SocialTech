@@ -9,6 +9,4 @@ public sealed class UserFollow : EntityBase
 
     public int FollowingId { get; set; }
     public User Following { get; set; } = null!;
-
-    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 }

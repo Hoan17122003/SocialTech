@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Microsoft.EntityFrameworkCore;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Common.DTOs.User;
+using SocialBackEnd.Common.Models.User;
 using SocialBackEnd.Domain.Entities;
 
 namespace SocialBackEnd.Infrastructure.Persistence.Repositories;
@@ -55,15 +56,14 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
         return affectedRows > 0;
     }
 
-    public async User GetProfileAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<User?> GetProfileAsync(int userId, CancellationToken cancellationToken = default)
     {
         return await DbContext.Users
             .AsNoTracking()
-            .Select(x => new
-            {
-                FollwersCount = x.Followers.Count,
-                FollowingCount = x.Following.Count,
-            })
-            .FirstOrDefaultAsync();
+            .Include(x => x.Followers)
+            .Include(x => x.Followings)
+            .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
     }
+
+
 }

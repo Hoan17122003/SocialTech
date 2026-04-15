@@ -10,7 +10,7 @@ public sealed class CommentRepository : RepositoryBase<Comment>, ICommentReposit
     {
     }
 
-    public Task<List<Comment>> GetByPostAsync(Guid postId, CancellationToken cancellationToken = default)
+    public Task<List<Comment>> GetByPostAsync(int postId, CancellationToken cancellationToken = default)
     {
         return DbContext.Comments
             .AsNoTracking()
@@ -20,7 +20,7 @@ public sealed class CommentRepository : RepositoryBase<Comment>, ICommentReposit
             .ToListAsync(cancellationToken);
     }
 
-    public Task<List<Comment>> GetRepliesAsync(Guid parentCommentId, CancellationToken cancellationToken = default)
+    public Task<List<Comment>> GetRepliesAsync(int parentCommentId, CancellationToken cancellationToken = default)
     {
         return DbContext.Comments
             .AsNoTracking()

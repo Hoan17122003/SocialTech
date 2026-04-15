@@ -3,7 +3,7 @@ using SocialBackEnd.Domain.Entities;
 
 namespace SocialBackEnd.Application.Ports.Outbound.Repositories;
 
-public interface UserFollowRepository : IRepository<UserFollow>
+public interface IUserFollowRepository : IRepository<UserFollow>
 {
     Task<bool> FollowAsync(int followerId, int followingId, CancellationToken cancellationToken = default);
     Task<bool> UnfollowAsync(int followerId, int followingId, CancellationToken cancellationToken = default);

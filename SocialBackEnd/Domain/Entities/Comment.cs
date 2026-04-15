@@ -2,15 +2,15 @@ using SocialBackEnd.Domain.Enums;
 
 namespace SocialBackEnd.Domain.Entities;
 
-public class Comment : AuditableEntity
+public class Comment : EntityBase
 {
-    public Guid PostId { get; set; }
+    public int PostId { get; set; }
     public Post Post { get; set; } = null!;
 
-    public Guid AuthorId { get; set; }
+    public int AuthorId { get; set; }
     public User Author { get; set; } = null!;
 
-    public Guid? ParentCommentId { get; set; }
+    public int? ParentCommentId { get; set; }
     public Comment? ParentComment { get; set; }
 
     public string Body { get; set; } = string.Empty;

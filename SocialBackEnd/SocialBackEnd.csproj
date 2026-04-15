@@ -22,6 +22,7 @@
     <Folder Include="Application\Services\" />
     <Folder Include="Common\Constants\" />
     <Folder Include="Common\DTOs\User\" />
+    <Folder Include="Common\Models\User\" />
     <Folder Include="Common\Validations\" />
     <Folder Include="Infrastructure\Notifications\" />
     <Folder Include="Presentation\Controllers\" />

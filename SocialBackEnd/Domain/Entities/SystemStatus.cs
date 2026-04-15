@@ -1,9 +1,7 @@
 namespace SocialBackEnd.Domain.Entities;
 
-public sealed class SystemStatus
+public sealed class SystemStatus : EntityBase
 {
-    public Guid Id { get; set; }
-
     public string Name { get; set; } = string.Empty;
 
     public string Version { get; set; } = string.Empty;
