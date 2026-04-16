@@ -4838,11 +4838,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Training\\SocialTech\\SocialBackEnd\\SocialBackEnd.csproj",
+      "projectUniqueName": "D:\\Training\\SocialBackEnd\\SocialBackEnd.csproj",
       "projectName": "SocialBackEnd",
-      "projectPath": "D:\\Training\\SocialTech\\SocialBackEnd\\SocialBackEnd.csproj",
+      "projectPath": "D:\\Training\\SocialBackEnd\\SocialBackEnd.csproj",
       "packagesPath": "C:\\Users\\hd_hoan.BRYCENVN.000\\.nuget\\packages\\",
-      "outputPath": "D:\\Training\\SocialTech\\SocialBackEnd\\obj\\",
+      "outputPath": "D:\\Training\\SocialBackEnd\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\hd_hoan.BRYCENVN.000\\AppData\\Roaming\\NuGet\\NuGet.Config"

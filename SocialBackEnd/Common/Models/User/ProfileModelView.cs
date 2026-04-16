@@ -9,5 +9,17 @@ public record ProfileModelView
     string ProfileImageUrl,
     bool IsPrivateAccount,
     int FollowersCount,
-    int FollowingsCount
+    int FollowingsCount,
+    List<PostModelView> RecentPosts,
+    bool IsAccount
+);
+
+public record PostModelView
+(
+    int PostId,
+    string Title,
+    string url,
+    string PostType,
+    string Content,
+    DateTime UpdatedAt
 );

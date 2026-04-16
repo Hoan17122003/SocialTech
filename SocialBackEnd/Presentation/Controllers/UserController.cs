@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SocialBackEnd.Application.Ports.Inbound;
 using SocialBackEnd.Common.DTOs.User;
+using SocialBackEnd.Common.Models;
 
 namespace SocialBackEnd.Presentation.Controllers
 {
@@ -17,16 +18,19 @@ namespace SocialBackEnd.Presentation.Controllers
         }
 
         [HttpPost("create")]
-        public Task<IActionResult> CreateUser([FromBody] RequestCreateAccount request)
+        public async Task<IActionResult> CreateUser([FromBody] RequestCreateAccount request)
         {
-            var result = _userPort.CreateUserAsync(request);
-            if (result == null)
-            {
-                return Task.FromResult<IActionResult>(BadRequest("User creation failed."));
-            }
-            return Task.FromResult<IActionResult>(Ok(result));
+            var result = await _userPort.CreateUserAsync(request);
+            return Ok(result);
+        }
+
+        public async Task<IActionResult> GetUserProfile([FromQuery] int userId)
+        {
+            var result = await _userPort.GetUserProfileAsync(userId);
+            return Ok(result);
         }
 
 
+
+        }
     }
-}
