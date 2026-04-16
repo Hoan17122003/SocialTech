@@ -10,7 +10,7 @@ public sealed class PostMediaAssetRepository : RepositoryBase<PostMediaAsset>, I
     {
     }
 
-    public Task<List<PostMediaAsset>> GetByPostAsync(Guid postId, CancellationToken cancellationToken = default)
+    public Task<List<PostMediaAsset>> GetByPostAsync(int postId, CancellationToken cancellationToken = default)
     {
         return DbContext.PostMediaAssets
             .AsNoTracking()

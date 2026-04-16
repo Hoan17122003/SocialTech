@@ -10,9 +10,8 @@ services:
   #     - mysqlhost
   #   networks:
   #     - SocialNetwork
-    
 
-  mysqlhost : 
+  mysqlhost:
     image: mysql:8.0.45
     restart: always
     environment:
@@ -24,7 +23,8 @@ services:
       - mysql-data:/var/lib/mysql
     networks:
       - SocialNetwork
-    
+    env_file:
+      - .env.prod
 
 volumes:
   mysql-data:

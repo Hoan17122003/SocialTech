@@ -4,7 +4,7 @@ namespace SocialBackEnd.Domain.Entities;
 
 public class PostMediaAsset : EntityBase
 {
-    public Guid PostId { get; set; }
+    public int PostId { get; set; }
     public Post Post { get; set; } = null!;
 
     public MediaAssetType AssetType { get; set; } = MediaAssetType.Image;

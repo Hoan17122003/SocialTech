@@ -2,12 +2,12 @@ using SocialBackEnd.Domain.Enums;
 
 namespace SocialBackEnd.Domain.Entities;
 
-public class Post : AuditableEntity
+public class Post : EntityBase
 {
-    public Guid CommunityId { get; set; }
+    public int CommunityId { get; set; }
     public Community Community { get; set; } = null!;
 
-    public Guid AuthorId { get; set; }
+    public int AuthorId { get; set; }
     public User Author { get; set; } = null!;
 
     public string Title { get; set; } = string.Empty;

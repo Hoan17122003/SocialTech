@@ -5,6 +5,6 @@ namespace SocialBackEnd.Application.Ports.Outbound.Repositories;
 public interface IContentReportRepository : IRepository<ContentReport>
 {
     Task<List<ContentReport>> GetPendingByCommunityAsync(
-        Guid communityId,
+        int communityId,
         CancellationToken cancellationToken = default);
 }

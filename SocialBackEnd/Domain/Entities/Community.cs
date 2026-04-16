@@ -2,7 +2,7 @@ using SocialBackEnd.Domain.Enums;
 
 namespace SocialBackEnd.Domain.Entities;
 
-public class Community : AuditableEntity
+public class Community : EntityBase
 {
     public string Name { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
@@ -13,7 +13,7 @@ public class Community : AuditableEntity
     public int MemberCount { get; set; }
     public int PostCount { get; set; }
 
-    public Guid CreatedByUserId { get; set; }
+    public int CreatedByUserId { get; set; }
     public User CreatedByUser { get; set; } = null!;
 
     public ICollection<CommunityRule> Rules { get; set; } = new List<CommunityRule>();

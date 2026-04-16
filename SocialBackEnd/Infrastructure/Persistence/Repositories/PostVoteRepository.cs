@@ -11,8 +11,8 @@ public sealed class PostVoteRepository : RepositoryBase<PostVote>, IPostVoteRepo
     }
 
     public Task<PostVote?> GetByPostAndUserAsync(
-        Guid postId,
-        Guid userId,
+        int postId,
+        int userId,
         CancellationToken cancellationToken = default)
     {
         return DbContext.PostVotes

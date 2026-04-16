@@ -10,9 +10,10 @@ public sealed class CommentVoteRepository : RepositoryBase<CommentVote>, ICommen
     {
     }
 
+
     public Task<CommentVote?> GetByCommentAndUserAsync(
-        Guid commentId,
-        Guid userId,
+        int commentId,
+        int userId,
         CancellationToken cancellationToken = default)
     {
         return DbContext.CommentVotes

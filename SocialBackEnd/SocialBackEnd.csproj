@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MailKit" Version="4.15.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.21" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.25" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.25" />
@@ -17,10 +18,14 @@
 
   <ItemGroup>
     <Folder Include=".config\" />
+    <Folder Include="Application\Notifications\Templates\" />
     <Folder Include="Application\Services\" />
     <Folder Include="Common\Constants\" />
     <Folder Include="Common\DTOs\User\" />
+    <Folder Include="Common\Models\User\" />
     <Folder Include="Common\Validations\" />
+    <Folder Include="Infrastructure\Notifications\" />
+    <Folder Include="Presentation\Controllers\" />
   </ItemGroup>
 
 </Project>

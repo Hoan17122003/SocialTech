@@ -5,7 +5,7 @@ namespace SocialBackEnd.Application.Ports.Outbound.Repositories;
 public interface IPostVoteRepository : IRepository<PostVote>
 {
     Task<PostVote?> GetByPostAndUserAsync(
-        Guid postId,
-        Guid userId,
+        int postId,
+        int userId,
         CancellationToken cancellationToken = default);
 }
