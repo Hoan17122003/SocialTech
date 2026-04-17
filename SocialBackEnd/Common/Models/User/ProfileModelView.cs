@@ -11,15 +11,14 @@ public record ProfileModelView
     int FollowersCount,
     int FollowingsCount,
     List<PostModelView> RecentPosts,
-    bool IsAccount
+    bool IsPermissionEdit
 );
 
 public record PostModelView
 (
     int PostId,
     string Title,
-    string url,
-    string PostType,
-    string Content,
+    List<string> PathAttachment,
+    string Body,
     DateTime UpdatedAt
 );

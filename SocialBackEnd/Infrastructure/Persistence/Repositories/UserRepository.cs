@@ -1,7 +1,8 @@
-using System.ComponentModel;
 using Microsoft.EntityFrameworkCore;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
+using SocialBackEnd.Common.DTOs;
 using SocialBackEnd.Common.DTOs.User;
+using SocialBackEnd.Common.Models;
 using SocialBackEnd.Common.Models.User;
 using SocialBackEnd.Domain.Entities;
 
@@ -56,13 +57,58 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
         return affectedRows > 0;
     }
 
-    public async Task<User?> GetProfileAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<ProfileModelView> GetProfileAsync(int userId, CancellationToken cancellationToken = default)
     {
-        return await DbContext.Users
+        var profile = await DbContext.Users
             .AsNoTracking()
-            .Include(x => x.Followers)
-            .Include(x => x.Followings)
-            .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+            .Where(x => x.Id == userId)
+            .Select(x => new ProfileModelView(
+                x.DisplayName,
+                x.Bio ?? string.Empty,
+                x.ProfileImageUrl ?? string.Empty,
+                x.IsPrivateAccount,
+                x.Followers.Count,
+                x.Followings.Count,
+                x.AuthoredPosts
+                    .OrderByDescending(post => post.PublishedAtUtc ?? post.CreatedAtUtc)
+                    .Select(post => new PostModelView(
+                        post.Id,
+                        post.Title,
+                        post.Attachments
+                            .OrderBy(attachment => attachment.Id)
+                            .Select(attachment => attachment.FilePath)
+                            .ToList(),
+                        post.Body ?? string.Empty,
+                        post.UpdatedAtUtc ?? post.CreatedAtUtc
+                    ))
+                    .ToList(),
+                false
+            ))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return profile ?? throw new KeyNotFoundException($"User with id {userId} was not found.");
+    }
+
+    public Task<List<DetailUserFollow>> GetDetailUserFollowAsync(
+        int userId,
+        Paganation paganation,
+        CancellationToken cancellationToken = default)
+    {
+        var page = paganation.Page <= 0 ? 1 : paganation.Page;
+        var limit = paganation.Limit <= 0 ? 10 : paganation.Limit;
+
+        return DbContext.Set<UserFollow>()
+            .AsNoTracking()
+            .Where(x => x.FollowingId == userId)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .Skip((page - 1) * limit)
+            .Take(limit)
+            .Select(x => new DetailUserFollow(
+                x.Follower.Id,
+                x.Follower.ProfileImageUrl ?? string.Empty,
+                x.Follower.DisplayName
+            ))
+            .ToListAsync(cancellationToken);
     }
 
 

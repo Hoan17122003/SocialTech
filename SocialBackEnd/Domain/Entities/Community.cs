@@ -12,7 +12,6 @@ public class Community : EntityBase
     public bool IsNsfw { get; set; }
     public int MemberCount { get; set; }
     public int PostCount { get; set; }
-
     public int CreatedByUserId { get; set; }
     public User CreatedByUser { get; set; } = null!;
 

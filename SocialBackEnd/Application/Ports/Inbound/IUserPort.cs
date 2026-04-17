@@ -1,5 +1,7 @@
 using System;
+using SocialBackEnd.Common.DTOs;
 using SocialBackEnd.Common.DTOs.User;
+using SocialBackEnd.Common.Models;
 using SocialBackEnd.Common.Models.User;
 
 namespace SocialBackEnd.Application.Ports.Inbound;
@@ -16,7 +18,6 @@ public interface IUserPort
 
     public Task<bool> UnfollowUserAsync(int userId, int targetUserId);
 
-    public Task<List<ProfileModelView>> GetDetailFollowersAsync(int userId);
-
+    public Task<List<DetailUserFollow>> GetDetailFollowersAsync(int userId, Paganation paganation);
 
 }
