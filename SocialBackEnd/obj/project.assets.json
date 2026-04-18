@@ -4833,19 +4833,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\hd_hoan.BRYCENVN.000\\.nuget\\packages\\": {}
+    "C:\\Users\\Admin\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Training\\SocialBackEnd\\SocialBackEnd.csproj",
+      "projectUniqueName": "C:\\Users\\Admin\\OneDrive\\Desktop\\SocialTech\\SocialBackEnd\\SocialBackEnd.csproj",
       "projectName": "SocialBackEnd",
-      "projectPath": "D:\\Training\\SocialBackEnd\\SocialBackEnd.csproj",
-      "packagesPath": "C:\\Users\\hd_hoan.BRYCENVN.000\\.nuget\\packages\\",
-      "outputPath": "D:\\Training\\SocialBackEnd\\obj\\",
+      "projectPath": "C:\\Users\\Admin\\OneDrive\\Desktop\\SocialTech\\SocialBackEnd\\SocialBackEnd.csproj",
+      "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Admin\\OneDrive\\Desktop\\SocialTech\\SocialBackEnd\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\hd_hoan.BRYCENVN.000\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
@@ -4922,8 +4922,20 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.415/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.420/PortableRuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1902",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'MailKit' 4.15.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-9j88-vvj5-vhgr",
+      "libraryId": "MailKit",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    }
+  ]
 }

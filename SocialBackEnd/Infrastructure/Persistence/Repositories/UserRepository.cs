@@ -111,5 +111,13 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<string> Validate(int userId)
+    {
+        return await DbContext.Users
+            .Where(x => x.Id == userId)
+            .Select(x => x.Email)
+            .FirstOrDefaultAsync();
+    }
+
 
 }

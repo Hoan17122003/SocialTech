@@ -24,4 +24,5 @@ public class User : EntityBase
     public ICollection<CommentVote> CommentVotes { get; set; } = new List<CommentVote>();
     public ICollection<ContentReport> SubmittedReports { get; set; } = new List<ContentReport>();
     public ICollection<ContentReport> AssignedReports { get; set; } = new List<ContentReport>();
+    public ICollection<IPLogin> IPLogins { set; get; } = new List<IPLogin>();
 }

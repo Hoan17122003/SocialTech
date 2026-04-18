@@ -7,7 +7,7 @@ using MySql.EntityFrameworkCore.Metadata;
 namespace SocialBackEnd.Migrations
 {
     /// <inheritdoc />
-    public partial class InitalCreate : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -107,6 +107,30 @@ namespace SocialBackEnd.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
+                name: "IpLocation",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    RefreshToken = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false),
+                    IpAdress = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAtUtc = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAtUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_IpLocation", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_IpLocation_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
                 name: "UserFollows",
                 columns: table => new
                 {
@@ -199,17 +223,14 @@ namespace SocialBackEnd.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
-                    CommunityId = table.Column<int>(type: "int", nullable: false),
+                    CommunityId = table.Column<int>(type: "int", nullable: true),
                     AuthorId = table.Column<int>(type: "int", nullable: false),
                     Title = table.Column<string>(type: "varchar(300)", maxLength: 300, nullable: false),
                     Body = table.Column<string>(type: "varchar(10000)", maxLength: 10000, nullable: true),
-                    Url = table.Column<string>(type: "varchar(2000)", maxLength: 2000, nullable: true),
                     PostType = table.Column<int>(type: "int", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     IsPinned = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     IsLocked = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    Score = table.Column<int>(type: "int", nullable: false),
-                    CommentCount = table.Column<int>(type: "int", nullable: false),
                     ViewCount = table.Column<int>(type: "int", nullable: false),
                     PublishedAtUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CreatedAtUtc = table.Column<DateTime>(type: "datetime(6)", nullable: false),
@@ -230,6 +251,33 @@ namespace SocialBackEnd.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                })
+                .Annotation("MySQL:Charset", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "Attachments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
+                    FilePath = table.Column<string>(type: "varchar(500)", maxLength: 500, nullable: false),
+                    FileName = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false),
+                    FileExtension = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false),
+                    FileSize = table.Column<long>(type: "bigint", nullable: false),
+                    PostId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAtUtc = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UpdatedAtUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Attachments", x => x.Id);
+                    table.CheckConstraint("CK_Attachments_FileExtension", "LOWER(FileExtension) IN ('mp4', 'jpg', 'jpeg')");
+                    table.ForeignKey(
+                        name: "FK_Attachments_Posts_PostId",
+                        column: x => x.PostId,
+                        principalTable: "Posts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySQL:Charset", "utf8mb4");
 
@@ -443,7 +491,12 @@ namespace SocialBackEnd.Migrations
             migrationBuilder.InsertData(
                 table: "SystemStatuses",
                 columns: new[] { "Id", "CreatedAtUtc", "Environment", "Name", "UpdatedAtUtc", "UtcTime", "Version" },
-                values: new object[] { 1, new DateTime(2026, 4, 16, 9, 32, 34, 931, DateTimeKind.Utc).AddTicks(6936), "Seed", "SocialBackEnd", null, new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Utc), "v1" });
+                values: new object[] { 1, new DateTime(2026, 4, 18, 11, 16, 21, 401, DateTimeKind.Utc).AddTicks(2886), "Seed", "SocialBackEnd", null, new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Utc), "v1" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Attachments_PostId",
+                table: "Attachments",
+                column: "PostId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Comments_AuthorId",
@@ -524,6 +577,11 @@ namespace SocialBackEnd.Migrations
                 column: "ReporterUserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_IpLocation_UserId",
+                table: "IpLocation",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PostMediaAssets_PostId",
                 table: "PostMediaAssets",
                 column: "PostId");
@@ -588,6 +646,9 @@ namespace SocialBackEnd.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "Attachments");
+
+            migrationBuilder.DropTable(
                 name: "CommentVotes");
 
             migrationBuilder.DropTable(
@@ -598,6 +659,9 @@ namespace SocialBackEnd.Migrations
 
             migrationBuilder.DropTable(
                 name: "ContentReports");
+
+            migrationBuilder.DropTable(
+                name: "IpLocation");
 
             migrationBuilder.DropTable(
                 name: "PostMediaAssets");

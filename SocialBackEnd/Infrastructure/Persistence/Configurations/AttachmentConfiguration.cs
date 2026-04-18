@@ -14,7 +14,7 @@ public class AttachmentConfiguration : IEntityTypeConfiguration<Attachments>
         {
             tableBuilder.HasCheckConstraint(
                 "CK_Attachments_FileExtension",
-                "LOWER([FileExtension]) IN ('mp4', 'jpg', 'jpeg')");
+                "LOWER(FileExtension) IN ('mp4', 'jpg', 'jpeg')");
         });
 
         builder.HasKey(x => x.Id);

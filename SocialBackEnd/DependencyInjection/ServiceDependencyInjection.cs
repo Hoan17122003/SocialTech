@@ -1,5 +1,6 @@
 using SocialBackEnd.Application.Notifications;
 using SocialBackEnd.Application.Notifications.Templates;
+using SocialBackEnd.Application.Ports;
 using SocialBackEnd.Application.Ports.Inbound;
 using SocialBackEnd.Application.Ports.Outbound;
 using SocialBackEnd.Application.Services;
@@ -19,7 +20,7 @@ public static class ServiceDependencyInjection
         services.AddScoped<IEmailPortOut, MailAdapter>();
         services.AddScoped<IEmailNotificationService, NotificationService>();
         services.AddScoped<IEmailTemplateRenderer<WelcomeEmailModel>, WellcomeEmailRenderer>();
-
+        services.AddScoped<IAuthenticationPort, AuthenticationAdapterPort>();
         return services;
     }
 }

@@ -24,6 +24,7 @@
     <Folder Include="Application\Notifications\Templates\" />
     <Folder Include="Application\Services\" />
     <Folder Include="Common\Constants\" />
+    <Folder Include="Common\DTOs\IpLogin\" />
     <Folder Include="Common\DTOs\User\" />
     <Folder Include="Common\Models\User\" />
     <Folder Include="Common\Validations\" />
