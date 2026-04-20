@@ -1,4 +1,5 @@
 using SocialBackEnd.DependencyInjection;
+using SocialBackEnd.Infrastructure.Configuration;
 using SocialBackEnd.Presentation.Middlewares;
 
 namespace SocialBackEnd;
@@ -8,6 +9,7 @@ public class Program
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        builder.AddDotEnvFile();
 
         // Add services to the container.
         builder.Services.AddControllers();

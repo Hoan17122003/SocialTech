@@ -1,11 +1,1 @@
-{
-  "Version": 1,
-  "Hash": "VwLazYxT+1Jh9OcVD+ZRuhPHJILKWh5d/YoTbVsIkVY=",
-  "Source": "SocialBackEnd",
-  "BasePath": "_content/SocialBackEnd",
-  "Mode": "Default",
-  "ManifestType": "Build",
-  "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
-  "Assets": []
-}
+{"Version":1,"Hash":"Hw4nhj/mKjwMCbg9uqiTTpPMaDLUga5ioLk6OuKYY/c=","Source":"SocialBackEnd","BasePath":"/","Mode":"Root","ManifestType":"Build","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[],"Assets":[],"Endpoints":[]}

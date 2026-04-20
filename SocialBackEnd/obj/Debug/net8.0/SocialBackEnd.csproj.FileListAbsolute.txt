@@ -461,8 +461,11 @@ C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\refint
 C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\SocialBackEnd.pdb
 C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\SocialBackEnd.genruntimeconfig.cache
 C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\ref\SocialBackEnd.dll
-C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\staticwebassets\msbuild.SocialBackEnd.Microsoft.AspNetCore.StaticWebAssets.props
-C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\staticwebassets\msbuild.build.SocialBackEnd.props
-C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\staticwebassets\msbuild.buildMultiTargeting.SocialBackEnd.props
-C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\staticwebassets\msbuild.buildTransitive.SocialBackEnd.props
-C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\staticwebassets.pack.json
+C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\bin\Debug\net8.0\SocialBackEnd.staticwebassets.endpoints.json
+C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\rjimswa.dswa.cache.json
+C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
+C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
+C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\staticwebassets.build.json.cache
+C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\staticwebassets.build.endpoints.json
+C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\swae.build.ex.cache
