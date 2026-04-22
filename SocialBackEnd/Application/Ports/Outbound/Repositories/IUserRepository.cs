@@ -12,7 +12,7 @@ public interface IUserRepository : IRepository<User>
     Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 
     Task<User> CreateUserAsync(RequestCreateAccount requestCreateAccount);
-    Task<bool> UpdateUserAsync(int userId, RequestUpdateAccount requestUpdateAccount);
+    Task<bool> UpdateUserAsync(int userId, RequestUpdateAccount requestUpdateAccount, string? profileImageUrl = null);
 
     Task<ProfileModelView> GetProfileAsync(int userId, CancellationToken cancellationToken = default);
 

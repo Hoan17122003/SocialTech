@@ -2,6 +2,7 @@ using SocialBackEnd.DependencyInjection;
 using SocialBackEnd.Infrastructure.Configuration;
 using SocialBackEnd.Infrastructure.Security;
 using SocialBackEnd.Presentation.Middlewares;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 
 namespace SocialBackEnd;
@@ -71,6 +72,13 @@ public class Program
 
         // Buộc request chuyển sang HTTPS nếu client gọi bằng HTTP.
         app.UseHttpsRedirection();
+
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(
+                Path.Combine(app.Environment.ContentRootPath, "wwwroot")),
+            RequestPath = string.Empty
+        });
 
         // Chạy authentication trước rồi authorization sau.
         // Extension này thực chất gọi:

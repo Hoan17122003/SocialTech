@@ -1,11 +1,1 @@
-{
-  "Version": 1,
-  "Hash": "VwLazYxT+1Jh9OcVD+ZRuhPHJILKWh5d/YoTbVsIkVY=",
-  "Source": "SocialBackEnd",
-  "BasePath": "_content/SocialBackEnd",
-  "Mode": "Default",
-  "ManifestType": "Build",
-  "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
-  "Assets": []
-}
+{"Version":1,"Hash":"Wh0c75z5SujHZF2kckWDMByqOSDgPh5W3R7O69vH4N8=","Source":"SocialBackEnd","BasePath":"/","Mode":"Root","ManifestType":"Build","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[{"Name":"SocialBackEnd\\wwwroot","Source":"SocialBackEnd","ContentRoot":"C:\\Users\\Admin\\OneDrive\\Desktop\\SocialTech\\SocialBackEnd\\wwwroot\\","BasePath":"/","Pattern":"**"}],"Assets":[],"Endpoints":[]}

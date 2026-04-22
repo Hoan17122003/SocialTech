@@ -44,19 +44,52 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
         return userEntity.Entity;
     }
 
-    public async Task<bool> UpdateUserAsync(int userId, RequestUpdateAccount requestUpdateAccount)
+    public async Task<bool> UpdateUserAsync(int userId, RequestUpdateAccount requestUpdateAccount, string? profileImageUrl = null)
     {
-        var affectedRows = await DbContext
-            .Users
-            .Where(x => x.Id == userId)
-            .ExecuteUpdateAsync(setters => setters
-                .SetProperty(x => x.DisplayName, requestUpdateAccount.DisplayName)
-                // Password neu co duoc cap nhat thi da duoc hash truoc o Application service.
-                .SetProperty(x => x.PasswordHash, requestUpdateAccount.Password)
-                .SetProperty(x => x.Bio, requestUpdateAccount.Bio)
-                .SetProperty(x => x.ProfileImageUrl, requestUpdateAccount.ProfileImageUrl));
+        var user = await DbContext.Users.FirstOrDefaultAsync(x => x.Id == userId);
+        if (user is null)
+        {
+            return false;
+        }
 
-        return affectedRows > 0;
+        var hasChanges = false;
+
+        if (!string.IsNullOrWhiteSpace(requestUpdateAccount.DisplayName) &&
+            !string.Equals(user.DisplayName, requestUpdateAccount.DisplayName, StringComparison.Ordinal))
+        {
+            user.DisplayName = requestUpdateAccount.DisplayName;
+            hasChanges = true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(requestUpdateAccount.Password) &&
+            !string.Equals(user.PasswordHash, requestUpdateAccount.Password, StringComparison.Ordinal))
+        {
+            // Password neu co duoc cap nhat thi da duoc hash truoc o Application service.
+            user.PasswordHash = requestUpdateAccount.Password;
+            hasChanges = true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(requestUpdateAccount.Bio) &&
+            !string.Equals(user.Bio, requestUpdateAccount.Bio, StringComparison.Ordinal))
+        {
+            user.Bio = requestUpdateAccount.Bio;
+            hasChanges = true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(profileImageUrl) &&
+            !string.Equals(user.ProfileImageUrl, profileImageUrl, StringComparison.Ordinal))
+        {
+            user.ProfileImageUrl = profileImageUrl;
+            hasChanges = true;
+        }
+
+        if (!hasChanges)
+        {
+            return true;
+        }
+
+        await DbContext.SaveChangesAsync();
+        return true;
     }
 
     public async Task<ProfileModelView> GetProfileAsync(int userId, CancellationToken cancellationToken = default)

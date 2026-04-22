@@ -9,6 +9,7 @@ using SocialBackEnd.Common.DTOs.Mail;
 using SocialBackEnd.Domain.Entities;
 using SocialBackEnd.Infrastructure.Notifications;
 using SocialBackEnd.Infrastructure.Security;
+using SocialBackEnd.Infrastructure.Storage;
 using Microsoft.AspNetCore.Identity;
 
 namespace SocialBackEnd.DependencyInjection;
@@ -28,6 +29,7 @@ public static class ServiceDependencyInjection
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IUserAuthenticationService, UserAuthenticationService>();
         services.AddScoped<IPasswordHashService, Argon2PasswordHashService>();
+        services.AddScoped<IEntityMediaStorageService, LocalEntityMediaStorageService>();
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
         return services;

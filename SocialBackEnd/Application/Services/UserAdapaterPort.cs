@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using SocialBackEnd.Application.Notifications;
 using SocialBackEnd.Application.Ports.Inbound;
+using SocialBackEnd.Application.Ports.Outbound;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Application.Ports.Outbound.Security;
 using SocialBackEnd.Common.DTOs;
@@ -18,17 +19,20 @@ public sealed class UserAdapaterPort : IUserPort
     private readonly ILogger<UserAdapaterPort> _logger;
     private readonly IEmailNotificationService _emailNoificationService;
     private readonly IPasswordHashService _passwordHashService;
+    private readonly IEntityMediaStorageService _entityMediaStorageService;
 
     public UserAdapaterPort(
         IUserRepository repository,
         ILogger<UserAdapaterPort> logger,
         IEmailNotificationService emailNotificationService,
-        IPasswordHashService passwordHashService)
+        IPasswordHashService passwordHashService,
+        IEntityMediaStorageService entityMediaStorageService)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _emailNoificationService = emailNotificationService ?? throw new ArgumentNullException(nameof(emailNotificationService));
         _passwordHashService = passwordHashService ?? throw new ArgumentNullException(nameof(passwordHashService));
+        _entityMediaStorageService = entityMediaStorageService ?? throw new ArgumentNullException(nameof(entityMediaStorageService));
     }
 
     public async Task<int> CreateUserAsync(RequestCreateAccount requestCreateAccount)
@@ -99,12 +103,39 @@ public sealed class UserAdapaterPort : IUserPort
             throw new ArgumentNullException(nameof(requestUpdateAccount));
         }
 
-        if (!string.IsNullOrWhiteSpace(requestUpdateAccount.Password))
+        var user = await _repository.GetByIdAsync(userId);
+        if (user is null)
         {
-            requestUpdateAccount.Password = _passwordHashService.HashPassword(requestUpdateAccount.Password);
+            return false;
         }
 
-        return await _repository.UpdateUserAsync(userId, requestUpdateAccount);
+        requestUpdateAccount.DisplayName = string.IsNullOrWhiteSpace(requestUpdateAccount.DisplayName)
+            ? null
+            : requestUpdateAccount.DisplayName.Trim();
+
+        requestUpdateAccount.Bio = string.IsNullOrWhiteSpace(requestUpdateAccount.Bio)
+            ? null
+            : requestUpdateAccount.Bio.Trim();
+
+        if (!string.IsNullOrWhiteSpace(requestUpdateAccount.Password))
+        {
+            requestUpdateAccount.Password = _passwordHashService.HashPassword(requestUpdateAccount.Password.Trim());
+        }
+        else
+        {
+            requestUpdateAccount.Password = null;
+        }
+
+        string? profileImageUrl = null;
+        if (requestUpdateAccount.ProfileImageUrl is not null && requestUpdateAccount.ProfileImageUrl.Length > 0)
+        {
+            profileImageUrl = await _entityMediaStorageService.SaveUserProfileImageAsync(
+                userId,
+                requestUpdateAccount.ProfileImageUrl,
+                user.ProfileImageUrl);
+        }
+
+        return await _repository.UpdateUserAsync(userId, requestUpdateAccount, profileImageUrl);
     }
 
     public async Task<ProfileModelView> GetUserProfileAsync(int userIdTarget, int userId)

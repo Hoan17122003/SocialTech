@@ -472,3 +472,7 @@ C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\obj\Debug\net8.0\swae.b
 D:\Training\SocialBackEnd\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 D:\Training\SocialBackEnd\bin\Debug\net8.0\Konscious.Security.Cryptography.Argon2.dll
 D:\Training\SocialBackEnd\bin\Debug\net8.0\Konscious.Security.Cryptography.Blake2.dll
+C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\bin\Debug\net8.0\Konscious.Security.Cryptography.Argon2.dll
+C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\bin\Debug\net8.0\Konscious.Security.Cryptography.Blake2.dll
+C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\bin\Debug\net8.0\SocialBackEnd.staticwebassets.runtime.json

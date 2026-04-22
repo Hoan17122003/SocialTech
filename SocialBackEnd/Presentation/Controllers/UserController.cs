@@ -51,5 +51,23 @@ namespace SocialBackEnd.Presentation.Controllers
             return Ok(result);
         }
 
+        [Authorize]
+        [HttpPost("profile/update")]
+        public async Task<IActionResult> UpdateInfoUser([FromForm]  RequestUpdateAccount requestUpdateAccount)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized(ApiResponse<string>.Fail("Token không chứa user id hợp lệ."));
+            }
+            var result = await _userPort.UpdateUserAsync(userId, requestUpdateAccount);
+            if (!result)
+            {
+                return NotFound(ApiResponse<string>.Fail("Khong tim thay nguoi dung."));
+            }
+
+            return Ok(ApiResponse<string>.Ok("Cap nhat thong tin thanh cong.", "Success"));
+        }
+
     }
 }
