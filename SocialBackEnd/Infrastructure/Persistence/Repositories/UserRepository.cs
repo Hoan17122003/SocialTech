@@ -36,7 +36,8 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
             Username = requestCreateAccount.Username,
             DisplayName = requestCreateAccount.DisplayName,
             Email = requestCreateAccount.Email,
-            PasswordHash = requestCreateAccount.Password, // In a real application, hash the password before storing
+            // Password da duoc hash truoc o Application service.
+            PasswordHash = requestCreateAccount.Password,
         };
         var userEntity = await DbContext.Users.AddAsync(user, CancellationToken.None);
         await DbContext.SaveChangesAsync();
@@ -50,6 +51,7 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
             .Where(x => x.Id == userId)
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(x => x.DisplayName, requestUpdateAccount.DisplayName)
+                // Password neu co duoc cap nhat thi da duoc hash truoc o Application service.
                 .SetProperty(x => x.PasswordHash, requestUpdateAccount.Password)
                 .SetProperty(x => x.Bio, requestUpdateAccount.Bio)
                 .SetProperty(x => x.ProfileImageUrl, requestUpdateAccount.ProfileImageUrl));
@@ -117,6 +119,35 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
             .Where(x => x.Id == userId)
             .Select(x => x.Email)
             .FirstOrDefaultAsync();
+    }
+
+    public async Task<User?> UserIsExists(
+        string? email,
+        string? username,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedEmail = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
+        var normalizedUsername = string.IsNullOrWhiteSpace(username) ? null : username.Trim();
+
+        if (normalizedEmail is null && normalizedUsername is null)
+        {
+            return null;
+        }
+
+        return await DbContext.Users
+            .AsNoTracking()
+            .Where(x =>
+                (normalizedEmail != null && x.Email == normalizedEmail) ||
+                (normalizedUsername != null && x.Username == normalizedUsername))
+            .Select(x => new User
+            {
+                Id = x.Id,
+                Email = x.Email,
+                Username = x.Username,
+                DisplayName = x.DisplayName,
+                PasswordHash = x.PasswordHash
+            })
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
 

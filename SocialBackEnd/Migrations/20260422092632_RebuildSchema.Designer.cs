@@ -11,8 +11,8 @@ using SocialBackEnd.Infrastructure.Persistence;
 namespace SocialBackEnd.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260418111621_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260422092632_RebuildSchema")]
+    partial class RebuildSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -340,7 +340,7 @@ namespace SocialBackEnd.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("IpAdress")
+                    b.Property<string>("IpAddress")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
@@ -360,7 +360,7 @@ namespace SocialBackEnd.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("IpLocation", (string)null);
+                    b.ToTable("IPlogin", (string)null);
                 });
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Post", b =>
@@ -542,7 +542,7 @@ namespace SocialBackEnd.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAtUtc = new DateTime(2026, 4, 18, 11, 16, 21, 401, DateTimeKind.Utc).AddTicks(2886),
+                            CreatedAtUtc = new DateTime(2026, 4, 22, 9, 26, 31, 865, DateTimeKind.Utc).AddTicks(1640),
                             Environment = "Seed",
                             Name = "SocialBackEnd",
                             UtcTime = new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -812,7 +812,7 @@ namespace SocialBackEnd.Migrations
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.IPLogin", b =>
                 {
                     b.HasOne("SocialBackEnd.Domain.Entities.User", "UserLogin")
-                        .WithMany("iPLogins")
+                        .WithMany("IPLogins")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -962,13 +962,13 @@ namespace SocialBackEnd.Migrations
 
                     b.Navigation("Followings");
 
+                    b.Navigation("IPLogins");
+
                     b.Navigation("OwnedCommunities");
 
                     b.Navigation("PostVotes");
 
                     b.Navigation("SubmittedReports");
-
-                    b.Navigation("iPLogins");
                 });
 #pragma warning restore 612, 618
         }

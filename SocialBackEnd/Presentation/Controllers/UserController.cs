@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocialBackEnd.Application.Ports.Inbound;
 using SocialBackEnd.Common.DTOs;
@@ -26,19 +26,24 @@ namespace SocialBackEnd.Presentation.Controllers
             var result = await _userPort.CreateUserAsync(request);
             return Ok(result);
         }
+
+        [Authorize]
         [HttpPost("profile/{id}")]
-        public async Task<IActionResult> GetUserProfile([FromRoute] int userIdTarget)
+        public async Task<IActionResult> GetUserProfile([FromRoute(Name = "id")] int userIdTarget)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            // Khi request đi qua [Authorize], JWT middleware đã validate bearer token
+            // và gán claims vào HttpContext.User. Controller chỉ cần đọc lại claims đó.
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdClaim, out var userId))
             {
-                return Unauthorized();
+                return Unauthorized(ApiResponse<string>.Fail("Token không chứa user id hợp lệ."));
             }
 
             var result = await _userPort.GetUserProfileAsync(userIdTarget, userId);
             return Ok(ApiResponse<ProfileModelView>.Ok(result, "Success"));
         }
 
+        [Authorize]
         [HttpGet("profile/{id}/detail")]
         public async Task<IActionResult> GetDetailUserFollower([FromRoute(Name = "id")] int userId, [FromQuery] Paganation paganation)
         {

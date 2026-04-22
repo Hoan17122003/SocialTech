@@ -7,7 +7,7 @@ using MySql.EntityFrameworkCore.Metadata;
 namespace SocialBackEnd.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class RebuildSchema : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -107,22 +107,22 @@ namespace SocialBackEnd.Migrations
                 .Annotation("MySQL:Charset", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "IpLocation",
+                name: "IPlogin",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("MySQL:ValueGenerationStrategy", MySQLValueGenerationStrategy.IdentityColumn),
                     RefreshToken = table.Column<string>(type: "varchar(255)", maxLength: 255, nullable: false),
-                    IpAdress = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false),
+                    IpAddress = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false),
                     UserId = table.Column<int>(type: "int", nullable: false),
                     CreatedAtUtc = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedAtUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_IpLocation", x => x.Id);
+                    table.PrimaryKey("PK_IPlogin", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_IpLocation_Users_UserId",
+                        name: "FK_IPlogin_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id",
@@ -491,7 +491,7 @@ namespace SocialBackEnd.Migrations
             migrationBuilder.InsertData(
                 table: "SystemStatuses",
                 columns: new[] { "Id", "CreatedAtUtc", "Environment", "Name", "UpdatedAtUtc", "UtcTime", "Version" },
-                values: new object[] { 1, new DateTime(2026, 4, 18, 11, 16, 21, 401, DateTimeKind.Utc).AddTicks(2886), "Seed", "SocialBackEnd", null, new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Utc), "v1" });
+                values: new object[] { 1, new DateTime(2026, 4, 22, 9, 26, 31, 865, DateTimeKind.Utc).AddTicks(1640), "Seed", "SocialBackEnd", null, new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Utc), "v1" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Attachments_PostId",
@@ -577,8 +577,8 @@ namespace SocialBackEnd.Migrations
                 column: "ReporterUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_IpLocation_UserId",
-                table: "IpLocation",
+                name: "IX_IPlogin_UserId",
+                table: "IPlogin",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
@@ -661,7 +661,7 @@ namespace SocialBackEnd.Migrations
                 name: "ContentReports");
 
             migrationBuilder.DropTable(
-                name: "IpLocation");
+                name: "IPlogin");
 
             migrationBuilder.DropTable(
                 name: "PostMediaAssets");
