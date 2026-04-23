@@ -18,6 +18,7 @@ public interface IUserRepository : IRepository<User>
 
     Task<List<DetailUserFollow>> GetDetailUserFollowAsync(int userId, Paganation paganation, CancellationToken cancellationToken = default);
 
+
     Task<User?> UserIsExists(string? email, string? username, CancellationToken cancellationToken = default);
 
 }

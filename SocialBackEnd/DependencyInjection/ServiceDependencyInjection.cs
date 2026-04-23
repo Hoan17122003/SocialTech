@@ -31,6 +31,7 @@ public static class ServiceDependencyInjection
         services.AddScoped<IPasswordHashService, Argon2PasswordHashService>();
         services.AddScoped<IEntityMediaStorageService, LocalEntityMediaStorageService>();
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+        services.AddScoped<IArticlePort, ArticleAdapterPort>();
 
         return services;
     }

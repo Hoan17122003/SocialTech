@@ -1,1 +1,39 @@
-{"Version":1,"Hash":"Wh0c75z5SujHZF2kckWDMByqOSDgPh5W3R7O69vH4N8=","Source":"SocialBackEnd","BasePath":"/","Mode":"Root","ManifestType":"Build","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[{"Name":"SocialBackEnd\\wwwroot","Source":"SocialBackEnd","ContentRoot":"C:\\Users\\Admin\\OneDrive\\Desktop\\SocialTech\\SocialBackEnd\\wwwroot\\","BasePath":"/","Pattern":"**"}],"Assets":[],"Endpoints":[]}
+{
+  "Version": 1,
+  "Hash": "cbPm5jFdeaWeQdZ2veG5NYykMtsaeCeilMhtElMpOTU=",
+  "Source": "SocialBackEnd",
+  "BasePath": "_content/SocialBackEnd",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "SocialBackEnd\\wwwroot",
+      "Source": "SocialBackEnd",
+      "ContentRoot": "D:\\Training\\SocialBackEnd\\wwwroot\\",
+      "BasePath": "_content/SocialBackEnd",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": [
+    {
+      "Identity": "D:\\Training\\SocialBackEnd\\wwwroot\\uploads\\users\\4\\profile\\86f25f9b0b0e47afbb69ebf2b6ab16e1.png",
+      "SourceId": "SocialBackEnd",
+      "SourceType": "Discovered",
+      "ContentRoot": "D:\\Training\\SocialBackEnd\\wwwroot\\",
+      "BasePath": "_content/SocialBackEnd",
+      "RelativePath": "uploads/users/4/profile/86f25f9b0b0e47afbb69ebf2b6ab16e1.png",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\uploads\\users\\4\\profile\\86f25f9b0b0e47afbb69ebf2b6ab16e1.png"
+    }
+  ]
+}

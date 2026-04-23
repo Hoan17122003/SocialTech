@@ -18,6 +18,6 @@ public interface IUserPort
 
     public Task<bool> UnfollowUserAsync(int userId, int targetUserId);
 
-    public Task<List<DetailUserFollow>> GetDetailFollowersAsync(int userId, Paganation paganation);
+    public Task<List<DetailUserFollow>> GetDetailFollowersAsync(int userId, int? userTargetId, Paganation paganation);
 
 }

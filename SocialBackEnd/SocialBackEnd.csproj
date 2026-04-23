@@ -27,6 +27,7 @@
     <Folder Include="Application\Ports\Outbound\Security\" />
     <Folder Include="Application\Services\" />
     <Folder Include="Common\Constants\" />
+    <Folder Include="Common\DTOs\Article\" />
     <Folder Include="Common\DTOs\Auth\" />
     <Folder Include="Common\DTOs\IpLogin\" />
     <Folder Include="Common\DTOs\User\" />

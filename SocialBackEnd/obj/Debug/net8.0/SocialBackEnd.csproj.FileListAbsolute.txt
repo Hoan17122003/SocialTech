@@ -476,3 +476,4 @@ C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\bin\Debug\net8.0\Konsci
 C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\bin\Debug\net8.0\Konscious.Security.Cryptography.Blake2.dll
 C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
 C:\Users\Admin\OneDrive\Desktop\SocialTech\SocialBackEnd\bin\Debug\net8.0\SocialBackEnd.staticwebassets.runtime.json
+D:\Training\SocialBackEnd\bin\Debug\net8.0\SocialBackEnd.staticwebassets.runtime.json
