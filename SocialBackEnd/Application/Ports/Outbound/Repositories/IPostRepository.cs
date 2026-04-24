@@ -4,6 +4,7 @@ namespace SocialBackEnd.Application.Ports.Outbound.Repositories;
 
 public interface IPostRepository : IRepository<Post>
 {
+    Task<int> CreatePostAsync(Post post, CancellationToken cancellationToken = default);
     Task<List<Post>> GetPostsByCommunityAsync(int communityId, CancellationToken cancellationToken = default);
     Task<List<Post>> GetPostsByAuthorAsync(int authorId, CancellationToken cancellationToken = default);
 }

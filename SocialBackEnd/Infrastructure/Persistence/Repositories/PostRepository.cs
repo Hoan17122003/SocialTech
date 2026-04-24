@@ -31,4 +31,11 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
             .OrderByDescending(x => x.CreatedAtUtc)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<int> CreatePostAsync(Post post, CancellationToken cancellationToken = default)
+    {
+        DbContext.Posts.Add(post);
+        await DbContext.SaveChangesAsync(cancellationToken);
+        return post.Id;
+    }
 }
