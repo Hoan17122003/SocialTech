@@ -17,7 +17,6 @@ public record RequestCreateAccount
 
     [Required]
     [StrongPassword(MinimumLength = 12, ErrorMessage = "Password is not strong enough.")]
-
     public string Password { get; set; }
 
     public CancellationToken? CancellationToken { get; set; } = default;

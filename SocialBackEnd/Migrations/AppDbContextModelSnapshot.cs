@@ -19,14 +19,57 @@ namespace SocialBackEnd.Migrations
                 .HasAnnotation("ProductVersion", "8.0.25")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
+            modelBuilder.Entity("SocialBackEnd.Domain.Entities.Attachments", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("FileExtension")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostId");
+
+                    b.ToTable("Attachments", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Attachments_FileExtension", "LOWER(FileExtension) IN ('mp4', 'png', 'jpg', 'jpeg')");
+                        });
+                });
+
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Comment", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
 
-                    b.Property<Guid>("AuthorId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Body")
                         .IsRequired()
@@ -42,11 +85,11 @@ namespace SocialBackEnd.Migrations
                     b.Property<bool>("IsLocked")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<Guid?>("ParentCommentId")
-                        .HasColumnType("char(36)");
+                    b.Property<int?>("ParentCommentId")
+                        .HasColumnType("int");
 
-                    b.Property<Guid>("PostId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
 
                     b.Property<int>("Score")
                         .HasColumnType("int");
@@ -70,18 +113,21 @@ namespace SocialBackEnd.Migrations
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.CommentVote", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
 
-                    b.Property<Guid>("CommentId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("CommentId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("char(36)");
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.Property<int>("VoteType")
                         .HasColumnType("int");
@@ -98,15 +144,15 @@ namespace SocialBackEnd.Migrations
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Community", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid>("CreatedByUserId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
@@ -153,12 +199,12 @@ namespace SocialBackEnd.Migrations
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.CommunityMembership", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
 
-                    b.Property<Guid>("CommunityId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("CommunityId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime(6)");
@@ -175,8 +221,8 @@ namespace SocialBackEnd.Migrations
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -190,12 +236,15 @@ namespace SocialBackEnd.Migrations
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.CommunityRule", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
 
-                    b.Property<Guid>("CommunityId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("CommunityId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
@@ -212,6 +261,9 @@ namespace SocialBackEnd.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("varchar(150)");
 
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CommunityId");
@@ -221,18 +273,18 @@ namespace SocialBackEnd.Migrations
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.ContentReport", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
 
-                    b.Property<Guid?>("AssignedModeratorId")
-                        .HasColumnType("char(36)");
+                    b.Property<int?>("AssignedModeratorId")
+                        .HasColumnType("int");
 
-                    b.Property<Guid?>("CommentId")
-                        .HasColumnType("char(36)");
+                    b.Property<int?>("CommentId")
+                        .HasColumnType("int");
 
-                    b.Property<Guid>("CommunityId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("CommunityId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime(6)");
@@ -241,16 +293,16 @@ namespace SocialBackEnd.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("varchar(2000)");
 
-                    b.Property<Guid?>("PostId")
-                        .HasColumnType("char(36)");
+                    b.Property<int?>("PostId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Reason")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
-                    b.Property<Guid>("ReporterUserId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("ReporterUserId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("ReviewedAtUtc")
                         .HasColumnType("datetime(6)");
@@ -276,24 +328,53 @@ namespace SocialBackEnd.Migrations
                     b.ToTable("ContentReports", (string)null);
                 });
 
+            modelBuilder.Entity("SocialBackEnd.Domain.Entities.IPLogin", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("RefreshToken")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("IPlogin", (string)null);
+                });
+
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Post", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
 
-                    b.Property<Guid>("AuthorId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Body")
                         .HasMaxLength(10000)
                         .HasColumnType("varchar(10000)");
 
-                    b.Property<int>("CommentCount")
+                    b.Property<int?>("CommunityId")
                         .HasColumnType("int");
-
-                    b.Property<Guid>("CommunityId")
-                        .HasColumnType("char(36)");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime(6)");
@@ -310,9 +391,6 @@ namespace SocialBackEnd.Migrations
                     b.Property<DateTime?>("PublishedAtUtc")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("Score")
-                        .HasColumnType("int");
-
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -323,10 +401,6 @@ namespace SocialBackEnd.Migrations
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Url")
-                        .HasMaxLength(2000)
-                        .HasColumnType("varchar(2000)");
 
                     b.Property<int>("ViewCount")
                         .HasColumnType("int");
@@ -342,9 +416,9 @@ namespace SocialBackEnd.Migrations
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.PostMediaAsset", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
 
                     b.Property<int>("AssetType")
                         .HasColumnType("int");
@@ -353,11 +427,14 @@ namespace SocialBackEnd.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("varchar(300)");
 
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("PostId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
 
                     b.Property<string>("StorageUrl")
                         .IsRequired()
@@ -368,6 +445,9 @@ namespace SocialBackEnd.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("varchar(2000)");
 
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("PostId");
@@ -377,11 +457,11 @@ namespace SocialBackEnd.Migrations
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.PostTag", b =>
                 {
-                    b.Property<Guid>("PostId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
 
-                    b.Property<Guid>("TagId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("TagId")
+                        .HasColumnType("int");
 
                     b.HasKey("PostId", "TagId");
 
@@ -392,18 +472,21 @@ namespace SocialBackEnd.Migrations
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.PostVote", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid>("PostId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("char(36)");
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.Property<int>("VoteType")
                         .HasColumnType("int");
@@ -420,8 +503,12 @@ namespace SocialBackEnd.Migrations
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.SystemStatus", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Environment")
                         .IsRequired()
@@ -432,6 +519,9 @@ namespace SocialBackEnd.Migrations
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("varchar(150)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("UtcTime")
                         .HasColumnType("datetime(6)");
@@ -448,7 +538,8 @@ namespace SocialBackEnd.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            Id = 1,
+                            CreatedAtUtc = new DateTime(2026, 4, 26, 9, 26, 45, 695, DateTimeKind.Utc).AddTicks(1008),
                             Environment = "Seed",
                             Name = "SocialBackEnd",
                             UtcTime = new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -458,9 +549,12 @@ namespace SocialBackEnd.Migrations
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Tag", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(300)
@@ -476,6 +570,9 @@ namespace SocialBackEnd.Migrations
                         .HasMaxLength(80)
                         .HasColumnType("varchar(80)");
 
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Slug")
@@ -486,9 +583,9 @@ namespace SocialBackEnd.Migrations
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.User", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
 
                     b.Property<string>("Bio")
                         .HasMaxLength(500)
@@ -508,6 +605,9 @@ namespace SocialBackEnd.Migrations
                         .HasColumnType("varchar(255)");
 
                     b.Property<bool>("IsEmailVerified")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsPrivateAccount")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("PasswordHash")
@@ -539,6 +639,45 @@ namespace SocialBackEnd.Migrations
                         .IsUnique();
 
                     b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("SocialBackEnd.Domain.Entities.UserFollow", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("FollowerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("FollowingId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FollowingId");
+
+                    b.HasIndex("FollowerId", "FollowingId")
+                        .IsUnique();
+
+                    b.ToTable("UserFollows", (string)null);
+                });
+
+            modelBuilder.Entity("SocialBackEnd.Domain.Entities.Attachments", b =>
+                {
+                    b.HasOne("SocialBackEnd.Domain.Entities.Post", "Post")
+                        .WithMany("Attachments")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Post");
                 });
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Comment", b =>
@@ -667,6 +806,17 @@ namespace SocialBackEnd.Migrations
                     b.Navigation("ReporterUser");
                 });
 
+            modelBuilder.Entity("SocialBackEnd.Domain.Entities.IPLogin", b =>
+                {
+                    b.HasOne("SocialBackEnd.Domain.Entities.User", "UserLogin")
+                        .WithMany("IPLogins")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserLogin");
+                });
+
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Post", b =>
                 {
                     b.HasOne("SocialBackEnd.Domain.Entities.User", "Author")
@@ -678,8 +828,7 @@ namespace SocialBackEnd.Migrations
                     b.HasOne("SocialBackEnd.Domain.Entities.Community", "Community")
                         .WithMany("Posts")
                         .HasForeignKey("CommunityId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Author");
 
@@ -735,6 +884,25 @@ namespace SocialBackEnd.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("SocialBackEnd.Domain.Entities.UserFollow", b =>
+                {
+                    b.HasOne("SocialBackEnd.Domain.Entities.User", "Follower")
+                        .WithMany("Followings")
+                        .HasForeignKey("FollowerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SocialBackEnd.Domain.Entities.User", "Following")
+                        .WithMany("Followers")
+                        .HasForeignKey("FollowingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Follower");
+
+                    b.Navigation("Following");
+                });
+
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Comment", b =>
                 {
                     b.Navigation("Replies");
@@ -757,6 +925,8 @@ namespace SocialBackEnd.Migrations
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Post", b =>
                 {
+                    b.Navigation("Attachments");
+
                     b.Navigation("Comments");
 
                     b.Navigation("MediaAssets");
@@ -784,6 +954,12 @@ namespace SocialBackEnd.Migrations
                     b.Navigation("CommentVotes");
 
                     b.Navigation("CommunityMemberships");
+
+                    b.Navigation("Followers");
+
+                    b.Navigation("Followings");
+
+                    b.Navigation("IPLogins");
 
                     b.Navigation("OwnedCommunities");
 

@@ -7,7 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include=".config\dotnet-tools.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Konscious.Security.Cryptography.Argon2" Version="1.3.1" />
     <PackageReference Include="MailKit" Version="4.15.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.21" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.21" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.25" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.25" />
@@ -17,14 +23,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include=".config\" />
     <Folder Include="Application\Notifications\Templates\" />
+    <Folder Include="Application\Ports\Outbound\Security\" />
     <Folder Include="Application\Services\" />
     <Folder Include="Common\Constants\" />
+    <Folder Include="Common\DTOs\Article\" />
+    <Folder Include="Common\DTOs\Auth\" />
+    <Folder Include="Common\DTOs\IpLogin\" />
     <Folder Include="Common\DTOs\User\" />
     <Folder Include="Common\Models\User\" />
     <Folder Include="Common\Validations\" />
     <Folder Include="Infrastructure\Notifications\" />
+    <Folder Include="Infrastructure\Security\" />
     <Folder Include="Presentation\Controllers\" />
   </ItemGroup>
 

@@ -19,9 +19,6 @@ public sealed class PostConfiguration : IEntityTypeConfiguration<Post>
         builder.Property(x => x.Body)
             .HasMaxLength(10000);
 
-        builder.Property(x => x.Url)
-            .HasMaxLength(2000);
-
         builder.Property(x => x.PostType)
             .HasConversion<int>()
             .IsRequired();
