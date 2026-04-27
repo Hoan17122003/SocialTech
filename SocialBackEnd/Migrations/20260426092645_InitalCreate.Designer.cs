@@ -11,8 +11,8 @@ using SocialBackEnd.Infrastructure.Persistence;
 namespace SocialBackEnd.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260422092632_RebuildSchema")]
-    partial class RebuildSchema
+    [Migration("20260426092645_InitalCreate")]
+    partial class InitalCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -61,7 +61,7 @@ namespace SocialBackEnd.Migrations
 
                     b.ToTable("Attachments", null, t =>
                         {
-                            t.HasCheckConstraint("CK_Attachments_FileExtension", "LOWER(FileExtension) IN ('mp4', 'jpg', 'jpeg')");
+                            t.HasCheckConstraint("CK_Attachments_FileExtension", "LOWER(FileExtension) IN ('mp4', 'png', 'jpg', 'jpeg')");
                         });
                 });
 
@@ -542,7 +542,7 @@ namespace SocialBackEnd.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAtUtc = new DateTime(2026, 4, 22, 9, 26, 31, 865, DateTimeKind.Utc).AddTicks(1640),
+                            CreatedAtUtc = new DateTime(2026, 4, 26, 9, 26, 45, 695, DateTimeKind.Utc).AddTicks(1008),
                             Environment = "Seed",
                             Name = "SocialBackEnd",
                             UtcTime = new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Utc),

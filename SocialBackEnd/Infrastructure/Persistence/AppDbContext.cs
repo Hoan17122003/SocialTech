@@ -24,6 +24,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<CommentVote> CommentVotes => Set<CommentVote>();
     public DbSet<ContentReport> ContentReports => Set<ContentReport>();
     public DbSet<IPLogin> IPLogins => Set<IPLogin>();
+    public DbSet<Attachments> Attachments => Set<Attachments>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

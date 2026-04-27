@@ -18,6 +18,7 @@ public sealed class LocalEntityMediaStorageService : IEntityMediaStorageService
     private static readonly HashSet<string> AllowedPostAttachmentExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".jpg",
+        ".png",
         ".jpeg",
         ".mp4"
     };

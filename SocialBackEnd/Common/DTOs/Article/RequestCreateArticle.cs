@@ -10,7 +10,7 @@ public record RequestCreateArticle
     [Length(minimumLength: 1, maximumLength: 255, ErrorMessage = "Độ dài bạn cần nhập tối thiểu là 1")]
     public string Title { set; get; }
     public string? Content { set; get; }
-    public List<IFormFile>? FileUploads { set; get; }
+    public List<IFormFile>? Attachments { set; get; }
     public int? ComunityId { set; get; }
 
 }

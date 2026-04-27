@@ -21,7 +21,8 @@ namespace SocialBackEnd.Presentation.Controllers
 
         [Authorize]
         [HttpPost("create")]
-        public async Task<IActionResult> CreateArticle([FromBody] RequestCreateArticle requestCreateArticle)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> CreateArticle([FromForm] RequestCreateArticle requestCreateArticle)
         {
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdClaim, out var userId))
@@ -33,7 +34,8 @@ namespace SocialBackEnd.Presentation.Controllers
         }
         [Authorize]
         [HttpPut("update/{articleId:int}")]
-        public async Task<IActionResult> UpdateArticle([FromRoute] int articleId, [FromBody] RequestUpdateArticle requestUpdateArticle)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateArticle([FromRoute] int articleId, [FromForm] RequestUpdateArticle requestUpdateArticle)
         {
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdClaim, out var userId))

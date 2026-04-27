@@ -7,7 +7,7 @@ using MySql.EntityFrameworkCore.Metadata;
 namespace SocialBackEnd.Migrations
 {
     /// <inheritdoc />
-    public partial class RebuildSchema : Migration
+    public partial class InitalCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -271,7 +271,7 @@ namespace SocialBackEnd.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Attachments", x => x.Id);
-                    table.CheckConstraint("CK_Attachments_FileExtension", "LOWER(FileExtension) IN ('mp4', 'jpg', 'jpeg')");
+                    table.CheckConstraint("CK_Attachments_FileExtension", "LOWER(FileExtension) IN ('mp4', 'png', 'jpg', 'jpeg')");
                     table.ForeignKey(
                         name: "FK_Attachments_Posts_PostId",
                         column: x => x.PostId,
@@ -491,7 +491,7 @@ namespace SocialBackEnd.Migrations
             migrationBuilder.InsertData(
                 table: "SystemStatuses",
                 columns: new[] { "Id", "CreatedAtUtc", "Environment", "Name", "UpdatedAtUtc", "UtcTime", "Version" },
-                values: new object[] { 1, new DateTime(2026, 4, 22, 9, 26, 31, 865, DateTimeKind.Utc).AddTicks(1640), "Seed", "SocialBackEnd", null, new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Utc), "v1" });
+                values: new object[] { 1, new DateTime(2026, 4, 26, 9, 26, 45, 695, DateTimeKind.Utc).AddTicks(1008), "Seed", "SocialBackEnd", null, new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Utc), "v1" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Attachments_PostId",
