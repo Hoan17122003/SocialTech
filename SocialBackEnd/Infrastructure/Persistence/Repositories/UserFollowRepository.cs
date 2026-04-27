@@ -53,10 +53,6 @@ public class UserFollowRepository : RepositoryBase<UserFollow>, IUserFollowRepos
 
     public async Task<bool> UnfollowAsync(int followerId, int followingId, CancellationToken cancellationToken = default)
     {
-        if (followerId == followingId)
-        {
-            return false;
-        }
         var usersExist = await _context.Users
             .Where(x => x.Id == followerId || x.Id == followingId)
             .Select(x => x.Id)

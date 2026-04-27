@@ -8,6 +8,6 @@ public record RequestUpdateAccount
     public string? Password { get; set; }
     public string? Bio { get; set; }
 
-    public string? ProfileImageUrl { get; set; }
+    public IFormFile? ProfileImageUrl { get; set; }
 
 }
