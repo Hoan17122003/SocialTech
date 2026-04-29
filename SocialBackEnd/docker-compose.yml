@@ -13,7 +13,7 @@ services:
 
   mysqlhost:
     image: mysql:8.0.45
-    restart: always
+    restart: on-failure
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASS}
       MYSQL_DATABASE: ${DB_NAME}
@@ -25,6 +25,13 @@ services:
       - SocialNetwork
     env_file:
       - .env.prod
+  redis:
+    image: redis:7.0.11
+    restart: on-failure
+    ports:
+      - "6379:6379"
+    networks:
+      - SocialNetwork
 
 volumes:
   mysql-data:

@@ -18,12 +18,15 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.25" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.25" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.21" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.7" />
     <PackageReference Include="MySql.EntityFrameworkCore" Version="10.0.1+MySQL9.6.0" />
+    <PackageReference Include="StackExchange.Redis" Version="2.12.14" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Application\Notifications\Templates\" />
+    <Folder Include="Application\Ports\Outbound\cache\" />
     <Folder Include="Application\Ports\Outbound\Security\" />
     <Folder Include="Application\Services\" />
     <Folder Include="Common\Constants\" />
@@ -33,6 +36,8 @@
     <Folder Include="Common\DTOs\User\" />
     <Folder Include="Common\Models\User\" />
     <Folder Include="Common\Validations\" />
+    <Folder Include="Infrastructure\cache\" />
+    <Folder Include="Infrastructure\Kafka\" />
     <Folder Include="Infrastructure\Notifications\" />
     <Folder Include="Infrastructure\Security\" />
     <Folder Include="Presentation\Controllers\" />

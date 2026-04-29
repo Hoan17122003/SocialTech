@@ -57,6 +57,11 @@ public class Program
         // để Program.cs gọn hơn và phần security tập trung ở Infrastructure/Security.
         builder.Services.AddSecurityConfiguration(builder.Configuration);
 
+        builder.Services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = builder.Configuration.GetSection("RedisCacheSettings:Configuration").Value;
+        });
+
         // Build tạo ra ứng dụng hoàn chỉnh từ toàn bộ cấu hình ở trên.
         var app = builder.Build();
 

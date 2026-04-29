@@ -1,9 +1,18 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Sockets;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using SocialBackEnd.Application.Notifications;
 using SocialBackEnd.Application.Ports.Inbound;
 using SocialBackEnd.Application.Ports.Outbound;
+using SocialBackEnd.Application.Ports.Outbound.cache;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Application.Ports.Outbound.Security;
 using SocialBackEnd.Common.DTOs;
@@ -23,8 +32,9 @@ public sealed class UserAdapaterPort : IUserPort
     private readonly IEmailNotificationService _emailNoificationService;
     private readonly IPasswordHashService _passwordHashService;
     private readonly IEntityMediaStorageService _entityMediaStorageService;
-
     private readonly IUserFollowRepository _userFollowRepository;
+    private readonly ICacheInternal _cacheInternal;
+    private readonly JwtOptions _jwtOptions;
 
     public UserAdapaterPort(
         IUserRepository repository,
@@ -32,7 +42,9 @@ public sealed class UserAdapaterPort : IUserPort
         IEmailNotificationService emailNotificationService,
         IPasswordHashService passwordHashService,
         IEntityMediaStorageService entityMediaStorageService,
-        IUserFollowRepository userFollowRepository)
+        IUserFollowRepository userFollowRepository,
+        ICacheInternal cacheInternal,
+        IOptions<JwtOptions> jwtOptions)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -40,6 +52,8 @@ public sealed class UserAdapaterPort : IUserPort
         _passwordHashService = passwordHashService ?? throw new ArgumentNullException(nameof(passwordHashService));
         _entityMediaStorageService = entityMediaStorageService ?? throw new ArgumentNullException(nameof(entityMediaStorageService));
         _userFollowRepository = userFollowRepository ?? throw new ArgumentException(nameof(_userFollowRepository));
+        _cacheInternal = cacheInternal ?? throw new ArgumentNullException(nameof(cacheInternal));
+        _jwtOptions = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
     }
 
     public async Task<int> CreateUserAsync(RequestCreateAccount requestCreateAccount)
@@ -101,6 +115,144 @@ public sealed class UserAdapaterPort : IUserPort
         );
 
         return 1;
+    }
+
+    public async Task<bool> RequestForgetPasswordAsync(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            throw new ArgumentException("Email is required.", nameof(email));
+        }
+        var normalizedEmail = email.Trim();
+        var user = await _repository.GetByEmailAsync(normalizedEmail);
+        if (user is null)
+        {
+            return false;
+        }
+
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SecretKey));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var claims = new List<Claim>
+        {
+            new (JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new (JwtRegisteredClaimNames.Email, user.Email),
+            new (ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new (ClaimTypes.Email, user.Email)
+        };
+
+        var jwtToken = new JwtSecurityToken(
+          issuer: _jwtOptions.Issuer,
+          audience: _jwtOptions.Audience,
+          claims: claims,
+           expires: DateTime.UtcNow.AddMinutes(_jwtOptions.AccessTokenMinutes),
+          signingCredentials: credentials);
+
+        var tokenOfUser = new JwtSecurityTokenHandler().WriteToken(jwtToken);
+
+        var token = Guid.NewGuid().ToString();
+        var cacheKey = $"ForgetPasswordToken:{normalizedEmail}";
+        var timeSpan = TimeSpan.FromMinutes(2);
+        var tokenResult = $"{token}@{tokenOfUser}";
+        // Store the token in cache with an expiration time
+        var resultCache = await _cacheInternal.SetAsync<string>(cacheKey, tokenResult, timeSpan);
+        if (!resultCache)
+        {
+            _logger.LogError("Failed to set forget password token in cache for email {Email}", normalizedEmail);
+            return false;
+        }
+        var emailModel = new ForgetPasswordEmailModel(
+            Username: user.Username,
+            ResetPasswordLink: $"https://yourapp.com/reset-password?token={tokenResult}"
+        );
+
+        await _emailNoificationService.SendEmailAsync(
+            to: user.Email,
+            model: emailModel,
+            cancellationToken: default
+        );
+
+        return true;
+    }
+
+    public async Task<bool> ValidateResetPasswordTokenAsync(string token, string newPassword)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            throw new ValidationException("Token không hợp lệ hoặc đã hết hạn.", new[] { "token" });
+        }
+
+        if (string.IsNullOrWhiteSpace(newPassword))
+        {
+            throw new ValidationException("Mật khẩu mới là bắt buộc.", new[] { "newPassword" });
+        }
+
+        var tokenParts = token.Split('@', 2);
+        if (tokenParts.Length != 2 ||
+            string.IsNullOrWhiteSpace(tokenParts[0]) ||
+            string.IsNullOrWhiteSpace(tokenParts[1]))
+        {
+            throw new ValidationException("Token không hợp lệ hoặc đã hết hạn.", new[] { "token" });
+        }
+
+        var tokenOfJwt = tokenParts[1];
+        var email = GetEmailFromResetPasswordJwt(tokenOfJwt);
+        var tokenCacheKey = $"ForgetPasswordToken:{email}";
+
+        var cachedToken = await _cacheInternal.GetAsync<string>(tokenCacheKey);
+        if (cachedToken is null || !string.Equals(cachedToken, token, StringComparison.Ordinal))
+        {
+            throw new ValidationException("Token không hợp lệ hoặc đã hết hạn.", new[] { "token" });
+        }
+
+        var newPasswordHash = _passwordHashService.HashPassword(newPassword.Trim());
+        var (userExists, passwordUpdated) = await _repository.ChangePassword(email, newPasswordHash);
+        if (!userExists || !passwordUpdated)
+        {
+            return false;
+        }
+
+        await _cacheInternal.RemoveAsync(tokenCacheKey);
+        return true;
+    }
+
+    private string GetEmailFromResetPasswordJwt(string tokenOfJwt)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(_jwtOptions.SecretKey);
+
+        try
+        {
+            var principal = tokenHandler.ValidateToken(tokenOfJwt, new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = _jwtOptions.Issuer,
+                ValidAudience = _jwtOptions.Audience,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ClockSkew = TimeSpan.FromSeconds(30)
+            }, out _);
+
+            var email = principal.FindFirstValue(ClaimTypes.Email)
+                ?? principal.FindFirstValue(JwtRegisteredClaimNames.Email);
+
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                throw new ValidationException("Token không chứa email hợp lệ.", new[] { "token" });
+            }
+
+            return email.Trim();
+        }
+        catch (SecurityTokenException)
+        {
+            throw new ValidationException("Token không hợp lệ hoặc đã hết hạn.", new[] { "token" });
+        }
+        catch (ArgumentException)
+        {
+            throw new ValidationException("Token không hợp lệ hoặc đã hết hạn.", new[] { "token" });
+        }
     }
 
     public async Task<bool> UpdateUserAsync(int userId, RequestUpdateAccount requestUpdateAccount)

@@ -92,6 +92,18 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
         return true;
     }
 
+    public async Task<(bool, bool)> ChangePassword(string email, string newPasswordHash )
+    {
+        var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
+        if (user == null)
+        {
+            return (false, false);
+        }
+        user.PasswordHash = newPasswordHash;
+        await DbContext.SaveChangesAsync();
+        return (true, true);
+    }
+
     public async Task<ProfileModelView> GetProfileAsync(int userId, CancellationToken cancellationToken = default)
     {
         var profile = await DbContext.Users

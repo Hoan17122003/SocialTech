@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Authorization;
@@ -27,6 +28,28 @@ namespace SocialBackEnd.Presentation.Controllers
         {
             var result = await _userPort.CreateUserAsync(request);
             return Ok(result);
+        }
+
+        [HttpPost("request-forget_password")]
+        public async Task<IActionResult> RequestForgetPassword([FromBody] RequestForgetPassword request)
+        {
+            var result = await _userPort.RequestForgetPasswordAsync(request.Email);
+            if (!result)
+            {
+                return NotFound(ApiResponse<string>.Fail("Không tìm thấy tài khoản với email này."));
+            }
+            return Ok(ApiResponse<string>.Ok("Yêu cầu đặt lại mật khẩu đã được gửi đến email của bạn.", "Success"));
+        }
+
+        [HttpPost("reset_password")]
+        public async Task<IActionResult> ResetPassword([FromBody] RequestResetPassword request)
+        {
+            var result = await _userPort.ValidateResetPasswordTokenAsync(request.Token, request.NewPassword);
+            if (!result)
+            {
+                return BadRequest(ApiResponse<string>.Fail("Mã token không hợp lệ hoặc đã hết hạn."));
+            }
+            return Ok(ApiResponse<string>.Ok("Mật khẩu của bạn đã được đặt lại thành công.", "Success"));
         }
 
         [Authorize]
@@ -96,7 +119,7 @@ namespace SocialBackEnd.Presentation.Controllers
             var result = await _userPort.UnfollowUserAsync(userId, userIdTarget);
             return Ok(ApiResponse<bool>.Ok(result));
         }
-        
+
         [Authorize]
         [HttpGet("followers")]
         public async Task<IActionResult> GetDetailFollower([FromQuery] RequestGetFollowers requestGetFollowers)

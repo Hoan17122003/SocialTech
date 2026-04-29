@@ -11,6 +11,9 @@ using SocialBackEnd.Infrastructure.Notifications;
 using SocialBackEnd.Infrastructure.Security;
 using SocialBackEnd.Infrastructure.Storage;
 using Microsoft.AspNetCore.Identity;
+using SocialBackEnd.Application.Ports.Outbound.cache;
+using SocialBackEnd.Infrastructure.cache;
+using StackExchange.Redis;
 
 namespace SocialBackEnd.DependencyInjection;
 
@@ -25,6 +28,7 @@ public static class ServiceDependencyInjection
         services.AddScoped<IEmailPortOut, MailAdapter>();
         services.AddScoped<IEmailNotificationService, NotificationService>();
         services.AddScoped<IEmailTemplateRenderer<WelcomeEmailModel>, WellcomeEmailRenderer>();
+        services.AddScoped<IEmailTemplateRenderer<ForgetPasswordEmailModel>, ForgetPasswordEmailRenderer>();
         services.AddScoped<IAuthenticationPort, AuthenticationAdapterPort>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IUserAuthenticationService, UserAuthenticationService>();
@@ -32,7 +36,17 @@ public static class ServiceDependencyInjection
         services.AddScoped<IEntityMediaStorageService, LocalEntityMediaStorageService>();
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<IArticlePort, ArticleAdapterPort>();
+        services.AddScoped<ICacheInternal, CacheAdapter>();
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+        {
+            var redisConfiguration = configuration.GetSection("RedisCacheSettings:Configuration").Value;
+            if (string.IsNullOrWhiteSpace(redisConfiguration))
+            {
+                throw new InvalidOperationException("Redis configuration is missing.");
+            }
+            return ConnectionMultiplexer.Connect(redisConfiguration);
 
+        });
         return services;
     }
 }
