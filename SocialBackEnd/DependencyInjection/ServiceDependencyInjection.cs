@@ -11,8 +11,11 @@ using SocialBackEnd.Infrastructure.Notifications;
 using SocialBackEnd.Infrastructure.Security;
 using SocialBackEnd.Infrastructure.Storage;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using SocialBackEnd.Application.Ports.Outbound.cache;
+using SocialBackEnd.Application.Ports.Outbound.Events;
 using SocialBackEnd.Infrastructure.cache;
+using SocialBackEnd.Infrastructure.Kafka;
 using StackExchange.Redis;
 
 namespace SocialBackEnd.DependencyInjection;
@@ -22,11 +25,14 @@ public static class ServiceDependencyInjection
     public static IServiceCollection AddServiceDependencies(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
+        services.Configure<KafkaOptions>(configuration.GetSection(KafkaOptions.SectionName));
 
         services.AddHttpClient<IEmailAccessTokenProvider, OAuth2AccessTokenProvider>();
         services.AddScoped<IUserPort, UserAdapaterPort>();
         services.AddScoped<IEmailPortOut, MailAdapter>();
         services.AddScoped<IEmailNotificationService, NotificationService>();
+        services.AddSingleton<IApplicationEventPublisher, KafkaEventPublisher>();
+        services.AddHostedService<KafkaEventConsumer>();
         services.AddScoped<IEmailTemplateRenderer<WelcomeEmailModel>, WellcomeEmailRenderer>();
         services.AddScoped<IEmailTemplateRenderer<ForgetPasswordEmailModel>, ForgetPasswordEmailRenderer>();
         services.AddScoped<IAuthenticationPort, AuthenticationAdapterPort>();

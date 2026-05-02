@@ -1,53 +1,69 @@
 # Social Domain Overview
 
-## Muc dich
-- Dinh nghia domain nghiep vu cot loi cho `SocialTech` theo mo hinh social community tuong tu Reddit.
-- Tao mot boundary ro rang de team business, backend, va data cung nhin cung mot ngon ngu.
+## Mục đích
+- Định nghĩa domain nghiệp vụ cốt lõi cho `SocialTech` theo mô hình social network kết hợp community-driven platform.
+- Tạo một boundary rõ ràng để team business, backend và data cùng nhìn cùng một ngôn ngữ.
 
-## Tu duy product
-- San pham xoay quanh cac cong dong theo chu de.
-- Nguoi dung tham gia cong dong, dang bai, binh luan, va vote de tao thuc chat cho feed.
-- Moderation la mot phan cot loi, khong phai phan mo rong.
+## Tư duy product
+- Sản phẩm xoay quanh các cộng đồng theo chủ đề, hồ sơ người dùng và tương tác thời gian gần thực.
+- Người dùng tham gia community, đăng bài, bình luận, reaction, chat và theo dõi nhau để tạo độ gắn kết.
+- Moderation là capability cốt lõi, không phải phần phụ trợ.
 
-## Bounded contexts de xuat
+## Bounded contexts đề xuất
 - `Identity`
-  Quan ly tai khoan nguoi dung, ho so co ban, diem uy tin, va trang thai xac thuc.
+  Quản lý tài khoản người dùng, hồ sơ cơ bản, trạng thái xác thực, quyền riêng tư tài khoản và phiên đăng nhập.
 - `Community`
-  Quan ly cong dong, rule, thanh vien, vai tro moderator/owner, va visibility.
+  Quản lý community, rule, thành viên, vai trò moderator/owner, visibility và trạng thái tham gia.
 - `Content`
-  Quan ly post, media, tag, comment, va cau truc thread comment.
+  Quản lý post, media, tag, comment, comment thread, chỉnh sửa nội dung và trạng thái hiển thị.
 - `Engagement`
-  Quan ly upvote/downvote, dem diem bai viet, diem binh luan, va chi so tuong tac.
+  Quản lý vote/reaction cho post, comment, message và các chỉ số tương tác tổng hợp.
+- `Relationship`
+  Quản lý follow, block, mute và các ràng buộc hiển thị liên quan đến quan hệ giữa user.
+- `Messaging`
+  Quản lý direct message, conversation, delivery status, read status và reaction trong tin nhắn.
 - `Moderation`
-  Quan ly report, hang doi review, va ket qua xu ly noi dung vi pham.
+  Quản lý report, hàng đợi review, quyết định xử lý và audit log moderation.
+- `Notification`
+  Quản lý notification theo sự kiện như comment mới, reaction mới, follow mới và message mới.
 
-## Actor chinh
-- `Guest`: xem mot phan noi dung cong khai.
-- `User`: tao post, comment, vote, tham gia cong dong.
-- `Moderator`: duyet report, xoa/an noi dung, quan ly thanh vien trong cong dong.
-- `Owner`: tao cong dong, dinh nghia rule, bo nhiem moderator.
+## Actor chính
+- `Guest`: xem một phần nội dung công khai.
+- `User`: tạo post, comment, reaction, chat, follow, tham gia community.
+- `Moderator`: duyệt report, ẩn/xóa nội dung, quản lý thành viên trong community.
+- `Owner`: tạo community, định nghĩa rule, bổ nhiệm moderator.
+- `System`: phát notification, cập nhật feed, đồng bộ trạng thái đọc và ghi nhận audit.
 
-## Aggregate roots chinh
+## Aggregate roots chính
 - `User`
-  Thuc the dai dien cho danh tinh social va trang thai co ban cua nguoi dung.
+  Thực thể đại diện cho danh tính social, hồ sơ cơ bản và trạng thái hoạt động của người dùng.
 - `Community`
-  Trung tam cua nghiep vu. Moi post deu thuoc mot community.
+  Trung tâm tổ chức nội dung theo chủ đề. Mọi `Post` cộng đồng đều thuộc một community.
 - `Post`
-  Don vi noi dung chinh tren feed. Ho tro bai text, link, va media.
+  Đơn vị nội dung chính trên feed. Hỗ trợ text, link, media và metadata tương tác.
 - `Comment`
-  Don vi thao luan theo dang tree, cho phep reply long nhau.
+  Đơn vị thảo luận theo dạng tree, cho phép reply lồng nhau.
+- `Conversation`
+  Phiên trao đổi giữa hai hoặc nhiều user, giữ ngữ cảnh tin nhắn và trạng thái thành viên.
+- `Message`
+  Đơn vị nội dung trong chat, hỗ trợ text, media, reaction, trạng thái gửi/đã xem.
+- `Notification`
+  Đơn vị thông báo gắn với một sự kiện nghiệp vụ và một user nhận thông báo.
 - `ContentReport`
-  Don vi moderation de moderator xu ly cac noi dung bi bao cao.
+  Đơn vị moderation để moderator xử lý nội dung hoặc hành vi bị báo cáo.
 
-## Quy tac domain can giu ro
-- Moi `Post` phai thuoc dung mot `Community`.
-- Moi `Comment` phai thuoc dung mot `Post`.
-- Vote la duy nhat theo cap `User + Post` hoac `User + Comment`.
-- Thanh vien trong community duoc quan ly rieng qua `CommunityMembership`, khong dat role truc tiep tren `User`.
-- Rule cua community duoc tach thanh `CommunityRule` de de quan ly va hien thi.
-- Report chi tro vao mot muc tieu tai mot thoi diem: `Post` hoac `Comment`.
+## Quy tắc domain cần giữ rõ
+- Mỗi `Post` phải thuộc đúng một `Community` hoặc một ngữ cảnh profile feed đã được định nghĩa rõ.
+- Mỗi `Comment` phải thuộc đúng một `Post`.
+- Vote hoặc reaction là duy nhất theo cặp `User + Target + ReactionType` tùy loại target.
+- Thành viên trong community được quản lý riêng qua `CommunityMembership`, không đặt role trực tiếp trên `User`.
+- Quan hệ follow là một chiều; block có ưu tiên cao hơn follow trong logic hiển thị và chat.
+- Mỗi `Message` phải thuộc đúng một `Conversation`.
+- `MessageReaction` chỉ được tạo trên message còn hiển thị và từ user đang là thành viên conversation.
+- Report chỉ trỏ vào một mục tiêu tại một thời điểm: `Post`, `Comment`, `Message`, `User` hoặc `Community`.
+- Notification được tạo từ domain event, không phải nguồn dữ liệu gốc của nghiệp vụ.
 
-## Gia tri cua model nay
-- De doc: ten entity trung voi ngon ngu nghiep vu.
-- De mo rong: co san cho moderation, media, membership, va voting.
-- De ORM hoa: quan he 1-n, n-n, self-reference deu ro rang cho Entity Framework.
+## Giá trị của model này
+- Dễ đọc: tên entity trùng với ngôn ngữ nghiệp vụ.
+- Dễ mở rộng: có sẵn chỗ cho chat, reaction, follow, notification và moderation.
+- Dễ ORM hóa: quan hệ 1-n, n-n, self-reference đều rõ ràng cho `Entity Framework`.

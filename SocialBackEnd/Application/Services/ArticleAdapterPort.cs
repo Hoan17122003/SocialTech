@@ -1,6 +1,7 @@
 using System;
 using SocialBackEnd.Application.Ports.Inbound;
 using SocialBackEnd.Application.Ports.Outbound;
+using SocialBackEnd.Application.Ports.Outbound.Events;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Common.DTOs.Article;
 using SocialBackEnd.Common.Exceptions;
@@ -13,16 +14,19 @@ public class ArticleAdapterPort : IArticlePort
     private readonly IPostRepository _repository;
     private readonly IEntityMediaStorageService _entityMediaStorageService;
     private readonly IAttachmentRepository _attachmentRepository;
+    private readonly IApplicationEventPublisher _applicationEventPublisher;
     private readonly ILogger _logger;
 
     public ArticleAdapterPort(IPostRepository repository,
         IEntityMediaStorageService entityMediaStorageService,
         IAttachmentRepository attachmentRepository,
+        IApplicationEventPublisher applicationEventPublisher,
         ILogger<ArticleAdapterPort> logger)
     {
         _repository = repository ?? throw new ArgumentException(nameof(repository));
         _entityMediaStorageService = entityMediaStorageService ?? throw new ArgumentException(nameof(entityMediaStorageService));
         _attachmentRepository = attachmentRepository ?? throw new ArgumentException(nameof(attachmentRepository));
+        _applicationEventPublisher = applicationEventPublisher ?? throw new ArgumentNullException(nameof(applicationEventPublisher));
         _logger = logger ?? throw new ArgumentException(nameof(logger));
     }
     public async Task<int> CreateArticle(RequestCreateArticle requestCreateArticle, int userId)
@@ -66,6 +70,7 @@ public class ArticleAdapterPort : IArticlePort
             }
         }
 
+        await _applicationEventPublisher.PublishArticleCreatedAsync(articleEntity, fileUploadUrls.Count);
         return articleEntity.Id;
     }
 

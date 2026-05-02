@@ -9,14 +9,13 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using SocialBackEnd.Application.Notifications;
 using SocialBackEnd.Application.Ports.Inbound;
 using SocialBackEnd.Application.Ports.Outbound;
 using SocialBackEnd.Application.Ports.Outbound.cache;
+using SocialBackEnd.Application.Ports.Outbound.Events;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Application.Ports.Outbound.Security;
 using SocialBackEnd.Common.DTOs;
-using SocialBackEnd.Common.DTOs.Mail;
 using SocialBackEnd.Common.DTOs.User;
 using SocialBackEnd.Common.Exceptions;
 using SocialBackEnd.Common.Models;
@@ -29,30 +28,30 @@ public sealed class UserAdapaterPort : IUserPort
 {
     private readonly IUserRepository _repository;
     private readonly ILogger<UserAdapaterPort> _logger;
-    private readonly IEmailNotificationService _emailNoificationService;
     private readonly IPasswordHashService _passwordHashService;
     private readonly IEntityMediaStorageService _entityMediaStorageService;
     private readonly IUserFollowRepository _userFollowRepository;
     private readonly ICacheInternal _cacheInternal;
+    private readonly IApplicationEventPublisher _applicationEventPublisher;
     private readonly JwtOptions _jwtOptions;
 
     public UserAdapaterPort(
         IUserRepository repository,
         ILogger<UserAdapaterPort> logger,
-        IEmailNotificationService emailNotificationService,
         IPasswordHashService passwordHashService,
         IEntityMediaStorageService entityMediaStorageService,
         IUserFollowRepository userFollowRepository,
         ICacheInternal cacheInternal,
+        IApplicationEventPublisher applicationEventPublisher,
         IOptions<JwtOptions> jwtOptions)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _emailNoificationService = emailNotificationService ?? throw new ArgumentNullException(nameof(emailNotificationService));
         _passwordHashService = passwordHashService ?? throw new ArgumentNullException(nameof(passwordHashService));
         _entityMediaStorageService = entityMediaStorageService ?? throw new ArgumentNullException(nameof(entityMediaStorageService));
         _userFollowRepository = userFollowRepository ?? throw new ArgumentException(nameof(_userFollowRepository));
         _cacheInternal = cacheInternal ?? throw new ArgumentNullException(nameof(cacheInternal));
+        _applicationEventPublisher = applicationEventPublisher ?? throw new ArgumentNullException(nameof(applicationEventPublisher));
         _jwtOptions = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
     }
 
@@ -103,16 +102,9 @@ public sealed class UserAdapaterPort : IUserPort
             return 0;
         }
 
-        var emailModel = new WelcomeEmailModel(
-            Username: userEntity.Username,
-            VerifyLink: $"https://yourapp.com/verify?userId={userEntity.Id}"
-        );
-
-        await _emailNoificationService.SendEmailAsync(
-            to: userEntity.Email,
-            model: emailModel,
-            cancellationToken: default
-        );
+        await _applicationEventPublisher.PublishWelcomeEmailRequestedAsync(
+            userEntity,
+            $"https://yourapp.com/verify?userId={userEntity.Id}");
 
         return 1;
     }
@@ -161,16 +153,9 @@ public sealed class UserAdapaterPort : IUserPort
             _logger.LogError("Failed to set forget password token in cache for email {Email}", normalizedEmail);
             return false;
         }
-        var emailModel = new ForgetPasswordEmailModel(
-            Username: user.Username,
-            ResetPasswordLink: $"https://yourapp.com/reset-password?token={tokenResult}"
-        );
-
-        await _emailNoificationService.SendEmailAsync(
-            to: user.Email,
-            model: emailModel,
-            cancellationToken: default
-        );
+        await _applicationEventPublisher.PublishForgetPasswordEmailRequestedAsync(
+            user,
+            $"https://yourapp.com/reset-password?token={tokenResult}");
 
         return true;
     }
