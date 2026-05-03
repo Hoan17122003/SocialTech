@@ -45,9 +45,13 @@ public static class EnvFileConfigurationExtensions
             ["Smtp:OAuth2:ClientSecret"] = GetEnvironmentVariable("Smtp__OAuth2__ClientSecret", "MAILER_CLIENT_SECRET"),
             ["Smtp:OAuth2:RefreshToken"] = GetEnvironmentVariable("Smtp__OAuth2__RefreshToken", "MAIL_REFRESH"),
             ["Smtp:OAuth2:TokenEndpoint"] = GetEnvironmentVariable("Smtp__OAuth2__TokenEndpoint", "MAIL_TOKEN_ENDPOINT"),
-            ["Smtp:OAuth2:Scope"] = GetEnvironmentVariable("Smtp__OAuth2__Scope", "MAIL_SCOPE")
+            ["Smtp:OAuth2:Scope"] = GetEnvironmentVariable("Smtp__OAuth2__Scope", "MAIL_SCOPE"),
+            ["Gemini:Model"] = GetEnvironmentVariable("Gemini__Model", "GEMINI_MODEL"),
+            ["Gemini:SystemInstruction"] = GetEnvironmentVariable("Gemini__SystemInstruction", "GEMINI_SYSTEM_INSTRUCTION"),
+            ["Gemini:QuotaCooldownMinutes"] = GetEnvironmentVariable("Gemini__QuotaCooldownMinutes", "GEMINI_QUOTA_COOLDOWN_MINUTES")
         };
 
+        AddArrayOverride(overrides, "Gemini:ApiKeys", GetEnvironmentVariable("Gemini__ApiKeys", "GEMINI_API_KEYS"));
         builder.Configuration.AddInMemoryCollection(overrides.Where(x => !string.IsNullOrWhiteSpace(x.Value)));
         return builder;
     }
@@ -64,5 +68,21 @@ public static class EnvFileConfigurationExtensions
         }
 
         return null;
+    }
+
+    private static void AddArrayOverride(IDictionary<string, string?> overrides, string sectionKey, string? rawValue)
+    {
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return;
+        }
+
+        var values = rawValue
+            .Split([',', ';', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        for (var index = 0; index < values.Length; index++)
+        {
+            overrides[$"{sectionKey}:{index}"] = values[index];
+        }
     }
 }

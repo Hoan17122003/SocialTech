@@ -19,6 +19,7 @@ using SocialBackEnd.Infrastructure.Kafka;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.HttpOverrides;
 using SocialBackEnd.Application.Ports.Inbound.web;
+using SocialBackEnd.Infrastructure.Gemini;
 
 namespace SocialBackEnd.DependencyInjection;
 
@@ -29,6 +30,7 @@ public static class ServiceDependencyInjection
         services.AddHttpContextAccessor();
         services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
         services.Configure<KafkaOptions>(configuration.GetSection(KafkaOptions.SectionName));
+        services.Configure<GeminiOptions>(configuration.GetSection(GeminiOptions.SectionName));
 
         services.AddHttpClient<IEmailAccessTokenProvider, OAuth2AccessTokenProvider>();
         services.AddScoped<IUserPort, UserAdapaterPort>();
@@ -41,6 +43,8 @@ public static class ServiceDependencyInjection
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IUserAuthenticationService, UserAuthenticationService>();
         services.AddScoped<IAuthenticationPort, AuthenticationAdapter>();
+        services.AddSingleton<IGeminiClientRouter, GeminiClientRouter>();
+        services.AddScoped<IGeminiPort, GeminiAdapter>();
         services.AddScoped<IPasswordHashService, Argon2PasswordHashService>();
         services.AddScoped<IEntityMediaStorageService, LocalEntityMediaStorageService>();
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
