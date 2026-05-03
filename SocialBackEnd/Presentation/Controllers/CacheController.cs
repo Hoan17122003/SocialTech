@@ -6,23 +6,23 @@ namespace SocialBackEnd.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class Cache : ControllerBase
+    public class CacheController : ControllerBase
     {
 
         private readonly ICacheInternal _cacheService;
 
-        public Cache(ICacheInternal cacheService)
+        public CacheController(ICacheInternal cacheService)
         {
             _cacheService = cacheService;
         }
 
-        [HttpPost("get")]
+        [HttpGet("get/{key}")]
         public async Task<IActionResult> GetAllValuesOfKeyPrefix([FromRoute] string key)
         {
             var result = await _cacheService.GetAsync<string>(key);
             return Ok(result);
         }
-        [HttpPost("clear")]
+        [HttpDelete("clear/{keyPrefix}")]
         public async Task<IActionResult> ClearCache([FromRoute] string keyPrefix)
         {
             var result = await _cacheService.ClearAsync(keyPrefix);

@@ -6,8 +6,10 @@ namespace SocialBackEnd.Application.Ports.Outbound.Repositories;
 
 public interface IUserLoginRepository : IRepository<IPLogin>
 {
-    Task<bool> CreateIpLogin(RequestIpLogin requestIpLogin);
+    Task<bool> CreateIpLoginAsync(RequestIpLogin requestIpLogin);
 
-    Task<bool> DestroyIpLogin(int userId, string refreshToken);
+    Task<bool> DestroyIpLoginAsync(int userId, string refreshToken);
+    Task<bool> UpdateRefreshTokenAsync(int userId, CancellationToken cancellationToken);
+    Task<IPLogin?> GetLatestIpLoginByUserIdAsync(int userId, CancellationToken cancellationToken);
 
 }

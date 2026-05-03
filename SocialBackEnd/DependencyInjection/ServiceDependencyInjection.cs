@@ -17,6 +17,8 @@ using SocialBackEnd.Application.Ports.Outbound.Events;
 using SocialBackEnd.Infrastructure.cache;
 using SocialBackEnd.Infrastructure.Kafka;
 using StackExchange.Redis;
+using Microsoft.AspNetCore.HttpOverrides;
+using SocialBackEnd.Application.Ports.Inbound.web;
 
 namespace SocialBackEnd.DependencyInjection;
 
@@ -24,6 +26,7 @@ public static class ServiceDependencyInjection
 {
     public static IServiceCollection AddServiceDependencies(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddHttpContextAccessor();
         services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
         services.Configure<KafkaOptions>(configuration.GetSection(KafkaOptions.SectionName));
 
@@ -35,9 +38,9 @@ public static class ServiceDependencyInjection
         services.AddHostedService<KafkaEventConsumer>();
         services.AddScoped<IEmailTemplateRenderer<WelcomeEmailModel>, WellcomeEmailRenderer>();
         services.AddScoped<IEmailTemplateRenderer<ForgetPasswordEmailModel>, ForgetPasswordEmailRenderer>();
-        services.AddScoped<IAuthenticationPort, AuthenticationAdapterPort>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IUserAuthenticationService, UserAuthenticationService>();
+        services.AddScoped<IAuthenticationPort, AuthenticationAdapter>();
         services.AddScoped<IPasswordHashService, Argon2PasswordHashService>();
         services.AddScoped<IEntityMediaStorageService, LocalEntityMediaStorageService>();
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
@@ -53,6 +56,15 @@ public static class ServiceDependencyInjection
             return ConnectionMultiplexer.Connect(redisConfiguration);
 
         });
+
+        services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders =
+                     ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            options.KnownNetworks.Clear(); // Xóa danh sách KnownNetworks mặc định để chấp nhận forwarded headers từ mọi IP.
+            options.KnownProxies.Clear(); // Xóa danh sách KnownProxies mặc định để chấp nhận forwarded headers từ mọi IP.
+        });
+
         return services;
     }
 }

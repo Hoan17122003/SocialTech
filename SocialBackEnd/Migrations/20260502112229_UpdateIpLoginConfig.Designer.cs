@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SocialBackEnd.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using SocialBackEnd.Infrastructure.Persistence;
 namespace SocialBackEnd.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260502112229_UpdateIpLoginConfig")]
+    partial class UpdateIpLoginConfig
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -344,8 +347,8 @@ namespace SocialBackEnd.Migrations
 
                     b.Property<string>("RefreshToken")
                         .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("varchar(1024)");
+                        .HasMaxLength(512)
+                        .HasColumnType("varchar(512)");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime(6)");
@@ -539,7 +542,7 @@ namespace SocialBackEnd.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAtUtc = new DateTime(2026, 5, 2, 11, 23, 52, 147, DateTimeKind.Utc).AddTicks(8332),
+                            CreatedAtUtc = new DateTime(2026, 5, 2, 11, 22, 28, 246, DateTimeKind.Utc).AddTicks(4179),
                             Environment = "Seed",
                             Name = "SocialBackEnd",
                             UtcTime = new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Utc),

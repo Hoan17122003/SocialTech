@@ -1,7 +1,10 @@
+using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using SocialBackEnd.Application.Ports.Outbound.cache;
 using SocialBackEnd.Common.Models;
+using SocialBackEnd.Common.Constants;
 
 namespace SocialBackEnd.Infrastructure.Security;
 
@@ -72,7 +75,27 @@ public static class SecurityConfigurationExtensions
                 options.Events = new JwtBearerEvents
                 {
                     OnMessageReceived = context => Task.CompletedTask,
-                    OnTokenValidated = context => Task.CompletedTask,
+                    OnTokenValidated = context =>
+                    {
+                        // resolve service ở runtime để tránh lỗi khởi động DI 
+                        var cacheInternal = context.HttpContext.RequestServices.GetRequiredService<ICacheInternal>();
+
+                        var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+                        var authorizationHeader = context.HttpContext.Request.Headers.Authorization.ToString();
+                        var jwt = String.Empty;
+                        if (authorizationHeader.StartsWith($"{Constant.PrefixAuth} ", StringComparison.OrdinalIgnoreCase))
+                        {
+                            jwt = authorizationHeader[Constant.PrefixAuth.Length..].Trim();
+                        }
+                        // var email = context.Principal?.FindFirstValue(ClaimTypes.Email);
+                        var tokenOfBlackList = cacheInternal.GetAsync<string>($"blacklist_token:{userId}@{jwt}").Result;
+                        if (tokenOfBlackList != null)
+                        {
+                            context.Fail("Token is blacklisted.");
+                            return Task.CompletedTask;
+                        }
+                        return Task.CompletedTask;
+                    },
                     OnAuthenticationFailed = context => Task.CompletedTask,
                     OnChallenge = context => Task.CompletedTask
                 };

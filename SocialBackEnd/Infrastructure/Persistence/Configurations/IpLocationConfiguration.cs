@@ -14,11 +14,11 @@ public class IpLoginConfiguration : IEntityTypeConfiguration<IPLogin>
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.RefreshToken)
-            .HasMaxLength(255)
+            .HasMaxLength(1024)
             .IsRequired();
 
         builder.Property(x => x.IpAddress)
-            .HasMaxLength(20)
+            .HasMaxLength(45)
             .IsRequired();
 
         builder.HasOne(x => x.UserLogin)

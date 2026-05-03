@@ -5,6 +5,8 @@ namespace SocialBackEnd.Application.Ports.Outbound.Security;
 public interface ITokenService
 {
     string CreateAccessToken(UserIdentity user);
+
+    string CreateRefreshToken(UserIdentity user);
 }
 
 public sealed record UserIdentity(

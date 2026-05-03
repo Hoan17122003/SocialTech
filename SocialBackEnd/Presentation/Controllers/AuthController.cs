@@ -6,6 +6,10 @@ using SocialBackEnd.Application.Ports.Outbound.Security;
 using LoginRequest = SocialBackEnd.Common.DTOs.Auth.LoginRequest;
 using SocialBackEnd.Common.Models;
 using SocialBackEnd.Common.DTOs.Auth;
+using SocialBackEnd.Application.Ports.Inbound.web;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using SocialBackEnd.Common.Constants;
 
 namespace SocialBackEnd.Presentation.Controllers
 {
@@ -13,13 +17,12 @@ namespace SocialBackEnd.Presentation.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly IUserAuthenticationService _authService;
-        private readonly ITokenService _tokenService;
 
-        public AuthController(IUserAuthenticationService authService, ITokenService tokenService)
+        private readonly IAuthenticationPort _authenticationPort;
+
+        public AuthController(IAuthenticationPort authenticationPort)
         {
-            _authService = authService;
-            _tokenService = tokenService;
+            _authenticationPort = authenticationPort ?? throw new ArgumentNullException(nameof(authenticationPort));
         }
 
         [HttpPost("login")]
@@ -27,23 +30,37 @@ namespace SocialBackEnd.Presentation.Controllers
             CancellationToken cancellationToken
         )
         {
-            var user = await _authService.ValidateCredentialsAsync(
-                loginRequest.Email,
-                loginRequest.Password,
+            var authResult = await _authenticationPort.LoginAsync(
+                loginRequest,
                 cancellationToken
             );
-            if (user is null)
+            if (string.IsNullOrEmpty(authResult.AccessToken))
             {
-                return Unauthorized(new ApiResponse<string>
-                {
-                    Message = "Sai tài khoản hoặc mật khẩu",
-                    Success = false,
-                    Data = null
-                });
+                return Unauthorized(new { Message = "Invalid email or password" });
             }
-            var accessToken = _tokenService.CreateAccessToken(user);
-            return Ok(new LoginResponse(accessToken, "Bearer", 900));
+            return Ok(authResult);
+        }
 
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            // Xóa cookie refresh token
+            Response.Cookies.Delete("refreshToken");
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var authorizationHeader = HttpContext.Request.Headers.Authorization.ToString();
+            string accessToken = null;
+            if (authorizationHeader.StartsWith($"{Constant.PrefixAuth} ", StringComparison.OrdinalIgnoreCase))
+            {
+                accessToken = authorizationHeader[Constant.PrefixAuth.Length..].Trim();
+            }
+            if (!int.TryParse(userIdClaim, out int userId))
+            {
+                return BadRequest(new { Message = "Invalid user ID" });
+            }
+            // update lại refresh token trong database thành rỗng
+            await _authenticationPort.LogoutAsync(userId, accessToken);
+            return Ok(new { Message = "Logged out successfully" });
         }
     }
 }

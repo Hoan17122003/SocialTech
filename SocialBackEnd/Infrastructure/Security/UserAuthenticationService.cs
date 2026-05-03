@@ -9,6 +9,7 @@ public sealed class UserAuthenticationService : IUserAuthenticationService
     private readonly IUserRepository _repository;
     private readonly IPasswordHashService _passwordHashService;
 
+
     public UserAuthenticationService(
         IUserRepository repository,
         IPasswordHashService passwordHashService)

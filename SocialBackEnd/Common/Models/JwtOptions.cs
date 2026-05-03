@@ -10,4 +10,6 @@ public sealed class JwtOptions
     public string Audience { init; get; } = string.Empty;
     public string SecretKey { init; get; } = string.Empty;
     public int AccessTokenMinutes { init; get; } = 15;
+
+    public int RefreshTokenMinutes { init; get; } = 1440;
 }

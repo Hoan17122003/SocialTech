@@ -13,7 +13,7 @@ public sealed class IpLoginRepository : RepositoryBase<IPLogin>, IUserLoginRepos
 
     }
 
-    public async Task<bool> CreateIpLogin(RequestIpLogin requestIpLogin)
+    public async Task<bool> CreateIpLoginAsync(RequestIpLogin requestIpLogin)
     {
         var ipLogin = new IPLogin
         {
@@ -27,14 +27,37 @@ public sealed class IpLoginRepository : RepositoryBase<IPLogin>, IUserLoginRepos
 
     }
 
-    public async Task<bool> DestroyIpLogin(int userId, string refreshToken)
+    public async Task<IPLogin?> GetLatestIpLoginByUserIdAsync(int userId, CancellationToken cancellationToken)
+    {
+        var ipLogin = await DbContext.IPLogins
+            .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .FirstOrDefaultAsync(cancellationToken);
+        return ipLogin;
+    }
+
+    public async Task<bool> DestroyIpLoginAsync(int userId, string refreshToken)
     {
         var refreshExists = await DbContext.IPLogins
             .FirstOrDefaultAsync(x => x.UserId == userId && x.RefreshToken == refreshToken);
         if (refreshExists is null) return false;
         DbContext.IPLogins.Remove(refreshExists);
-        DbContext.SaveChangesAsync();
+        await DbContext.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<bool> UpdateRefreshTokenAsync(int userId, CancellationToken cancellationToken)
+    {
+        var ipLogin = await DbContext.IPLogins
+            .Where(x => x.UserId == userId)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (ipLogin is null) return false;
+        ipLogin.RefreshToken = string.Empty;
+        ipLogin.UpdatedAtUtc = DateTime.UtcNow;
+        DbContext.IPLogins.Update(ipLogin);
+        var affectedRows = await DbContext.SaveChangesAsync(cancellationToken);
+        return affectedRows > 0;
     }
 
 }

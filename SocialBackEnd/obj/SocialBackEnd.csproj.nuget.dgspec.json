@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\20-ProjectPersonal\\04-SocialTech\\SocialBackEnd\\SocialBackEnd.csproj": {}
+    "D:\\20-ProjectPersonal\\04-SocialTech\\30-Coding\\SocialBackEnd\\SocialBackEnd.csproj": {}
   },
   "projects": {
-    "D:\\20-ProjectPersonal\\04-SocialTech\\SocialBackEnd\\SocialBackEnd.csproj": {
+    "D:\\20-ProjectPersonal\\04-SocialTech\\30-Coding\\SocialBackEnd\\SocialBackEnd.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\20-ProjectPersonal\\04-SocialTech\\SocialBackEnd\\SocialBackEnd.csproj",
+        "projectUniqueName": "D:\\20-ProjectPersonal\\04-SocialTech\\30-Coding\\SocialBackEnd\\SocialBackEnd.csproj",
         "projectName": "SocialBackEnd",
-        "projectPath": "D:\\20-ProjectPersonal\\04-SocialTech\\SocialBackEnd\\SocialBackEnd.csproj",
+        "projectPath": "D:\\20-ProjectPersonal\\04-SocialTech\\30-Coding\\SocialBackEnd\\SocialBackEnd.csproj",
         "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "D:\\20-ProjectPersonal\\04-SocialTech\\SocialBackEnd\\obj\\",
+        "outputPath": "D:\\20-ProjectPersonal\\04-SocialTech\\30-Coding\\SocialBackEnd\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
