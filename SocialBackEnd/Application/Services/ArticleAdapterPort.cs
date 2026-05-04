@@ -2,9 +2,13 @@ using System;
 using SocialBackEnd.Application.Ports.Inbound;
 using SocialBackEnd.Application.Ports.Outbound;
 using SocialBackEnd.Application.Ports.Outbound.Events;
+using SocialBackEnd.Application.Ports.Outbound.LLM;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
+using SocialBackEnd.Common.Constants;
+using SocialBackEnd.Common.DTOs.Ai;
 using SocialBackEnd.Common.DTOs.Article;
 using SocialBackEnd.Common.Exceptions;
+using SocialBackEnd.Common.Models;
 using SocialBackEnd.Domain.Entities;
 
 namespace SocialBackEnd.Application.Services;
@@ -16,21 +20,31 @@ public class ArticleAdapterPort : IArticlePort
     private readonly IAttachmentRepository _attachmentRepository;
     private readonly IApplicationEventPublisher _applicationEventPublisher;
     private readonly ILogger _logger;
+    private readonly IGeminiArticlePort _geminiArticlePort;
+
 
     public ArticleAdapterPort(IPostRepository repository,
         IEntityMediaStorageService entityMediaStorageService,
         IAttachmentRepository attachmentRepository,
         IApplicationEventPublisher applicationEventPublisher,
-        ILogger<ArticleAdapterPort> logger)
+        ILogger<ArticleAdapterPort> logger,
+        IGeminiArticlePort geminiArticlePort)
     {
         _repository = repository ?? throw new ArgumentException(nameof(repository));
         _entityMediaStorageService = entityMediaStorageService ?? throw new ArgumentException(nameof(entityMediaStorageService));
         _attachmentRepository = attachmentRepository ?? throw new ArgumentException(nameof(attachmentRepository));
         _applicationEventPublisher = applicationEventPublisher ?? throw new ArgumentNullException(nameof(applicationEventPublisher));
         _logger = logger ?? throw new ArgumentException(nameof(logger));
+        _geminiArticlePort = geminiArticlePort;
     }
     public async Task<int> CreateArticle(RequestCreateArticle requestCreateArticle, int userId)
     {
+        var validateArticle = await _geminiArticlePort.ValidateArticle(requestCreateArticle);
+        if (!validateArticle)
+        {
+            _logger.LogInformation($"value of validate: {validateArticle}");
+            return Constant.ResponseStatusArticle.BadParamOfArticle;
+        }
         var article = new Post
         {
             Title = requestCreateArticle.Title,
@@ -84,6 +98,7 @@ public class ArticleAdapterPort : IArticlePort
         // }
         return true;
     }
+
     public async Task<bool> DeleteArticle(int articleId, int userId)
     {
         var existsArticle = await _repository.GetByIdAsync(articleId);
@@ -97,4 +112,5 @@ public class ArticleAdapterPort : IArticlePort
         }
         return await _repository.RemoveAsync(existsArticle);
     }
+
 }

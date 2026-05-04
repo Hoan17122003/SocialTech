@@ -51,9 +51,9 @@ public class AuthenticationAdapter : IAuthenticationPort
                 TokenType: string.Empty
             );
         }
-        var exsistingIpLogin = await _ipLoginRepository.GetLatestIpLoginByUserIdAsync(userId, cancellationToken);
+        var existingIpLogin = await _ipLoginRepository.GetLatestIpLoginByUserIdAsync(userId, cancellationToken);
         var accessToken = _tokenService.CreateAccessToken(user);
-        if (!string.IsNullOrEmpty(exsistingIpLogin.RefreshToken))
+        if (!string.IsNullOrEmpty(existingIpLogin?.RefreshToken))
         {
             return new LoginResponse
             (

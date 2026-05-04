@@ -11,4 +11,6 @@ public sealed record GeminiGenerateRequest
     public float? Temperature { get; init; }
 
     public int? MaxOutputTokens { get; init; }
+
+    public IReadOnlyList<GeminiGenerateFile> Files { get; init; } = [];
 }

@@ -20,6 +20,7 @@ using StackExchange.Redis;
 using Microsoft.AspNetCore.HttpOverrides;
 using SocialBackEnd.Application.Ports.Inbound.web;
 using SocialBackEnd.Infrastructure.Gemini;
+using SocialBackEnd.Application.Ports.Outbound.LLM;
 
 namespace SocialBackEnd.DependencyInjection;
 
@@ -45,6 +46,7 @@ public static class ServiceDependencyInjection
         services.AddScoped<IAuthenticationPort, AuthenticationAdapter>();
         services.AddSingleton<IGeminiClientRouter, GeminiClientRouter>();
         services.AddScoped<IGeminiPort, GeminiAdapter>();
+        services.AddScoped<IGeminiArticlePort, GeminiArticleAdapter>();
         services.AddScoped<IPasswordHashService, Argon2PasswordHashService>();
         services.AddScoped<IEntityMediaStorageService, LocalEntityMediaStorageService>();
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();

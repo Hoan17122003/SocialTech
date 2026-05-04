@@ -46,9 +46,6 @@ public static class EnvFileConfigurationExtensions
             ["Smtp:OAuth2:RefreshToken"] = GetEnvironmentVariable("Smtp__OAuth2__RefreshToken", "MAIL_REFRESH"),
             ["Smtp:OAuth2:TokenEndpoint"] = GetEnvironmentVariable("Smtp__OAuth2__TokenEndpoint", "MAIL_TOKEN_ENDPOINT"),
             ["Smtp:OAuth2:Scope"] = GetEnvironmentVariable("Smtp__OAuth2__Scope", "MAIL_SCOPE"),
-            ["Gemini:Model"] = GetEnvironmentVariable("Gemini__Model", "GEMINI_MODEL"),
-            ["Gemini:SystemInstruction"] = GetEnvironmentVariable("Gemini__SystemInstruction", "GEMINI_SYSTEM_INSTRUCTION"),
-            ["Gemini:QuotaCooldownMinutes"] = GetEnvironmentVariable("Gemini__QuotaCooldownMinutes", "GEMINI_QUOTA_COOLDOWN_MINUTES")
         };
 
         AddArrayOverride(overrides, "Gemini:ApiKeys", GetEnvironmentVariable("Gemini__ApiKeys", "GEMINI_API_KEYS"));

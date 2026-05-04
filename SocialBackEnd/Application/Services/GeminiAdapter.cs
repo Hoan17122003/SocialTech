@@ -1,3 +1,4 @@
+using System;
 using SocialBackEnd.Application.Ports.Inbound.web;
 using SocialBackEnd.Application.Ports.Outbound;
 using SocialBackEnd.Common.DTOs.Ai;
@@ -5,7 +6,7 @@ using SocialBackEnd.Common.Exceptions;
 
 namespace SocialBackEnd.Application.Services;
 
-public sealed class GeminiAdapter : IGeminiPort
+public class GeminiAdapter : IGeminiPort
 {
     private readonly IGeminiClientRouter _geminiClientRouter;
 

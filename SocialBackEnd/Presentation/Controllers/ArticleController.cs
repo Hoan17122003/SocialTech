@@ -1,8 +1,11 @@
+using System.Net;
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SocialBackEnd.Application.Ports.Inbound;
+using SocialBackEnd.Common.Constants;
 using SocialBackEnd.Common.DTOs.Article;
 using SocialBackEnd.Common.Models;
 
@@ -30,8 +33,13 @@ namespace SocialBackEnd.Presentation.Controllers
                 return Unauthorized("Token không chứa user id hợp lệ.");
             }
             var result = await _articlePort.CreateArticle(requestCreateArticle, userId);
+            if (result == Constant.ResponseStatusArticle.BadParamOfArticle)
+            {
+                return BadRequest(ApiResponse<int>.Fail("Tạo bài viết thất bại do chứa nội dung nhạy cảm"));
+            }
             return Ok(ApiResponse<int>.Ok(result, "Tạo bài viết thành công"));
         }
+
         [Authorize]
         [HttpPut("update/{articleId:int}")]
         [Consumes("multipart/form-data")]

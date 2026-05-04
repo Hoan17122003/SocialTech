@@ -30,7 +30,6 @@
     <Folder Include="Application\Notifications\Templates\" />
     <Folder Include="Application\Ports\Outbound\cache\" />
     <Folder Include="Application\Ports\Outbound\Security\" />
-    <Folder Include="Application\Services\" />
     <Folder Include="Common\Constants\" />
     <Folder Include="Common\DTOs\Article\" />
     <Folder Include="Common\DTOs\Auth\" />
@@ -43,6 +42,7 @@
     <Folder Include="Infrastructure\Notifications\" />
     <Folder Include="Infrastructure\Security\" />
     <Folder Include="Presentation\Controllers\" />
+    <Folder Include="wwwroot\uploads\posts\" />
   </ItemGroup>
 
 </Project>

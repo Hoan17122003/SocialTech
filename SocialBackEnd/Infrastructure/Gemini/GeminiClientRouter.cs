@@ -62,8 +62,9 @@ public sealed class GeminiClientRouter : IGeminiClientRouter
                 var model = string.IsNullOrWhiteSpace(request.Model) ? _options.Model : request.Model.Trim();
                 var response = await slot.Client.Models.GenerateContentAsync(
                     model: model,
-                    contents: request.Prompt,
-                    config: config);
+                    contents: BuildContent(request),
+                    config: config,
+                    cancellationToken: cancellationToken);
 
                 var text = ExtractText(response);
                 if (string.IsNullOrWhiteSpace(text))
@@ -162,6 +163,34 @@ public sealed class GeminiClientRouter : IGeminiClientRouter
         }
 
         return config;
+    }
+
+    private static Content BuildContent(GeminiGenerateRequest request)
+    {
+        var parts = new List<Part>();
+
+        if (!string.IsNullOrWhiteSpace(request.Prompt))
+        {
+            parts.Add(new Part { Text = request.Prompt });
+        }
+
+        foreach (var file in request.Files.Where(static file => file.Data.Length > 0))
+        {
+            parts.Add(new Part
+            {
+                InlineData = new Blob
+                {
+                    Data = file.Data,
+                    MimeType = file.MimeType
+                }
+            });
+        }
+
+        return new Content
+        {
+            Role = "user",
+            Parts = parts
+        };
     }
 
     private static string ExtractText(GenerateContentResponse response)

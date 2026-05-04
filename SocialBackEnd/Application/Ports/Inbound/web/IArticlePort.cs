@@ -1,5 +1,7 @@
 using System;
+using SocialBackEnd.Common.DTOs.Ai;
 using SocialBackEnd.Common.DTOs.Article;
+using SocialBackEnd.Common.Models;
 
 namespace SocialBackEnd.Application.Ports.Inbound;
 
