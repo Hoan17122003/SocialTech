@@ -62,5 +62,32 @@ namespace SocialBackEnd.Presentation.Controllers
             await _authenticationPort.LogoutAsync(userId, accessToken);
             return Ok(new { Message = "Logged out successfully" });
         }
+
+        [HttpPost("accessToken-generate")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GenerateAccessTokenAsyc(CancellationToken cancellationToken)
+        {
+            var authorizationHeader = HttpContext.Request.Headers.Authorization.ToString();
+            string accessToken = string.Empty;
+
+            if (authorizationHeader.StartsWith($"{Constant.PrefixAuth} ", StringComparison.OrdinalIgnoreCase))
+            {
+                accessToken = authorizationHeader[Constant.PrefixAuth.Length..].Trim();
+            }
+
+            Request.Cookies.TryGetValue("refreshToken", out var refreshToken);
+
+            var result = await _authenticationPort.GenerateAccessTokenAsync(
+                accessToken,
+                refreshToken ?? string.Empty,
+                cancellationToken);
+
+            if (!result.Success)
+            {
+                return Unauthorized(result);
+            }
+
+            return Ok(result);
+        }
     }
 }

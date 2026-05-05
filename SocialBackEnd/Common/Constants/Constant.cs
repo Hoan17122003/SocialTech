@@ -5,6 +5,7 @@ namespace SocialBackEnd.Common.Constants;
 public static class Constant
 {
     public const string PrefixAuth = "Bearer";
+    public const string PrefixRequestForgetPassword = "ForgetPassword:";
     public static class GeminiConfigModel25Flash
     {
         public const string Model = "gemini-2.5-flash";

@@ -15,6 +15,7 @@ using SocialBackEnd.Application.Ports.Outbound.cache;
 using SocialBackEnd.Application.Ports.Outbound.Events;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Application.Ports.Outbound.Security;
+using SocialBackEnd.Common.Constants;
 using SocialBackEnd.Common.DTOs;
 using SocialBackEnd.Common.DTOs.User;
 using SocialBackEnd.Common.Exceptions;
@@ -143,7 +144,7 @@ public sealed class UserAdapaterPort : IUserPort
         var tokenOfUser = new JwtSecurityTokenHandler().WriteToken(jwtToken);
 
         var token = Guid.NewGuid().ToString();
-        var cacheKey = $"ForgetPasswordToken:{normalizedEmail}";
+        var cacheKey = $"{Constant.PrefixRequestForgetPassword}{normalizedEmail}";
         var timeSpan = TimeSpan.FromMinutes(2);
         var tokenResult = $"{token}@{tokenOfUser}";
         // Store the token in cache with an expiration time
