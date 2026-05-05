@@ -50,15 +50,21 @@ namespace SocialBackEnd.Presentation.Controllers
             {
                 return Unauthorized("Token không chứa user id hợp lệ.");
             }
-            var result = await _articlePort.UpdateArticle(requestUpdateArticle, articleId, userId);
-            if (result)
+            var (result, message) = await _articlePort.UpdateArticle(requestUpdateArticle, articleId, userId);
+            return result switch
             {
-                return Ok(ApiResponse<string>.Ok("Cập nhật bài viết thành công", "Success"));
-            }
-            else
-            {
-                return BadRequest(ApiResponse<string>.Fail("Cập nhật bài viết thất bại"));
-            }
+                Constant.ResponseStatusArticle.BadParamOfArticle =>
+                    BadRequest(ApiResponse<int>.Fail(message)),
+
+                Constant.ResponseStatusArticle.ForbidenOfArticle =>
+                    Forbid(message),
+
+                Constant.ResponseStatusArticle.SuccessActionOfArticle =>
+                    Ok(ApiResponse<int>.Ok(result, message)),
+
+                _ =>
+                    StatusCode(StatusCodes.Status500InternalServerError, ApiResponse<string>.Fail("có lỗi xảy ra."))
+            };
         }
 
         [Authorize]

@@ -30,5 +30,10 @@ public static class Constant
     public static class ResponseStatusArticle
     {
         public const int BadParamOfArticle = 1;
+        public const string BadParamMesssage = "Nội dung chứa thông tin nhạy cảm không phù hợp";
+        public const int SuccessActionOfArticle = 2;
+        public const string SuccessActionMessage = "Thao tác với bài viết thành công";
+        public const int ForbidenOfArticle = 3;
+        public const string ForbidenMessage = "Bạn không có quyền với hành động cập nhật bài viết này";
     }
 }

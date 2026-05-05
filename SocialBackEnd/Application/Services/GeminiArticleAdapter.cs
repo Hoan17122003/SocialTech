@@ -28,7 +28,7 @@ public sealed class GeminiArticleAdapter : GeminiAdapter, IGeminiArticlePort
     }
 
 
-    public async Task<bool> ValidateArticle(RequestCreateArticle requestCreateArticle)
+    public async Task<bool> ValidateArticle(ArticleValidateRequest requestCreateArticle)
     {
         var files = await BuildGeminiFilesAsync(requestCreateArticle.Attachments);
         var formatJson = JsonSerializer.Serialize(
