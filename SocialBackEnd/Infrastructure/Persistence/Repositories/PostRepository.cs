@@ -32,6 +32,12 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
             .ToListAsync(cancellationToken);
     }
 
+    public Task<bool> ExistsOfArticle(int userId, int articleId)
+    {
+        return DbContext.Posts
+            .AnyAsync(x => x.AuthorId == userId && x.Id == articleId);
+    }
+
     public async Task<Post> CreatePostAsync(Post post, CancellationToken cancellationToken = default)
     {
         DbContext.Posts.Add(post);
@@ -46,12 +52,20 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
         return affectedRows > 0;
     }
 
+    public async Task<bool> UpdatePostAsync(Post post, CancellationToken cancellationToken = default)
+    {
+        DbContext.Posts.Update(post);
+        var affectedRows = await DbContext.SaveChangesAsync(cancellationToken);
+        return affectedRows > 0;
+    }
+
     public async Task<bool> UpdateAndDeletePostAsync(Post postToUpdate, Post postToDelete, CancellationToken cancellationToken = default)
     {
         using var transaction = await DbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            DbContext.Posts.Update(postToUpdate);
+            DbContext.Posts
+                .Update(postToUpdate);
             var updateResult = await DbContext.SaveChangesAsync(cancellationToken);
 
             DbContext.Posts.Remove(postToDelete);

@@ -9,5 +9,4 @@ public interface IAttachmentRepository : IRepository<Attachments>
     Task<bool> DeleteAttachmentsByPostIdAsync(int postId, CancellationToken cancellationToken = default);
     Task<List<Attachments>> GetAttachmentsByPostIdAsync(int postId, CancellationToken cancellationToken = default);
     Task<bool> ExistsByPostIdAsync(int postId, CancellationToken cancellationToken = default);
-
 }

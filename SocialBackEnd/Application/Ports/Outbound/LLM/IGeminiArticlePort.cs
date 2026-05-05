@@ -7,5 +7,5 @@ namespace SocialBackEnd.Application.Ports.Outbound.LLM;
 
 public interface IGeminiArticlePort : IGeminiPort
 {
-    Task<bool> ValidateArticle(RequestCreateArticle requestCreateArticle);
+    Task<bool> ValidateArticle(ArticleValidateRequest requestCreateArticle);
 }

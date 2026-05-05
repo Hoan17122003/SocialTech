@@ -15,4 +15,10 @@ public interface IEntityMediaStorageService
         int postId,
         IEnumerable<IFormFile> files,
         CancellationToken cancellationToken = default);
+
+    Task DeleteFilesAsync(
+        IEnumerable<string> filePaths,
+        CancellationToken cancellationToken = default);
+
+    bool FileExists(string? filePath);
 }

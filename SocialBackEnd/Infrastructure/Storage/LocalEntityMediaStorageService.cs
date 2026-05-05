@@ -129,14 +129,44 @@ public sealed class LocalEntityMediaStorageService : IEntityMediaStorageService
             return;
         }
 
-        var normalizedRelativePath = relativePath.TrimStart('/', '\\')
-            .Replace('/', Path.DirectorySeparatorChar)
-            .Replace('\\', Path.DirectorySeparatorChar);
-
-        var absolutePath = Path.Combine(ResolveWebRootPath(), normalizedRelativePath);
+        var absolutePath = ResolveAbsolutePath(relativePath);
         if (File.Exists(absolutePath))
         {
             File.Delete(absolutePath);
         }
+    }
+
+    public bool FileExists(string? filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return false;
+        }
+
+        return File.Exists(ResolveAbsolutePath(filePath));
+    }
+
+    private string ResolveAbsolutePath(string relativePath)
+    {
+        var normalizedRelativePath = relativePath.TrimStart('/', '\\')
+            .Replace('/', Path.DirectorySeparatorChar)
+            .Replace('\\', Path.DirectorySeparatorChar);
+
+        return Path.Combine(ResolveWebRootPath(), normalizedRelativePath);
+    }
+
+    public Task DeleteFilesAsync(
+        IEnumerable<string> filePaths,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(filePaths);
+
+        foreach (var filePath in filePaths)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            DeleteFileIfExists(filePath);
+        }
+
+        return Task.CompletedTask;
     }
 }

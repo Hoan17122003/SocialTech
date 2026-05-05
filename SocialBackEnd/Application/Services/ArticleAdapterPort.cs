@@ -5,10 +5,9 @@ using SocialBackEnd.Application.Ports.Outbound.Events;
 using SocialBackEnd.Application.Ports.Outbound.LLM;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Common.Constants;
-using SocialBackEnd.Common.DTOs.Ai;
 using SocialBackEnd.Common.DTOs.Article;
 using SocialBackEnd.Common.Exceptions;
-using SocialBackEnd.Common.Models;
+using SocialBackEnd.Common.Models.Storage;
 using SocialBackEnd.Domain.Entities;
 
 namespace SocialBackEnd.Application.Services;
@@ -39,7 +38,13 @@ public class ArticleAdapterPort : IArticlePort
     }
     public async Task<int> CreateArticle(RequestCreateArticle requestCreateArticle, int userId)
     {
-        var validateArticle = await _geminiArticlePort.ValidateArticle(requestCreateArticle);
+        var articleValidateParam = new ArticleValidateRequest
+        {
+            Title = requestCreateArticle.Title,
+            Content = requestCreateArticle.Content,
+            Attachments = requestCreateArticle.Attachments
+        };
+        var validateArticle = await _geminiArticlePort.ValidateArticle(articleValidateParam);
         if (!validateArticle)
         {
             _logger.LogInformation($"value of validate: {validateArticle}");
@@ -89,14 +94,102 @@ public class ArticleAdapterPort : IArticlePort
     }
 
 
-    public async Task<bool> UpdateArticle(RequestUpdateArticle requestUpdateArticle, int articleId, int userId)
+    public async Task<(int, string)> UpdateArticle(RequestUpdateArticle requestUpdateArticle, int articleId, int userId)
     {
-        // var existingArticle = await _attachmentRepository.ExistsByPostIdAsync(articleId);
-        // if (!existingArticle)
-        // {
-        //     throw new NotFoundException("Bài viết không tồn tại.");
-        // }
-        return true;
+        var existingArticle = await _repository.GetByIdAsync(articleId);
+        if (existingArticle is null)
+        {
+            throw new NotFoundException("Bài viết không tồn tại.");
+        }
+
+        if (existingArticle.AuthorId != userId)
+        {
+            return (Constant.ResponseStatusArticle.ForbidenOfArticle, Constant.ResponseStatusArticle.ForbidenMessage);
+        }
+
+        var articleValidateParam = new ArticleValidateRequest
+        {
+            Title = requestUpdateArticle.Title ?? existingArticle.Title,
+            Content = requestUpdateArticle.Content ?? existingArticle.Body,
+            Attachments = requestUpdateArticle.Attachments
+        };
+
+        var validateContentOfArticle = await _geminiArticlePort.ValidateArticle(articleValidateParam);
+
+        if (!validateContentOfArticle)
+        {
+            return (Constant.ResponseStatusArticle.BadParamOfArticle, Constant.ResponseStatusArticle.BadParamMesssage);
+        }
+        existingArticle.Title = requestUpdateArticle.Title ?? existingArticle.Title;
+        existingArticle.Body = requestUpdateArticle.Content ?? existingArticle.Body;
+        existingArticle.CommunityId = requestUpdateArticle.CommunityId ?? existingArticle.CommunityId;
+        existingArticle.UpdatedAtUtc = DateTime.UtcNow;
+
+        var updateResult = await _repository.UpdatePostAsync(existingArticle);
+
+        if (!updateResult)
+        {
+            return (Constant.ResponseStatusArticle.BadParamOfArticle, Constant.ResponseStatusArticle.BadParamMesssage);
+        }
+
+        if (requestUpdateArticle.Attachments is not null)
+        {
+            var currentAttachments = await _attachmentRepository.GetAttachmentsByPostIdAsync(articleId);
+            var existingAttachments = currentAttachments
+                .Where(attachment => _entityMediaStorageService.FileExists(attachment.FilePath))
+                .ToList();
+
+            var missingFileAttachments = currentAttachments
+                .Where(attachment => !_entityMediaStorageService.FileExists(attachment.FilePath))
+                .ToList();
+
+            var requestedFileNames = requestUpdateArticle.Attachments
+                .Where(file => file.Length > 0)
+                .Select(file => Path.GetFileName(file.FileName))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var attachmentsToDelete = existingAttachments
+                .Where(attachment => !requestedFileNames.Contains(attachment.FileName))
+                .ToList();
+
+            attachmentsToDelete.AddRange(missingFileAttachments);
+
+            if (attachmentsToDelete.Count > 0)
+            {
+                foreach (var attachment in attachmentsToDelete)
+                {
+                    _attachmentRepository.Remove(attachment);
+                }
+
+                await _attachmentRepository.SaveChangesAsync();
+                await _entityMediaStorageService.DeleteFilesAsync(attachmentsToDelete.Select(x => x.FilePath));
+            }
+
+            var currentFileNames = existingAttachments
+                .Select(attachment => attachment.FileName)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var attachmentsToSave = requestUpdateArticle.Attachments
+                .Where(file => file.Length > 0)
+                .Where(file => !currentFileNames.Contains(Path.GetFileName(file.FileName)))
+                .ToList();
+
+            if (attachmentsToSave.Count > 0)
+            {
+                var storedFiles = await _entityMediaStorageService.SavePostAttachmentsAsync(
+                    articleId,
+                    attachmentsToSave);
+
+                var attachmentEntities = BuildAttachmentEntities(articleId, storedFiles);
+                var attachmentCount = await _attachmentRepository.AddAttachmentsAsync(attachmentEntities);
+                if (attachmentCount != attachmentsToSave.Count)
+                {
+                    _logger.LogError("Lưu tệp đính kèm thất bại, số lượng tệp lưu không khớp với số lượng tệp tải lên.");
+                    throw new ConflicException("Lưu tệp đính kèm thất bại, số lượng tệp lưu không khớp với số lượng tệp tải lên.");
+                }
+            }
+        }
+        return (Constant.ResponseStatusArticle.SuccessActionOfArticle, Constant.ResponseStatusArticle.SuccessActionMessage);
     }
 
     public async Task<bool> DeleteArticle(int articleId, int userId)
@@ -111,6 +204,22 @@ public class ArticleAdapterPort : IArticlePort
             throw new UnauthorizedAccessException("Bạn không có quyền xóa bài viết này.");
         }
         return await _repository.RemoveAsync(existsArticle);
+    }
+
+    private static List<Attachments> BuildAttachmentEntities(
+        int postId,
+        IReadOnlyList<StoredMediaFile> storedFiles)
+    {
+        return storedFiles
+            .Select(file => new Attachments
+            {
+                FilePath = file.FilePath,
+                FileName = file.FileName,
+                FileExtension = file.FileExtension,
+                FileSize = file.FileSize,
+                PostId = postId
+            })
+            .ToList();
     }
 
 }
