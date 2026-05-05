@@ -9,6 +9,7 @@ using SocialBackEnd.Common.DTOs.Article;
 using SocialBackEnd.Common.Exceptions;
 using SocialBackEnd.Common.Models.Storage;
 using SocialBackEnd.Domain.Entities;
+using SocialBackEnd.Domain.Enums;
 
 namespace SocialBackEnd.Application.Services;
 
@@ -55,7 +56,8 @@ public class ArticleAdapterPort : IArticlePort
             Title = requestCreateArticle.Title,
             Body = requestCreateArticle.Content,
             AuthorId = userId,
-            CommunityId = requestCreateArticle.ComunityId
+            CommunityId = requestCreateArticle.ComunityId,
+            Status = requestCreateArticle.ArticleStatus
         };
         var articleEntity = await _repository.CreatePostAsync(article);
 
@@ -123,6 +125,7 @@ public class ArticleAdapterPort : IArticlePort
         existingArticle.Title = requestUpdateArticle.Title ?? existingArticle.Title;
         existingArticle.Body = requestUpdateArticle.Content ?? existingArticle.Body;
         existingArticle.CommunityId = requestUpdateArticle.CommunityId ?? existingArticle.CommunityId;
+        existingArticle.Status = requestUpdateArticle.Status ?? existingArticle.Status;
         existingArticle.UpdatedAtUtc = DateTime.UtcNow;
 
         var updateResult = await _repository.UpdatePostAsync(existingArticle);
@@ -190,6 +193,12 @@ public class ArticleAdapterPort : IArticlePort
             }
         }
         return (Constant.ResponseStatusArticle.SuccessActionOfArticle, Constant.ResponseStatusArticle.SuccessActionMessage);
+    }
+
+    private Task<PostStatus> StatusOfArticle(PostStatus postStatusParam, int posStatusEntity)
+    {
+        //Todo : implement logic StatusOfArticle if current status is RemovedBymoderator then not update case, RemovedByModerator -> Publicshed 
+        return null;
     }
 
     public async Task<bool> DeleteArticle(int articleId, int userId)
