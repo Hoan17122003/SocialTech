@@ -15,7 +15,6 @@ public class User : EntityBase
 
     public ICollection<UserFollow> Followers { get; set; } = new List<UserFollow>();
     public ICollection<UserFollow> Followings { get; set; } = new List<UserFollow>();
-
     public ICollection<Community> OwnedCommunities { get; set; } = new List<Community>();
     public ICollection<CommunityMembership> CommunityMemberships { get; set; } = new List<CommunityMembership>();
     public ICollection<Post> AuthoredPosts { get; set; } = new List<Post>();
@@ -25,4 +24,6 @@ public class User : EntityBase
     public ICollection<ContentReport> SubmittedReports { get; set; } = new List<ContentReport>();
     public ICollection<ContentReport> AssignedReports { get; set; } = new List<ContentReport>();
     public ICollection<IPLogin> IPLogins { set; get; } = new List<IPLogin>();
+    public ICollection<UserSavedPost> SavedPosts { get; set; } = new List<UserSavedPost>();
+
 }

@@ -37,7 +37,7 @@ public sealed class PostConfiguration : IEntityTypeConfiguration<Post>
             .WithMany(x => x.Posts)
             .HasForeignKey(x => x.CommunityId)
             .OnDelete(DeleteBehavior.Restrict);
-
+        
         builder.HasOne(x => x.Author)
             .WithMany(x => x.AuthoredPosts)
             .HasForeignKey(x => x.AuthorId)

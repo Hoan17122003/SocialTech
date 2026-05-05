@@ -23,4 +23,6 @@ public class Post : EntityBase
     public ICollection<PostTag> PostTags { get; set; } = new List<PostTag>();
     public ICollection<PostMediaAsset> MediaAssets { get; set; } = new List<PostMediaAsset>();
     public ICollection<ContentReport> Reports { get; set; } = new List<ContentReport>();
+    public ICollection<UserSavedPost> SavedByUsers { get; set; } = new List<UserSavedPost>();
+
 }

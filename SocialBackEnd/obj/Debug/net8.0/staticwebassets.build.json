@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "SaR9bYw2ZEr3yPHUvwSHRBniFNsRq3FXKFUSWEBltOI=",
+  "Hash": "oFYYdoK8gvtHic9cFVJLDaiOz7F2wGNVNV8uDCeUEDk=",
   "Source": "SocialBackEnd",
   "BasePath": "_content/SocialBackEnd",
   "Mode": "Default",
@@ -17,12 +17,12 @@
   ],
   "Assets": [
     {
-      "Identity": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\3\\0882afae076b4aa492d745071535f0d3.png",
+      "Identity": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\3\\5ba62bb40cdb4c35b171f9e7920c829a.jpg",
       "SourceId": "SocialBackEnd",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\",
       "BasePath": "_content/SocialBackEnd",
-      "RelativePath": "uploads/posts/3/0882afae076b4aa492d745071535f0d3.png",
+      "RelativePath": "uploads/posts/3/5ba62bb40cdb4c35b171f9e7920c829a.jpg",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -33,7 +33,26 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\uploads\\posts\\3\\0882afae076b4aa492d745071535f0d3.png"
+      "OriginalItemSpec": "wwwroot\\uploads\\posts\\3\\5ba62bb40cdb4c35b171f9e7920c829a.jpg"
+    },
+    {
+      "Identity": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\3\\dd6b55bba195491299db8cf8a2708c11.png",
+      "SourceId": "SocialBackEnd",
+      "SourceType": "Discovered",
+      "ContentRoot": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\",
+      "BasePath": "_content/SocialBackEnd",
+      "RelativePath": "uploads/posts/3/dd6b55bba195491299db8cf8a2708c11.png",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\uploads\\posts\\3\\dd6b55bba195491299db8cf8a2708c11.png"
     },
     {
       "Identity": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\4\\8b210bf8f6fb47c7a29284ef30ec4c80.png",

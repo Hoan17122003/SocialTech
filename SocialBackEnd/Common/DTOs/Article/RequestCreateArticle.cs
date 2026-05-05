@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using SocialBackEnd.Common.Validations;
+using SocialBackEnd.Domain.Enums;
 
 namespace SocialBackEnd.Common.DTOs.Article;
 
@@ -12,5 +13,7 @@ public record RequestCreateArticle
     public string? Content { set; get; }
     public List<IFormFile>? Attachments { set; get; }
     public int? ComunityId { set; get; }
+
+    public PostStatus ArticleStatus { set; get; } = PostStatus.Published;
 
 }
