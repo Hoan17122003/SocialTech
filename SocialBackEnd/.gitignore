@@ -25,7 +25,8 @@ mono_crash.*
 wwwroot/
 
 #Debug
-obj/Debug
+obj/
+Debug/
 
 # Build results
 [Dd]ebug/
@@ -59,6 +60,8 @@ Generated\ Files/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+# debug when i run 
+SocialBackEnd/bin/Debug/*
 
 # Build Results of an ATL Project
 [Dd]ebugPS/
