@@ -144,7 +144,7 @@ public sealed class UserAdapaterPort : IUserPort
         var tokenOfUser = new JwtSecurityTokenHandler().WriteToken(jwtToken);
 
         var token = Guid.NewGuid().ToString();
-        var cacheKey = $"{Constant.PrefixRequestForgetPassword}{normalizedEmail}";
+        var cacheKey = $"{Constant.PrefixRequestForgetPassword}:{normalizedEmail}";
         var timeSpan = TimeSpan.FromMinutes(2);
         var tokenResult = $"{token}@{tokenOfUser}";
         // Store the token in cache with an expiration time
@@ -183,7 +183,7 @@ public sealed class UserAdapaterPort : IUserPort
 
         var tokenOfJwt = tokenParts[1];
         var email = GetEmailFromResetPasswordJwt(tokenOfJwt);
-        var tokenCacheKey = $"ForgetPasswordToken:{email}";
+        var tokenCacheKey = $"{Constant.PrefixRequestForgetPassword}:{email}";
 
         var cachedToken = await _cacheInternal.GetAsync<string>(tokenCacheKey);
         if (cachedToken is null || !string.Equals(cachedToken, token, StringComparison.Ordinal))
