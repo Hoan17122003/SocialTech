@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "oFYYdoK8gvtHic9cFVJLDaiOz7F2wGNVNV8uDCeUEDk=",
+  "Hash": "6DeboNU3Zin19Puzo14bJLgX9FvITxqo0opdBGIvCwQ=",
   "Source": "SocialBackEnd",
   "BasePath": "_content/SocialBackEnd",
   "Mode": "Default",
@@ -17,7 +17,7 @@
   ],
   "Assets": [
     {
-      "Identity": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\3\\5ba62bb40cdb4c35b171f9e7920c829a.jpg",
+      "Identity": "d:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\3\\5ba62bb40cdb4c35b171f9e7920c829a.jpg",
       "SourceId": "SocialBackEnd",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\",
@@ -36,7 +36,7 @@
       "OriginalItemSpec": "wwwroot\\uploads\\posts\\3\\5ba62bb40cdb4c35b171f9e7920c829a.jpg"
     },
     {
-      "Identity": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\3\\dd6b55bba195491299db8cf8a2708c11.png",
+      "Identity": "d:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\3\\dd6b55bba195491299db8cf8a2708c11.png",
       "SourceId": "SocialBackEnd",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\",
@@ -55,7 +55,7 @@
       "OriginalItemSpec": "wwwroot\\uploads\\posts\\3\\dd6b55bba195491299db8cf8a2708c11.png"
     },
     {
-      "Identity": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\4\\8b210bf8f6fb47c7a29284ef30ec4c80.png",
+      "Identity": "d:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\4\\8b210bf8f6fb47c7a29284ef30ec4c80.png",
       "SourceId": "SocialBackEnd",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\",
@@ -74,7 +74,26 @@
       "OriginalItemSpec": "wwwroot\\uploads\\posts\\4\\8b210bf8f6fb47c7a29284ef30ec4c80.png"
     },
     {
-      "Identity": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\users\\4\\profile\\86f25f9b0b0e47afbb69ebf2b6ab16e1.png",
+      "Identity": "d:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\5\\cd76040a72fd4ad398f2cc3efcd243db.jpg",
+      "SourceId": "SocialBackEnd",
+      "SourceType": "Discovered",
+      "ContentRoot": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\",
+      "BasePath": "_content/SocialBackEnd",
+      "RelativePath": "uploads/posts/5/cd76040a72fd4ad398f2cc3efcd243db.jpg",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\uploads\\posts\\5\\cd76040a72fd4ad398f2cc3efcd243db.jpg"
+    },
+    {
+      "Identity": "d:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\users\\4\\profile\\86f25f9b0b0e47afbb69ebf2b6ab16e1.png",
       "SourceId": "SocialBackEnd",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\",
@@ -93,7 +112,7 @@
       "OriginalItemSpec": "wwwroot\\uploads\\users\\4\\profile\\86f25f9b0b0e47afbb69ebf2b6ab16e1.png"
     },
     {
-      "Identity": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\users\\5\\profile\\030005affb9f42dabc2a77d9fba2d7ae.png",
+      "Identity": "d:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\users\\5\\profile\\030005affb9f42dabc2a77d9fba2d7ae.png",
       "SourceId": "SocialBackEnd",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\",

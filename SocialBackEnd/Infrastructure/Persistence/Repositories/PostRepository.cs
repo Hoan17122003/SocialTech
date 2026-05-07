@@ -87,5 +87,13 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
         }
     }
 
+    public Task<Post> GetByArticleIdAsync(int articleId, CancellationToken cancellationToken = default)
+    {
+        return DbContext.Posts
+            .Include(x => x.Attachments)
+            .Where(x => x.Id == articleId)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
 
 }
