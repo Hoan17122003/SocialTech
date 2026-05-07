@@ -227,7 +227,7 @@ public class ArticleAdapterPort : IArticlePort
 
     public async Task<bool> DeleteArticle(int articleId, int userId)
     {
-        var existsArticle = await _repository.GetByIdAsync(articleId);
+        var existsArticle = await _repository.GetByArticleIdAsync(articleId);
         if (existsArticle is null)
         {
             throw new NotFoundException("Bài viết không tồn tại.");
@@ -235,6 +235,11 @@ public class ArticleAdapterPort : IArticlePort
         if (existsArticle.AuthorId != userId)
         {
             throw new UnauthorizedAccessException("Bạn không có quyền xóa bài viết này.");
+        }
+        if (existsArticle.Attachments.Count > 0)
+        {
+            var deleteAttachments = await _attachmentRepository.GetAttachmentsByPostIdAsync(articleId);
+            await _entityMediaStorageService.DeleteFilesAsync(deleteAttachments.Select(x => x.FilePath));
         }
         return await _repository.RemoveAsync(existsArticle);
     }
