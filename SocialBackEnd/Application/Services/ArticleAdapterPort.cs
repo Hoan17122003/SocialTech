@@ -6,7 +6,9 @@ using SocialBackEnd.Application.Ports.Outbound.LLM;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Common.Constants;
 using SocialBackEnd.Common.DTOs.Article;
+using SocialBackEnd.Common.Events;
 using SocialBackEnd.Common.Exceptions;
+using SocialBackEnd.Common.Models.Article;
 using SocialBackEnd.Common.Models.Storage;
 using SocialBackEnd.Domain.Entities;
 using SocialBackEnd.Domain.Enums;
@@ -90,9 +92,31 @@ public class ArticleAdapterPort : IArticlePort
                 throw new ConflicException("Lưu tệp đính kèm thất bại, số lượng tệp đính kèm lưu không khớp với số lượng tệp đính kèm đã tải lên.");
             }
         }
-
-        await _applicationEventPublisher.PublishArticleCreatedAsync(articleEntity, fileUploadUrls.Count);
+        // không nên bỏ toàn bộ vào phía PublisArticleCreatedAsync nên bỏ luôn await tại vì nó sẽ bị buộc phải chờ kết quả 
+        var articleCreatedEvent = await _repository.GetArticleCreatedEventAsync(articleEntity.Id);
+        if (articleCreatedEvent is not null)
+        {
+            await _applicationEventPublisher.PublishArticleCreatedAsync(articleCreatedEvent);
+        }
         return articleEntity.Id;
+    }
+
+    public async Task<ArticleDetailModelView> GetDetailArticle(int articleId, int userId)
+    {
+        var article = await _repository.GetDetailPostById(articleId);
+
+        return new ArticleDetailModelView
+        {
+            Title = article.Title,
+            Content = article.Body ?? string.Empty,
+            attachments = article.Attachments
+                .Select(attachment => attachment.FilePath)
+                .ToList(),
+            IsPermissionEdit = article.AuthorId == userId,
+            CreateDate = article.CreatedAtUtc,
+            NameAuthor = article.Author.DisplayName,
+            AvatarAuthor = article.Author.ProfileImageUrl ?? string.Empty
+        };
     }
 
 

@@ -9,6 +9,9 @@ namespace SocialBackEnd.Infrastructure.Kafka;
 
 public sealed class KafkaEventPublisher : IApplicationEventPublisher, IDisposable
 {
+    // Kafka producer uses string key/value:
+    // - Key is used by Kafka for key-based partitioning.
+    // - Value is the JSON integration-event envelope.
     private readonly IProducer<string, string> _producer;
     private readonly KafkaOptions _options;
     private readonly ILogger<KafkaEventPublisher> _logger;
@@ -24,6 +27,7 @@ public sealed class KafkaEventPublisher : IApplicationEventPublisher, IDisposabl
             throw new InvalidOperationException("Kafka bootstrap servers are not configured.");
         }
 
+        // Acks.All + EnableIdempotence make publishing safer when producer retries.
         var config = new ProducerConfig
         {
             BootstrapServers = _options.BootstrapServers,
@@ -58,28 +62,23 @@ public sealed class KafkaEventPublisher : IApplicationEventPublisher, IDisposabl
         return PublishAsync(_options.Topics.Notification, payload, user.Id.ToString(), cancellationToken);
     }
 
-    public Task PublishArticleCreatedAsync(Post post, int attachmentCount, CancellationToken cancellationToken = default)
+    public Task PublishArticleCreatedAsync(ArticleCreatedIntegrationEvent payload, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(post);
+        ArgumentNullException.ThrowIfNull(payload);
 
-        var payload = new ArticleCreatedIntegrationEvent(
-            post.Id,
-            post.AuthorId,
-            post.Title,
-            post.CommunityId,
-            attachmentCount);
-
-        return PublishAsync(_options.Topics.DomainEvents, payload, post.Id.ToString(), cancellationToken);
+        return PublishAsync(_options.Topics.DomainEvents, payload, payload.ArticleId.ToString(), cancellationToken);
     }
 
     private async Task PublishAsync<TPayload>(string topic, TPayload payload, string? key, CancellationToken cancellationToken)
     {
+        // Envelope tells consumers the event type and carries the serialized payload.
         var envelope = new IntegrationEventEnvelope(
             typeof(TPayload).Name,
             DateTime.UtcNow,
             key,
             JsonSerializer.Serialize(payload, JsonOptions));
 
+        // The Kafka key controls partition routing when a topic has multiple partitions.
         var message = new Message<string, string>
         {
             Key = key ?? string.Empty,

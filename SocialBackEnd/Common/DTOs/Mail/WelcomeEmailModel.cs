@@ -1,6 +1,6 @@
 namespace SocialBackEnd.Common.DTOs.Mail;
 
-public record class WelcomeEmailModel
+public record WelcomeEmailModel
 (
     string Username,
     string VerifyLink

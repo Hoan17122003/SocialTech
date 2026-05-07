@@ -41,6 +41,19 @@ namespace SocialBackEnd.Presentation.Controllers
         }
 
         [Authorize]
+        [HttpGet("detail/{articleId:int}")]
+        public async Task<IActionResult> GetDetailArticle([FromRoute(Name = "articleId")] int articleId)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized("Token không chứa user id hợp lệ.");
+            }
+            var result = await _articlePort.GetDetailArticle(articleId, userId);
+            return Ok(ApiResponse<Object>.Ok(result));
+        }
+
+        [Authorize]
         [HttpPut("update/{articleId:int}")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UpdateArticle([FromRoute] int articleId, [FromForm] RequestUpdateArticle requestUpdateArticle)

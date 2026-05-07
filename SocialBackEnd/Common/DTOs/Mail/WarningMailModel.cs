@@ -1,6 +1,6 @@
 namespace SocialBackEnd.Common.DTOs.Mail;
 
-public record class WarningMailModel
+public record WarningMailModel
 (
     string Username,
     string WarningReason,

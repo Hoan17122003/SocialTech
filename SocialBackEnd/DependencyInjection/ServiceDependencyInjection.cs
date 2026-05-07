@@ -39,14 +39,19 @@ public static class ServiceDependencyInjection
         services.AddScoped<IEmailNotificationService, NotificationService>();
         services.AddSingleton<IApplicationEventPublisher, KafkaEventPublisher>();
         services.AddHostedService<KafkaEventConsumer>();
+        // Nhúng param vào template renderer để gửi mail 
         services.AddScoped<IEmailTemplateRenderer<WelcomeEmailModel>, WellcomeEmailRenderer>();
         services.AddScoped<IEmailTemplateRenderer<ForgetPasswordEmailModel>, ForgetPasswordEmailRenderer>();
+        services.AddScoped<IEmailTemplateRenderer<NotificationArticleCreate>, NotificationArticleCreateRenderer>();
+        // Xử lý cho jwt & authentication 
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IUserAuthenticationService, UserAuthenticationService>();
         services.AddScoped<IAuthenticationPort, AuthenticationAdapter>();
+        // Nhúng LLM SDK vào hệ thống
         services.AddSingleton<IGeminiClientRouter, GeminiClientRouter>();
         services.AddScoped<IGeminiPort, GeminiAdapter>();
         services.AddScoped<IGeminiArticlePort, GeminiArticleAdapter>();
+        
         services.AddScoped<IPasswordHashService, Argon2PasswordHashService>();
         services.AddScoped<IEntityMediaStorageService, LocalEntityMediaStorageService>();
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();

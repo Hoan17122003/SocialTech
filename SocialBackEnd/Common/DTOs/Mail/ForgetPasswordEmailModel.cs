@@ -1,6 +1,6 @@
 namespace SocialBackEnd.Common.DTOs.Mail;
 
-public record class ForgetPasswordEmailModel
+public record ForgetPasswordEmailModel
 (
     string Username,
     string ResetPasswordLink

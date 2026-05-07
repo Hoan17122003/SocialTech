@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
+using SocialBackEnd.Common.Constants;
+using SocialBackEnd.Common.Events;
 using SocialBackEnd.Domain.Entities;
 
 namespace SocialBackEnd.Infrastructure.Persistence.Repositories;
@@ -26,7 +28,9 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
     {
         return DbContext.Posts
             .AsNoTracking()
+            .Include(x => x.Author)
             .Include(x => x.Community)
+            .Include(x => x.Attachments)
             .Where(x => x.AuthorId == authorId)
             .OrderByDescending(x => x.CreatedAtUtc)
             .ToListAsync(cancellationToken);
@@ -43,6 +47,33 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
         DbContext.Posts.Add(post);
         await DbContext.SaveChangesAsync(cancellationToken);
         return post;
+    }
+
+    public Task<ArticleCreatedIntegrationEvent?> GetArticleCreatedEventAsync(int postId, CancellationToken cancellationToken = default)
+    {
+        return DbContext.Posts
+            .AsNoTracking()
+            .Where(post => post.Id == postId)
+            .Select(post => new ArticleCreatedIntegrationEvent
+            {
+                ArticleId = post.Id,
+                AuthorId = post.AuthorId,
+                NameAuthor = post.Author.DisplayName,
+                AvatarAuthor = post.Author.ProfileImageUrl ?? string.Empty,
+                Title = post.Title,
+                CommunityId = post.CommunityId,
+                LinkArticle = $"{Constant.PrefixArticle}/{post.Id}",
+                Thumbnail = post.Attachments
+                    .OrderBy(attachment => attachment.Id)
+                    .Select(attachment => attachment.FilePath)
+                    .FirstOrDefault() ?? string.Empty,
+                SubContent = string.Join(" ", post.Body.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(200)) ?? string.Empty,
+                EmailUserFollow = post.Author.Followers
+                    .Select(userFollow => userFollow.Follower.Email)
+                    .ToList(),
+                CreateDate = post.CreatedAtUtc
+            })
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<bool> RemoveAsync(Post post, CancellationToken cancellationToken = default)
@@ -85,6 +116,15 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
             await transaction.RollbackAsync(cancellationToken);
             throw;
         }
+    }
+
+    public Task<Post> GetDetailPostById(int articleId, CancellationToken cancellationToken = default)
+    {
+        return DbContext.Posts
+            .AsNoTracking()
+            .Include(post => post.Author)
+            .Include(post => post.Attachments)
+            .FirstAsync(post => post.Id == articleId, cancellationToken);
     }
 
 

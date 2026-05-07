@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "oFYYdoK8gvtHic9cFVJLDaiOz7F2wGNVNV8uDCeUEDk=",
+  "Hash": "GBxo/QcsqFdp6ZxpA3a3LLLLWgsPgnLZyVX3dYRTM+E=",
   "Source": "SocialBackEnd",
   "BasePath": "_content/SocialBackEnd",
   "Mode": "Default",
@@ -17,12 +17,12 @@
   ],
   "Assets": [
     {
-      "Identity": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\3\\5ba62bb40cdb4c35b171f9e7920c829a.jpg",
+      "Identity": "d:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\6\\5cb27b4a2d634064a3ffc10888bae5d6.jpg",
       "SourceId": "SocialBackEnd",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\",
       "BasePath": "_content/SocialBackEnd",
-      "RelativePath": "uploads/posts/3/5ba62bb40cdb4c35b171f9e7920c829a.jpg",
+      "RelativePath": "uploads/posts/6/5cb27b4a2d634064a3ffc10888bae5d6.jpg",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -33,15 +33,15 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\uploads\\posts\\3\\5ba62bb40cdb4c35b171f9e7920c829a.jpg"
+      "OriginalItemSpec": "wwwroot\\uploads\\posts\\6\\5cb27b4a2d634064a3ffc10888bae5d6.jpg"
     },
     {
-      "Identity": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\3\\dd6b55bba195491299db8cf8a2708c11.png",
+      "Identity": "d:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\6\\e79f9e1f660145b194e23e9929fcd219.jpg",
       "SourceId": "SocialBackEnd",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\",
       "BasePath": "_content/SocialBackEnd",
-      "RelativePath": "uploads/posts/3/dd6b55bba195491299db8cf8a2708c11.png",
+      "RelativePath": "uploads/posts/6/e79f9e1f660145b194e23e9929fcd219.jpg",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -52,15 +52,15 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\uploads\\posts\\3\\dd6b55bba195491299db8cf8a2708c11.png"
+      "OriginalItemSpec": "wwwroot\\uploads\\posts\\6\\e79f9e1f660145b194e23e9929fcd219.jpg"
     },
     {
-      "Identity": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\posts\\4\\8b210bf8f6fb47c7a29284ef30ec4c80.png",
+      "Identity": "d:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\users\\1\\profile\\85ab0900a729460ba0d8d2758b5a56f2.png",
       "SourceId": "SocialBackEnd",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\",
       "BasePath": "_content/SocialBackEnd",
-      "RelativePath": "uploads/posts/4/8b210bf8f6fb47c7a29284ef30ec4c80.png",
+      "RelativePath": "uploads/users/1/profile/85ab0900a729460ba0d8d2758b5a56f2.png",
       "AssetKind": "All",
       "AssetMode": "All",
       "AssetRole": "Primary",
@@ -71,10 +71,10 @@
       "AssetTraitValue": "",
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
-      "OriginalItemSpec": "wwwroot\\uploads\\posts\\4\\8b210bf8f6fb47c7a29284ef30ec4c80.png"
+      "OriginalItemSpec": "wwwroot\\uploads\\users\\1\\profile\\85ab0900a729460ba0d8d2758b5a56f2.png"
     },
     {
-      "Identity": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\users\\4\\profile\\86f25f9b0b0e47afbb69ebf2b6ab16e1.png",
+      "Identity": "d:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\users\\4\\profile\\86f25f9b0b0e47afbb69ebf2b6ab16e1.png",
       "SourceId": "SocialBackEnd",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\",
@@ -93,7 +93,7 @@
       "OriginalItemSpec": "wwwroot\\uploads\\users\\4\\profile\\86f25f9b0b0e47afbb69ebf2b6ab16e1.png"
     },
     {
-      "Identity": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\users\\5\\profile\\030005affb9f42dabc2a77d9fba2d7ae.png",
+      "Identity": "d:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\uploads\\users\\5\\profile\\030005affb9f42dabc2a77d9fba2d7ae.png",
       "SourceId": "SocialBackEnd",
       "SourceType": "Discovered",
       "ContentRoot": "D:\\Training\\01-SocialTech\\SocialBackEnd\\wwwroot\\",

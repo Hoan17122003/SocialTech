@@ -35,6 +35,7 @@
     <Folder Include="Common\DTOs\Auth\" />
     <Folder Include="Common\DTOs\IpLogin\" />
     <Folder Include="Common\DTOs\User\" />
+    <Folder Include="Common\Models\Article\" />
     <Folder Include="Common\Models\User\" />
     <Folder Include="Common\Validations\" />
     <Folder Include="Infrastructure\cache\" />
