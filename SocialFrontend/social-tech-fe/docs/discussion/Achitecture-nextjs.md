@@ -12,17 +12,17 @@ Source base trong `SocialFrontend/social-tech-fe` duoc dung lai theo huong co th
 
 ## 2. Tong quan kien truc
 
-Frontend duoc to chuc theo 5 lop chinh:
+Frontend duoc to chuc theo 5 lop chinh, nam ben trong `src/`:
 
-1. `app/`
+1. `src/app/`
    Chua routing cua Next.js App Router, cac layout va page entrypoint.
-2. `features/`
+2. `src/features/`
    Moi nghiep vu lon co mot module rieng gom contracts, API layer va UI components. Hien tai da co `auth`, `articles`, `users`.
-3. `shared/`
+3. `src/shared/`
    Chua cac khoi co the tai su dung giua nhieu features nhu `http-client`, `token-storage`, shell layout, navigation va UI atoms.
-4. `common/`
+4. `src/common/`
    Chua config, constants, types va utils dung chung cho toan he thong. Vai tro nay map tuong doi voi `Common` ben backend.
-5. `providers/`
+5. `src/providers/`
    Chua context/provider cap ung state xuyen suot ung dung, hien tai la `AuthProvider`.
 
 Huong chia nay giup frontend co tinh chat sau:
@@ -36,87 +36,94 @@ Huong chia nay giup frontend co tinh chat sau:
 
 ```text
 social-tech-fe/
-|-- app/
-|   |-- (auth)/
-|   |   |-- login/page.tsx
-|   |   `-- register/page.tsx
-|   |-- (workspace)/
+|-- docs/
+|   `-- discussion/Achitecture-nextjs.md
+|-- public/
+|-- src/
+|   |-- app/
+|   |   |-- (auth)/
+|   |   |   |-- login/page.tsx
+|   |   |   `-- register/page.tsx
+|   |   |-- (workspace)/
+|   |   |   |-- articles/
+|   |   |   |   |-- [id]/page.tsx
+|   |   |   |   `-- new/page.tsx
+|   |   |   |-- profile/[id]/page.tsx
+|   |   |   |-- dashboard/page.tsx
+|   |   |   `-- layout.tsx
+|   |   |-- globals.css
+|   |   |-- layout.tsx
+|   |   `-- page.tsx
+|   |-- common/
+|   |   |-- config/env.ts
+|   |   |-- constants/app-routes.ts
+|   |   |-- types/api.ts
+|   |   `-- utils/
+|   |       |-- cn.ts
+|   |       |-- format-date.ts
+|   |       |-- object-to-form-data.ts
+|   |       `-- query-string.ts
+|   |-- features/
 |   |   |-- articles/
-|   |   |   |-- [id]/page.tsx
-|   |   |   `-- new/page.tsx
-|   |   |-- profile/[id]/page.tsx
-|   |   |-- dashboard/page.tsx
-|   |   `-- layout.tsx
-|   |-- globals.css
-|   |-- layout.tsx
-|   `-- page.tsx
-|-- common/
-|   |-- config/env.ts
-|   |-- constants/app-routes.ts
-|   |-- types/api.ts
-|   `-- utils/
-|       |-- cn.ts
-|       |-- format-date.ts
-|       |-- object-to-form-data.ts
-|       `-- query-string.ts
-|-- docs/discussion/Achitecture-nextjs.md
-|-- features/
-|   |-- articles/
-|   |   |-- articles-api.ts
-|   |   |-- contracts.ts
-|   |   `-- components/
-|   |       |-- article-composer.tsx
-|   |       `-- article-detail-card.tsx
-|   |-- auth/
-|   |   |-- auth-api.ts
-|   |   |-- contracts.ts
-|   |   `-- components/
-|   |       |-- login-form.tsx
-|   |       `-- register-form.tsx
-|   `-- users/
-|       |-- contracts.ts
-|       |-- users-api.ts
-|       `-- components/
-|           `-- profile-panel.tsx
-|-- providers/
-|   |-- app-provider.tsx
-|   `-- auth-provider.tsx
-`-- shared/
-    |-- api/
-    |   |-- http-client.ts
-    |   `-- token-storage.ts
-    |-- layout/app-shell.tsx
-    |-- navigation/app-header.tsx
-    `-- ui/
-        |-- button.tsx
-        |-- card.tsx
-        |-- empty-state.tsx
-        |-- field.tsx
-        |-- form-message.tsx
-        `-- section-shell.tsx
+|   |   |   |-- articles-api.ts
+|   |   |   |-- contracts.ts
+|   |   |   `-- components/
+|   |   |       |-- article-composer.tsx
+|   |   |       `-- article-detail-card.tsx
+|   |   |-- auth/
+|   |   |   |-- auth-api.ts
+|   |   |   |-- contracts.ts
+|   |   |   `-- components/
+|   |   |       |-- login-form.tsx
+|   |   |       `-- register-form.tsx
+|   |   `-- users/
+|   |       |-- contracts.ts
+|   |       |-- users-api.ts
+|   |       `-- components/
+|   |           `-- profile-panel.tsx
+|   |-- providers/
+|   |   |-- app-provider.tsx
+|   |   `-- auth-provider.tsx
+|   `-- shared/
+|       |-- api/
+|       |   |-- http-client.ts
+|       |   `-- token-storage.ts
+|       |-- layout/app-shell.tsx
+|       |-- navigation/app-header.tsx
+|       `-- ui/
+|           |-- button.tsx
+|           |-- card.tsx
+|           |-- empty-state.tsx
+|           |-- field.tsx
+|           |-- form-message.tsx
+|           `-- section-shell.tsx
+|-- next.config.ts
+|-- package.json
+|-- postcss.config.mjs
+`-- tsconfig.json
 ```
 
 ## 4. Giai thich tung phan
 
-### 4.1 `app/`
+### 4.1 `src/app/`
 
 Day la lop tiep xuc truc tiep voi router cua Next.js.
 
-- `app/layout.tsx`
+- `src/app/layout.tsx`
   Root layout, khai bao metadata, fonts va wrap `AppProvider`.
-- `app/page.tsx`
+- `src/app/page.tsx`
   Landing page gioi thieu base architecture va diem vao cac luong chinh.
-- `app/(auth)/...`
+- `src/app/(auth)/...`
   Route group cho cac man hinh chua xac thuc nhu login, register.
-- `app/(workspace)/layout.tsx`
+- `src/app/(workspace)/layout.tsx`
   Workspace layout dung `AppShell`, render navigation, shell chung.
-- `app/(workspace)/dashboard/page.tsx`
+- `src/app/(workspace)/dashboard/page.tsx`
   Dashboard tong quan cho team FE/BE test nhanh luong nghiep vu.
-- `app/(workspace)/articles/new/page.tsx`
+- `src/app/(workspace)/articles/new/page.tsx`
   Man hinh tao bai viet moi.
-- `app/(workspace)/articles/[id]/page.tsx`
+- `src/app/(workspace)/articles/[id]/page.tsx`
   Man hinh doc chi tiet bai viet theo id.
-- `app/(workspace)/profile/[id]/page.tsx`
+- `src/app/(workspace)/profile/[id]/page.tsx`
   Man hinh profile va update thong tin ca nhan.
 
 Ly do dung route groups:
@@ -124,7 +131,7 @@ Ly do dung route groups:
 - Giup tach auth flow va authenticated workspace clean hon.
 - Sau nay co the them middleware, layout, loading/error boundary rieng cho tung nhom route.
 
-### 4.2 `common/`
+### 4.2 `src/common/`
 
 `common` giong vai tro `Common` trong backend: chua nhung gi on dinh va duoc dung o nhieu noi.
 
@@ -143,7 +150,7 @@ Ly do dung route groups:
 - `utils/query-string.ts`
   Build query string cho cac API co paging/filter.
 
-### 4.3 `features/`
+### 4.3 `src/features/`
 
 Moi folder trong `features` dai dien cho mot domain nghiep vu. Moi feature gom 3 lop:
 
@@ -187,7 +194,7 @@ Chi tiet tung feature:
 - `components/article-detail-card.tsx`
   Tai va render chi tiet bai viet theo id.
 
-### 4.4 `shared/`
+### 4.4 `src/shared/`
 
 `shared` chua cac khoi tai su dung nhieu lan, nhung khong phai business rule cua mot feature cu the.
 
@@ -197,11 +204,11 @@ Chi tiet tung feature:
   Doc/ghi/xoa access token trong `localStorage`.
 - `http-client.ts`
   Wrapper quanh `fetch`, phu trach:
-  - Gan `Authorization: Bearer`.
-  - Tu dong gui `credentials: include` de backend xu ly refresh token qua cookie.
-  - Retry mot lan khi gap `401` bang cach goi `POST /api/Auth/accessToken-generate`.
-  - Parse loi thanh `ApiError`.
-  - Ho tro JSON va `FormData`.
+    - Gan `Authorization: Bearer`.
+    - Tu dong gui `credentials: include` de backend xu ly refresh token qua cookie.
+    - Retry mot lan khi gap `401` bang cach goi `POST /api/Auth/accessToken-generate`.
+    - Parse loi thanh `ApiError`.
+    - Ho tro JSON va `FormData`.
 
 #### `shared/layout`
 
@@ -230,16 +237,16 @@ Day la tap hop primitive UI:
 - `section-shell.tsx`
   Component khung cho tung section lon.
 
-### 4.5 `providers/`
+### 4.5 `src/providers/`
 
 - `app-provider.tsx`
   Entry point gom tat ca providers cua app.
 - `auth-provider.tsx`
   Quan ly session client:
-  - Nap access token tu `localStorage`.
-  - Cung cap `login`.
-  - Cung cap `logout`.
-  - Expose `isAuthenticated`.
+    - Nap access token tu `localStorage`.
+    - Cung cap `login`.
+    - Cung cap `logout`.
+    - Expose `isAuthenticated`.
 
 Vie tri dat provider:
 
@@ -252,21 +259,21 @@ Vie tri dat provider:
 Frontend da map truc tiep theo API/controller hien co:
 
 - `AuthController`
-  - `POST /api/Auth/login`
-  - `POST /api/Auth/logout`
-  - `POST /api/Auth/accessToken-generate`
+    - `POST /api/Auth/login`
+    - `POST /api/Auth/logout`
+    - `POST /api/Auth/accessToken-generate`
 - `UserController`
-  - `POST /api/User/create`
-  - `POST /api/User/profile/{id}`
-  - `POST /api/User/profile/update`
-  - `POST /api/User/follow`
-  - `POST /api/User/unfollow`
-  - `GET /api/User/followers`
+    - `POST /api/User/create`
+    - `POST /api/User/profile/{id}`
+    - `POST /api/User/profile/update`
+    - `POST /api/User/follow`
+    - `POST /api/User/unfollow`
+    - `GET /api/User/followers`
 - `ArticleController`
-  - `POST /api/Article/create`
-  - `GET /api/Article/detail/{articleId}`
-  - `PUT /api/Article/update/{articleId}`
-  - `DELETE /api/Article/delete/{articleId}`
+    - `POST /api/Article/create`
+    - `GET /api/Article/detail/{articleId}`
+    - `PUT /api/Article/update/{articleId}`
+    - `DELETE /api/Article/delete/{articleId}`
 
 Ngoai ra:
 
@@ -302,7 +309,7 @@ Nhung concern xuyen suot duoc tach rieng:
 - Format helpers.
 - Reusable UI primitives.
 
-Do la cach frontend “common hoa” tuong tu backend dang tach `Common`, `Infrastructure`, `Presentation`.
+Do la cach frontend common hoa tuong tu backend dang tach `Common`, `Infrastructure`, `Presentation`.
 
 ### 6.4 Feature-first thay vi page-first
 

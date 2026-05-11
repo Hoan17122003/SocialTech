@@ -9,6 +9,7 @@ using SocialBackEnd.Common.DTOs;
 using SocialBackEnd.Common.DTOs.User;
 using SocialBackEnd.Common.Models;
 using SocialBackEnd.Common.Models.User;
+using SocialBackEnd.Common.Constants;
 
 namespace SocialBackEnd.Presentation.Controllers
 {
@@ -27,7 +28,11 @@ namespace SocialBackEnd.Presentation.Controllers
         public async Task<IActionResult> CreateUser([FromBody] RequestCreateAccount request)
         {
             var result = await _userPort.CreateUserAsync(request);
-            return Ok(result);
+            if (result == Constant.ResponseStatusAccount.ConfflictParamOfAccount)
+            {
+                return Conflict(ApiResponse<string>.Fail("Username hoặc email đã tồn tại trong hệ thống"));
+            }
+            return Ok(ApiResponse<int>.Ok(result, "Tạo tài khoản thành công"));
         }
 
         [HttpPost("request-forget_password")]

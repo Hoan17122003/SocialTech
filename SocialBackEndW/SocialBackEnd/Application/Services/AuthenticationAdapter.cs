@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Unicode;
 using Microsoft.IdentityModel.Tokens;
 using SocialBackEnd.Application.Ports.Inbound.web;
 using SocialBackEnd.Application.Ports.Outbound.cache;
@@ -21,6 +22,7 @@ public class AuthenticationAdapter : IAuthenticationPort
     private readonly IUserLoginRepository _ipLoginRepository;
     private readonly ICacheInternal _cacheInternal;
     private readonly IConfiguration _configuration;
+    private readonly ILogger _logger;
 
     public AuthenticationAdapter(
         IUserAuthenticationService userAuthenticationService,
@@ -28,7 +30,8 @@ public class AuthenticationAdapter : IAuthenticationPort
         IHttpContextAccessor httpContextAccessor,
         IUserLoginRepository ipLoginRepository,
         ICacheInternal cacheInternal,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ILogger<AuthenticationAdapter> logger)
     {
         _userAuthenticationService = userAuthenticationService;
         _tokenService = tokenService;
@@ -36,6 +39,7 @@ public class AuthenticationAdapter : IAuthenticationPort
         _ipLoginRepository = ipLoginRepository ?? throw new ArgumentNullException(nameof(ipLoginRepository));
         _cacheInternal = cacheInternal ?? throw new ArgumentNullException(nameof(cacheInternal));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
@@ -102,6 +106,7 @@ public class AuthenticationAdapter : IAuthenticationPort
         string refreshToken,
         CancellationToken cancellationToken = default)
     {
+        _logger.LogInformation($"time for refresh access token - {DateTime.Now.ToString("HH:mm:ss")}");
         if (string.IsNullOrWhiteSpace(accessToken))
         {
             return ApiResponse<string>.Fail("Access token không được để trống.");

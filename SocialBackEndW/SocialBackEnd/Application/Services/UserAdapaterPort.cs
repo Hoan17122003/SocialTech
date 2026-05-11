@@ -79,6 +79,12 @@ public sealed class UserAdapaterPort : IUserPort
         {
             throw new ArgumentException("Email is required.", nameof(requestCreateAccount));
         }
+        var emailExists = await _repository.UserIsExists(email: requestCreateAccount.Email, username: requestCreateAccount.Username);
+        if (emailExists is not null)
+        {
+            _logger.LogInformation($"check information exists {DateTime.Now.ToString("hh:mm:ss")}");
+            return Constant.ResponseStatusAccount.ConfflictParamOfAccount;
+        }
 
         if (string.IsNullOrWhiteSpace(requestCreateAccount.Password))
         {

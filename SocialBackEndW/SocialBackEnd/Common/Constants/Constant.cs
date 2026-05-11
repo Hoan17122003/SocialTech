@@ -40,4 +40,11 @@ public static class Constant
         public const int ForbidenOfArticle = 3;
         public const string ForbidenMessage = "Bạn không có quyền với hành động cập nhật bài viết này";
     }
+
+    public static class ResponseStatusAccount
+    {
+        public const int SuccessParamOfAccount = 1;
+        public const int ConfflictParamOfAccount = 2;
+
+    }
 }
