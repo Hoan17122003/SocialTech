@@ -162,7 +162,7 @@ public sealed class UserAdapaterPort : IUserPort
         }
         await _applicationEventPublisher.PublishForgetPasswordEmailRequestedAsync(
             user,
-            $"https://yourapp.com/reset-password?token={tokenResult}");
+            $"{Constant.URLVALIDATEPASSWORD}/{tokenResult}");
 
         return true;
     }

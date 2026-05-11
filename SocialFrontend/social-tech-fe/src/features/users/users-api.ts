@@ -1,7 +1,14 @@
 import { objectToFormData } from '@/common/utils/object-to-form-data';
 import { toQueryString } from '@/common/utils/query-string';
 import { httpClient } from '@/shared/api/http-client';
-import type { FollowersResponse, UpdateUserRequest, UserProfileResponse } from './contracts';
+import type {
+    FollowersResponse,
+    ForgotPasswordRequest,
+    ResetForgotPasswordRequest,
+    UpdateUserRequest,
+    UserProfileResponse,
+} from './contracts';
+import { ApiResponse } from '@/common/types/api';
 
 export const usersApi = {
     getProfile(userId: number) {
@@ -13,6 +20,12 @@ export const usersApi = {
         return httpClient.post('/api/User/profile/update', objectToFormData(payload), {
             auth: true,
         });
+    },
+    forgotPassword(payload: ForgotPasswordRequest) {
+        return httpClient.post<ApiResponse<boolean>>('/api/User/request-forget_password', payload);
+    },
+    resetForgotPassword(payload: ResetForgotPasswordRequest) {
+        return httpClient.post<ApiResponse<boolean>>('/api/User/reset_password', payload);
     },
     follow(userIdTarget: number) {
         return httpClient.post('/api/User/follow', userIdTarget, {

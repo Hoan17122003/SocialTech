@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { APP_ROUTES } from '@/common/constants/app-routes';
 import { SectionShell } from '@/shared/ui/section-shell';
+import { DISPLAYCONTENT } from '@/common/constants/display-const';
 
 const highlights = [
     'App Router + route groups cho luong auth/workspace/marketing.',
@@ -16,22 +17,20 @@ export default function HomePage() {
                 <section className="grid flex-1 items-center gap-8 py-12 lg:grid-cols-[1.2fr_0.8fr]">
                     <div className="space-y-8">
                         <span className="inline-flex rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 py-2 font-mono text-xs uppercase tracking-[0.28em] text-[var(--muted)] backdrop-blur">
-                            Social Tech Frontend Base
+                            {DISPLAYCONTENT.WEBDISPLAYNAME}
                         </span>
                         <div className="space-y-5">
                             <h1 className="max-w-4xl text-5xl font-semibold leading-tight text-[var(--foreground)] md:text-6xl">
-                                Nen tang Next.js cho social platform duoc to chuc giong du an thuc te.
+                                {DISPLAYCONTENT.WEBDESCRIPTION}
                             </h1>
                             <p className="max-w-3xl text-lg leading-8 text-[var(--muted)]">
-                                Boilerplate nay duoc dung de khop voi backend hien tai: auth, user, article, common
-                                response, token refresh va pattern module hoa de team phat trien tiep ma khong bi roi
-                                vao mot codebase monolithic.
+                                {DISPLAYCONTENT.AUTHORIMPL}
                             </p>
                         </div>
                         <div className="flex flex-wrap gap-4">
                             <Link
                                 href={APP_ROUTES.login}
-                                className="rounded-full bg-[var(--surface-inverse)] px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5"
+                                className="rounded-full bg-[var(--surface)] px-6 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5"
                             >
                                 Dang nhap
                             </Link>

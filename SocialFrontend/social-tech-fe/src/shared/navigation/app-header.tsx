@@ -5,11 +5,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { APP_ROUTES } from '@/common/constants/app-routes';
 import { cn } from '@/common/utils/cn';
 import { useAuth } from '@/providers/auth-provider';
+import { DISPLAYCONTENT } from '@/common/constants/display-const';
 
 const navItems = [
     { href: APP_ROUTES.dashboard, label: 'Dashboard' },
     { href: APP_ROUTES.createArticle, label: 'Create Article' },
-    { href: '/profile/1', label: 'Profile' },
+    { href: '/profile', label: 'Profile' },
 ];
 
 export function AppHeader() {
@@ -23,21 +24,21 @@ export function AppHeader() {
     }
 
     return (
-        <header className="sticky top-4 z-20 rounded-[2rem] border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[var(--shadow)] backdrop-blur-xl">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <header className="sticky top-0 z-20 bg-white border-b border-gray-200 shadow-sm flex items-center h-16 px-6">
+            <div className="flex items-center justify-between w-full">
                 <div>
                     <Link
                         href={APP_ROUTES.home}
-                        className="font-mono text-sm uppercase tracking-[0.28em] text-[var(--muted)]"
+                        className="var(--font-mono) border-r border-gray-300 pr-3 text-sm uppercase tracking-[0.28em] text-[var(--muted)]"
                     >
-                        Social Tech
+                        {DISPLAYCONTENT.WEBDISPLAYNAME}
                     </Link>
-                    <p className="mt-1 text-sm text-[var(--muted)]">
-                        Base structure for App Router, feature modules and shared API layer.
-                    </p>
                 </div>
 
-                <nav className="flex flex-wrap items-center gap-2">
+                <nav
+                    className="flex flex-wrap items-center gap-2"
+                    // className="flex gap-3"
+                >
                     {navItems.map((item) => (
                         <Link
                             key={item.href}

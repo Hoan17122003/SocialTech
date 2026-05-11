@@ -31,6 +31,14 @@ export type FollowerUser = {
     displayName: string;
     profileImageUrl: string;
 };
+export type ForgotPasswordRequest = {
+    email: string
+}
+
+export type ResetForgotPasswordRequest = {
+    token: string;
+    newPassword: string;
+};
 
 export type UserProfileResponse = ApiResponse<UserProfile>;
 export type FollowersResponse = ApiResponse<FollowerUser[]>;

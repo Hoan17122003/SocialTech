@@ -17,12 +17,23 @@
     --shadow: 0 24px 80px rgba(25, 37, 49, 0.12);
 }
 
-@theme inline {
+/* @theme inline {
     --color-background: var(--background);
     --color-foreground: var(--foreground);
-    --font-sans: var(--font-sans);
-    --font-mono: var(--font-mono);
+    --font-sans: var(--font-Montserrat);
+    --font-mono: var(--font-Roboto);
+} */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Font chính cho text (sans-serif) */
+  --font-sans: "Montserrat", sans-serif;
+
+  /* Font cho code/mono hoặc body text */
+  --font-mono: "Roboto", sans-serif;
 }
+
 
 * {
     box-sizing: border-box;
