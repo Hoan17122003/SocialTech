@@ -72,11 +72,13 @@ public class AuthenticationAdapter : IAuthenticationPort
             IpAddress = ipAddress
         });
 
+        var isHttpsRequest = _httpContextAccessor.HttpContext?.Request.IsHttps == true;
+
         _httpContextAccessor.HttpContext?.Response.Cookies.Append("refreshToken", refreshToken, new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
+            Secure = isHttpsRequest,
+            SameSite = isHttpsRequest ? SameSiteMode.None : SameSiteMode.Lax,
             Expires = DateTimeOffset.UtcNow.AddDays(1)
         });
 

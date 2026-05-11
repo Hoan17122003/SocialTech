@@ -19,6 +19,17 @@ public class Program
 
         // Đăng ký các service nền tảng của ASP.NET Core và các dependency của dự án.
         builder.Services.AddControllers();
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("FrontendDev", policy =>
+            {
+                policy
+                    .WithOrigins("http://localhost:3000", "https://localhost:3000")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
+            });
+        });
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(options =>
         {
@@ -89,6 +100,7 @@ public class Program
         // Extension này thực chất gọi:
         // - app.UseAuthentication()
         // - app.UseAuthorization()
+        app.UseCors("FrontendDev");
         app.UseSecurityConfiguration();
 
         // Map controller endpoints vào request pipeline.
