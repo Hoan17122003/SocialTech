@@ -22,16 +22,20 @@ async function parseResponse<T>(response: Response): Promise<T> {
     return payload as T;
 }
 
-async function refreshAccessToken() {
-    const existingToken = tokenStorage.get();
+async function refreshAccessToken(accessToken?: string | null) {
+    if (!accessToken) {
+        tokenStorage.clear();
+        return null;
+    }
+
     const response = await fetch(`${appConfig.apiBaseUrl}/api/Auth/accessToken-generate`, {
         method: 'POST',
         credentials: 'include',
-        headers: existingToken
-            ? {
-                  Authorization: `Bearer ${existingToken}`,
-              }
-            : undefined,
+        cache: 'no-store',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(accessToken),
     });
 
     if (!response.ok) {
@@ -41,11 +45,14 @@ async function refreshAccessToken() {
 
     const payload = (await response.json()) as {
         success?: boolean;
-        data?: { accessToken?: string };
+        data?: string | { accessToken?: string };
         accessToken?: string;
     };
 
-    const nextToken = payload.data?.accessToken ?? payload.accessToken ?? null;
+    const nextToken =
+        typeof payload.data === 'string' ? payload.data : payload.data?.accessToken ?? payload.accessToken ?? null;
+
+    console.log(`nextToken : ${nextToken}`);
 
     if (nextToken) {
         tokenStorage.set(nextToken);
@@ -79,7 +86,8 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     });
 
     if (response.status === 401 && auth && retryOnUnauthorized) {
-        const nextToken = await refreshAccessToken();
+        const accessToken = tokenStorage.get();
+        const nextToken = await refreshAccessToken(accessToken);
 
         if (nextToken) {
             return request<T>(path, {

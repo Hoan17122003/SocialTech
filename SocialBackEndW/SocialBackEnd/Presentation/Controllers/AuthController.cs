@@ -65,15 +65,8 @@ namespace SocialBackEnd.Presentation.Controllers
 
         [HttpPost("accessToken-generate")]
         [AllowAnonymous]
-        public async Task<IActionResult> GenerateAccessTokenAsyc(CancellationToken cancellationToken)
+        public async Task<IActionResult> GenerateAccessTokenAsyc([FromBody] string accessToken, CancellationToken cancellationToken)
         {
-            var authorizationHeader = HttpContext.Request.Headers.Authorization.ToString();
-            string accessToken = string.Empty;
-
-            if (authorizationHeader.StartsWith($"{Constant.PrefixAuth} ", StringComparison.OrdinalIgnoreCase))
-            {
-                accessToken = authorizationHeader[Constant.PrefixAuth.Length..].Trim();
-            }
 
             Request.Cookies.TryGetValue("refreshToken", out var refreshToken);
 

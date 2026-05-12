@@ -1,8 +1,9 @@
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useMemo, useState, useSyncExternalStore } from 'react';
 import { authApi } from '@/features/auth/auth-api';
 import { tokenStorage } from '@/shared/api/token-storage';
+import { publicIdStorage } from '@/shared/api/public-id-storage';
 
 type AuthContextValue = {
     accessToken: string | null;
@@ -14,14 +15,18 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [accessToken, setAccessToken] = useState<string | null>(null);
-    const [isHydrated, setIsHydrated] = useState(false);
+function useHydrated() {
+    return useSyncExternalStore(
+        () => () => {},
+        () => true,
+        () => false,
+    );
+}
 
-    useEffect(() => {
-        setAccessToken(tokenStorage.get());
-        setIsHydrated(true);
-    }, []);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+    const isHydrated = useHydrated();
+    const [accessTokenOverride, setAccessTokenOverride] = useState<string | null | undefined>(undefined);
+    const accessToken = accessTokenOverride ?? (isHydrated ? tokenStorage.get() : null);
 
     const value = useMemo<AuthContextValue>(
         () => ({
@@ -31,14 +36,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             async login(email: string, password: string) {
                 const response = await authApi.login({ email, password });
                 tokenStorage.set(response.accessToken);
-                setAccessToken(response.accessToken);
+                publicIdStorage.set(response.publicId);
+                setAccessTokenOverride(response.accessToken);
             },
             async logout() {
                 try {
                     await authApi.logout();
                 } finally {
                     tokenStorage.clear();
-                    setAccessToken(null);
+                    publicIdStorage.clear();
+                    setAccessTokenOverride(null);
                 }
             },
         }),

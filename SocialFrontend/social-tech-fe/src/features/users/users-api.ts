@@ -11,8 +11,8 @@ import type {
 import { ApiResponse } from '@/common/types/api';
 
 export const usersApi = {
-    getProfile(userId: number) {
-        return httpClient.post<UserProfileResponse>(`/api/User/profile/${userId}`, undefined, {
+    getProfile(publicId?: string) {
+        return httpClient.post<UserProfileResponse>(`/api/User/profile/${publicId}`, undefined, {
             auth: true,
         });
     },

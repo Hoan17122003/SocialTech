@@ -38,6 +38,7 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
             Email = requestCreateAccount.Email,
             // Password da duoc hash truoc o Application service.
             PasswordHash = requestCreateAccount.Password,
+            PublicId = Guid.NewGuid()
         };
         var userEntity = await DbContext.Users.AddAsync(user, CancellationToken.None);
         await DbContext.SaveChangesAsync();
@@ -92,7 +93,7 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
         return true;
     }
 
-    public async Task<(bool, bool)> ChangePassword(string email, string newPasswordHash )
+    public async Task<(bool, bool)> ChangePassword(string email, string newPasswordHash)
     {
         var user = await DbContext.Users.FirstOrDefaultAsync(u => u.Email == email);
         if (user == null)
@@ -104,19 +105,21 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
         return (true, true);
     }
 
-    public async Task<ProfileModelView> GetProfileAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<ProfileModelView> GetProfileAsync(Guid publicId, CancellationToken cancellationToken = default)
     {
         var profile = await DbContext.Users
             .AsNoTracking()
-            .Where(x => x.Id == userId)
-            .Select(x => new ProfileModelView(
-                x.DisplayName,
-                x.Bio ?? string.Empty,
-                x.ProfileImageUrl ?? string.Empty,
-                x.IsPrivateAccount,
-                x.Followers.Count,
-                x.Followings.Count,
-                x.AuthoredPosts
+            .Where(x => x.PublicId == publicId)
+            .Select(x => new ProfileModelView
+            {
+                Id = x.Id,
+                DisplayName = x.DisplayName,
+                Bio = x.Bio ?? string.Empty,
+                ProfileImageUrl = x.ProfileImageUrl ?? string.Empty,
+                IsPrivateAccount = x.IsPrivateAccount,
+                FollowersCount = x.Followers.Count,
+                FollowingsCount = x.Followings.Count,
+                RecentPosts = x.AuthoredPosts
                     .OrderByDescending(post => post.PublishedAtUtc ?? post.CreatedAtUtc)
                     .Select(post => new PostModelView(
                         post.Id,
@@ -129,11 +132,11 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
                         post.UpdatedAtUtc ?? post.CreatedAtUtc
                     ))
                     .ToList(),
-                false
-            ))
+                IsPermissionEdit = false
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
-        return profile ?? throw new KeyNotFoundException($"User with id {userId} was not found.");
+        return profile ?? throw new KeyNotFoundException($"User with id {publicId} was not found.");
     }
 
     public Task<List<DetailUserFollow>> GetDetailUserFollowAsync(
@@ -190,7 +193,8 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
                 Email = x.Email,
                 Username = x.Username,
                 DisplayName = x.DisplayName,
-                PasswordHash = x.PasswordHash
+                PasswordHash = x.PasswordHash,
+                PublicId = x.PublicId
             })
             .FirstOrDefaultAsync(cancellationToken);
     }

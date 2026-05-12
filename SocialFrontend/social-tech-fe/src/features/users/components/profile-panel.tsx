@@ -11,7 +11,7 @@ import { Input, Textarea } from '@/shared/ui/field';
 import { FormMessage } from '@/shared/ui/form-message';
 import { SectionShell } from '@/shared/ui/section-shell';
 
-export function ProfilePanel({ userId }: { userId: number }) {
+export function ProfilePanel({ userId }: { userId?: string }) {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [status, setStatus] = useState<string | null>(null);

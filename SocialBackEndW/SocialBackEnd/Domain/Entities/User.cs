@@ -10,7 +10,7 @@ public class User : EntityBase
     public string? ProfileImageUrl { get; set; }
     public int ReputationScore { get; set; }
     public bool IsEmailVerified { get; set; }
-
+    public Guid PublicId { get; set; }
     public bool IsPrivateAccount { get; set; } = false;
 
     public ICollection<UserFollow> Followers { get; set; } = new List<UserFollow>();

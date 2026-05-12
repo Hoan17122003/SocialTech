@@ -18,7 +18,7 @@ public sealed class UserAuthenticationService : IUserAuthenticationService
         _passwordHashService = passwordHashService;
     }
 
-    public async Task<UserIdentity?> ValidateCredentialsAsync(
+    public async Task<(UserIdentity?, Guid)> ValidateCredentialsAsync(
         string email,
         string password,
         CancellationToken cancellationToken = default)
@@ -27,30 +27,31 @@ public sealed class UserAuthenticationService : IUserAuthenticationService
 
         if (string.IsNullOrWhiteSpace(normalizedEmail) || string.IsNullOrWhiteSpace(password))
         {
-            return null;
+            return (null, Guid.Empty);
         }
 
         var user = await _repository.UserIsExists(normalizedEmail, null, cancellationToken);
         if (user is null)
         {
-            return null;
+            return (null, Guid.Empty);
         }
 
         if (string.IsNullOrWhiteSpace(user.PasswordHash))
         {
-            return null;
+            return (null, Guid.Empty);
         }
 
         if (!IsPasswordValid(user, password))
         {
-            return null;
+            return (null, Guid.Empty);
         }
+        var publicIdOfuser = user.PublicId;
 
-        return new UserIdentity(
+        return (new UserIdentity(
             UserId: user.Id.ToString(),
             Email: user.Email,
             Roles: ["User"],
-            Permissions: ["users.read"]);
+            Permissions: ["users.read"]), publicIdOfuser);
     }
 
     private bool IsPasswordValid(User user, string password)

@@ -3,16 +3,17 @@ using System;
 namespace SocialBackEnd.Common.Models.User;
 
 public record ProfileModelView
-(
-    string DisplayName,
-    string Bio,
-    string ProfileImageUrl,
-    bool IsPrivateAccount,
-    int FollowersCount,
-    int FollowingsCount,
-    List<PostModelView> RecentPosts,
-    bool IsPermissionEdit
-);
+{
+    public int Id { set; get; }
+    public string DisplayName { set; get; }
+    public string Bio { set; get; }
+    public string ProfileImageUrl { set; get; }
+    public bool IsPrivateAccount { set; get; }
+    public int FollowersCount { set; get; }
+    public int FollowingsCount { set; get; }
+    public List<PostModelView> RecentPosts { set; get; }
+    public bool IsPermissionEdit { set; get; }
+};
 
 public record PostModelView
 (

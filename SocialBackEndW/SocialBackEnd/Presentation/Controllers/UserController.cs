@@ -58,8 +58,8 @@ namespace SocialBackEnd.Presentation.Controllers
         }
 
         [Authorize]
-        [HttpPost("profile/{id}")]
-        public async Task<IActionResult> GetUserProfile([FromRoute(Name = "id")] int userIdTarget)
+        [HttpPost("profile/{publicid:Guid}")]
+        public async Task<IActionResult> GetUserProfile([FromRoute(Name = "publicid")] Guid publicId)
         {
             // Khi request đi qua [Authorize], JWT middleware đã validate bearer token
             // và gán claims vào HttpContext.User. Controller chỉ cần đọc lại claims đó.
@@ -69,7 +69,7 @@ namespace SocialBackEnd.Presentation.Controllers
                 return Unauthorized(ApiResponse<string>.Fail("Token không chứa user id hợp lệ."));
             }
 
-            var result = await _userPort.GetUserProfileAsync(userIdTarget, userId);
+            var result = await _userPort.GetUserProfileAsync(publicId, userId);
             return Ok(ApiResponse<ProfileModelView>.Ok(result, "Success"));
         }
 

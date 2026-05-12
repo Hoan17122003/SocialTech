@@ -44,7 +44,7 @@ public class AuthenticationAdapter : IAuthenticationPort
 
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await _userAuthenticationService.ValidateCredentialsAsync(
+        var (user, userPublicId) = await _userAuthenticationService.ValidateCredentialsAsync(
             request.Email,
             request.Password,
             cancellationToken);
@@ -53,7 +53,8 @@ public class AuthenticationAdapter : IAuthenticationPort
         {
             return new LoginResponse(
                 AccessToken: string.Empty,
-                TokenType: string.Empty);
+                TokenType: string.Empty,
+                PublicId: Guid.Empty);
         }
 
         var existingIpLogin = await _ipLoginRepository.GetLatestIpLoginByUserIdAsync(userId, cancellationToken);
@@ -63,7 +64,8 @@ public class AuthenticationAdapter : IAuthenticationPort
         {
             return new LoginResponse(
                 AccessToken: accessToken,
-                TokenType: Constant.PrefixAuth);
+                TokenType: Constant.PrefixAuth,
+                PublicId: userPublicId);
         }
 
         var refreshToken = _tokenService.CreateRefreshToken(user);
@@ -88,7 +90,8 @@ public class AuthenticationAdapter : IAuthenticationPort
 
         return new LoginResponse(
             AccessToken: accessToken,
-            TokenType: Constant.PrefixAuth);
+            TokenType: Constant.PrefixAuth,
+            PublicId: userPublicId);
     }
 
     public async Task LogoutAsync(int userId, string accessToken, CancellationToken cancellationToken = default)
@@ -153,7 +156,7 @@ public class AuthenticationAdapter : IAuthenticationPort
             return ApiResponse<string>.Fail("Refresh token không hợp lệ hoặc đã hết hạn.");
         }
 
-        var accessTokenUserId = accessTokenPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
+        var accessTokenUserId =  accessTokenPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
         var refreshTokenUserId = refreshTokenPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (!int.TryParse(accessTokenUserId, out var userId) ||

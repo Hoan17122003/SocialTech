@@ -14,7 +14,7 @@ public interface IUserRepository : IRepository<User>
     Task<User> CreateUserAsync(RequestCreateAccount requestCreateAccount);
     Task<bool> UpdateUserAsync(int userId, RequestUpdateAccount requestUpdateAccount, string? profileImageUrl = null);
     Task<(bool, bool)> ChangePassword(string email, string newPasswordHash);
-    Task<ProfileModelView> GetProfileAsync(int userId, CancellationToken cancellationToken = default);
+    Task<ProfileModelView> GetProfileAsync(Guid publicId, CancellationToken cancellationToken = default);
 
     Task<List<DetailUserFollow>> GetDetailUserFollowAsync(int userId, Paganation paganation, CancellationToken cancellationToken = default);
     Task<User?> UserIsExists(string? email, string? username, CancellationToken cancellationToken = default);

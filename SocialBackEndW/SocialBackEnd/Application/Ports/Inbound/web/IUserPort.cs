@@ -12,7 +12,7 @@ public interface IUserPort
     public Task<bool> RequestForgetPasswordAsync(string email);
     public Task<bool> ValidateResetPasswordTokenAsync(string token, string newPassword);
     public Task<bool> UpdateUserAsync(int userId, RequestUpdateAccount requestUpdateAccount);
-    public Task<ProfileModelView> GetUserProfileAsync(int userTargetId, int userId);
+    public Task<ProfileModelView> GetUserProfileAsync(Guid publicId, int userId);
     public Task<bool> FollowUserAsync(int userId, int targetUserId);
     public Task<bool> UnfollowUserAsync(int userId, int targetUserId);
     public Task<List<DetailUserFollow>> GetDetailFollowersAsync(int userId, int? userTargetId, Paganation paganation);

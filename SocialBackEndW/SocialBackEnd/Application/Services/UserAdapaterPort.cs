@@ -102,6 +102,7 @@ public sealed class UserAdapaterPort : IUserPort
         requestCreateAccount.DisplayName = normalizedDisplayName;
         requestCreateAccount.Email = normalizedEmail;
         requestCreateAccount.Password = passwordHash;
+        
 
         var userEntity = await _repository.CreateUserAsync(requestCreateAccount);
         if (userEntity is null)
@@ -289,13 +290,13 @@ public sealed class UserAdapaterPort : IUserPort
         return await _repository.UpdateUserAsync(userId, requestUpdateAccount, profileImageUrl);
     }
 
-    public async Task<ProfileModelView> GetUserProfileAsync(int userIdTarget, int userId)
+    public async Task<ProfileModelView> GetUserProfileAsync(Guid publicId, int userId)
     {
-        var profile = await _repository.GetProfileAsync(userIdTarget);
-        return profile with
-        {
-            IsPermissionEdit = userIdTarget == userId
-        };
+
+        var profile = await _repository.GetProfileAsync(publicId);
+        profile.IsPermissionEdit = userId == profile.Id;
+        profile.Id = 0;
+        return profile;
     }
 
     public async Task<bool> FollowUserAsync(int userId, int targetUserId)

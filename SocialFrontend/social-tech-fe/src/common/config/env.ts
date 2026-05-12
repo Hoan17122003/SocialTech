@@ -4,4 +4,5 @@ export const appConfig = {
     appName: 'Social Tech',
     apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL ?? fallbackApiBaseUrl,
     accessTokenStorageKey: 'social-tech.access-token',
+    publicIdStorageKey: 'social-tech.public-id',
 };

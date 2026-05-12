@@ -36,6 +36,13 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.ProfileImageUrl)
             .HasMaxLength(1000);
 
+        builder.Property(x => x.IsEmailVerified)
+            .IsRequired(true)
+            .HasDefaultValue(false);
+
+        builder.Property(x => x.PublicId)
+            .IsRequired(true);
+
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 
@@ -43,6 +50,9 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .IsUnique();
 
         builder.HasIndex(x => x.Email)
+            .IsUnique();
+
+        builder.HasIndex(x => x.PublicId)
             .IsUnique();
     }
 }
