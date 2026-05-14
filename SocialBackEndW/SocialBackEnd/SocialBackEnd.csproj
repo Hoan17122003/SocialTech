@@ -21,6 +21,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.25" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.21" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.7" />
+    <PackageReference Include="Minio" Version="7.0.0" />
     <PackageReference Include="MySql.EntityFrameworkCore" Version="10.0.1+MySQL9.6.0" />
     <PackageReference Include="StackExchange.Redis" Version="2.12.14" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
@@ -40,6 +41,7 @@
     <Folder Include="Common\Validations\" />
     <Folder Include="Infrastructure\cache\" />
     <Folder Include="Infrastructure\Kafka\" />
+    <Folder Include="Infrastructure\Minio\" />
     <Folder Include="Infrastructure\Notifications\" />
     <Folder Include="Infrastructure\Security\" />
     <Folder Include="Presentation\Controllers\" />

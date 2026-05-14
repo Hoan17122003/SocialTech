@@ -55,6 +55,18 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
     networks:
       - SocialNetwork
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Web console
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+    volumes:
+      - ./minio-data:/data
+    command: server /data --console-address ":9001"
 
 volumes:
   mysql-data:
