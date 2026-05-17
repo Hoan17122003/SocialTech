@@ -103,9 +103,14 @@ public class ArticleAdapterPort : IArticlePort
         return articleEntity.Id;
     }
 
-    public async Task<ArticleDetailModelView> GetDetailArticle(int articleId, int userId)
+    public async Task<ArticleDetailModelView?> GetDetailArticle(int articleId, int userId)
     {
         var article = await _repository.GetDetailArticleById(articleId);
+
+        if (article is null)
+        {
+            throw new NotFoundException($"Bài viết không tồn tại.");
+        }
 
         return new ArticleDetailModelView
         {

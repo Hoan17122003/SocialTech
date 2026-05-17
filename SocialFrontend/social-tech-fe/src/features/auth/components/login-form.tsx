@@ -34,7 +34,7 @@ export function LoginForm() {
         const trimmedValue = value.trim();
 
         if (!trimmedValue) {
-            setErrorLogin('Vui long nhap email o form dang nhap.');
+            setErrorLogin('Vui lòng nhập email ở form đăng nhập.');
             return false;
         }
 
@@ -51,12 +51,12 @@ export function LoginForm() {
         const trimmedValue = value.trim();
 
         if (!trimmedValue) {
-            setForgotPasswordError('Vui long nhap email trong popup quen mat khau.');
+            setForgotPasswordError('Vui lòng nhập email trong popup.');
             return false;
         }
 
         if (!isValidEmail(trimmedValue)) {
-            setForgotPasswordError('Vui long nhap dung dinh dang email trong popup quen mat khau.');
+            setForgotPasswordError('vui lòng nhập đúng định dạng email trong popup quên mật khẩu.');
             return false;
         }
 
@@ -92,10 +92,10 @@ export function LoginForm() {
 
         try {
             await login(email.trim(), password);
-            setStatus('Dang nhap thanh cong. Access token da duoc luu o client storage.');
+            setStatus('Đăng nhập thành công.');
             router.push(APP_ROUTES.dashboard);
         } catch (cause) {
-            setErrorLogin(cause instanceof ApiError ? cause.message : 'Khong the dang nhap luc nay.');
+            setErrorLogin(cause instanceof ApiError ? cause.message : 'Không thể đăng nhập ngay lúc này.');
         } finally {
             setIsSubmitting(false);
         }
@@ -114,11 +114,11 @@ export function LoginForm() {
 
         try {
             const response = await usersApi.forgotPassword({ email: forgotPasswordEmail.trim() });
-            setForgotPasswordStatus(response.message || 'Yeu cau khoi phuc mat khau da duoc gui.');
+            setForgotPasswordStatus(response.message || 'Yêu cầu khôi phục mật khẩu đã được gửi.');
             setIsForgotPasswordOpen(false);
         } catch (cause) {
             setForgotPasswordError(
-                cause instanceof ApiError ? cause.message : 'Khong the gui yeu cau khoi phuc mat khau luc nay.',
+                cause instanceof ApiError ? cause.message : 'Không thể gửi yêu cầu khôi phục mật khẩu lúc này.',
             );
         } finally {
             setIsForgotPasswordSubmitting(false);
@@ -130,7 +130,7 @@ export function LoginForm() {
             <Card className="w-full max-w-xl">
                 <div className="mb-8 space-y-3">
                     <p className="font-mono text-xs uppercase tracking-[0.28em] text-[var(--muted)]">Authentication</p>
-                    <h1 className="text-4xl font-semibold">Dang nhap vao workspace</h1>
+                    <h1 className="text-4xl font-semibold">Đăng nhập</h1>
                 </div>
 
                 <form className="space-y-4" onSubmit={handleSubmit} noValidate>
@@ -168,7 +168,7 @@ export function LoginForm() {
                     {errorLogin ? <FormMessage type="error" message={errorLogin} /> : null}
                     {status ? <FormMessage type="success" message={status} /> : null}
                     <Button type="submit" className="w-full" disabled={isSubmitting}>
-                        {isSubmitting ? 'Dang xu ly...' : 'Dang nhap'}
+                        {isSubmitting ? 'Đang xử lý...' : 'Đăng nhập'}
                     </Button>
                 </form>
 
@@ -194,9 +194,9 @@ export function LoginForm() {
                                 <p className="font-mono text-xs uppercase tracking-[0.28em] text-[var(--muted)]">
                                     Password Recovery
                                 </p>
-                                <h2 className="text-2xl font-semibold">Khoi phuc mat khau</h2>
+                                <h2 className="text-2xl font-semibold">Khôi phục mật khẩu</h2>
                                 <p className="text-sm leading-6 text-[var(--muted)]">
-                                    Nhap email de gui yeu cau khoi phuc mat khau den API.
+                                    Nhập email để gửi yêu cầu khôi phục mật khẩu.
                                 </p>
                             </div>
                             <button
@@ -210,6 +210,7 @@ export function LoginForm() {
                         </div>
 
                         <form className="space-y-4" onSubmit={handleForgotPasswordSubmit} noValidate>
+                            <p>Email</p>
                             <Input
                                 type="email"
                                 value={forgotPasswordEmail}
@@ -232,10 +233,10 @@ export function LoginForm() {
                                     onClick={closeForgotPasswordPopup}
                                     disabled={isForgotPasswordSubmitting}
                                 >
-                                    Dong
+                                    Đóng
                                 </Button>
                                 <Button type="submit" disabled={isForgotPasswordSubmitting}>
-                                    {isForgotPasswordSubmitting ? 'Dang gui...' : 'Gui yeu cau'}
+                                    {isForgotPasswordSubmitting ? 'Đang gửi...' : 'Gửi yêu cầu'}
                                 </Button>
                             </div>
                         </form>

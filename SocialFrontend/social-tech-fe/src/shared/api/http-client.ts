@@ -1,10 +1,12 @@
 import { appConfig } from '@/common/config/env';
 import { ApiError, type ApiErrorPayload } from '@/common/types/api';
 import { tokenStorage } from '@/shared/api/token-storage';
+import { globalLoadingStore } from '@/shared/ui/global-loading-store';
 
 type RequestOptions = RequestInit & {
     auth?: boolean;
     retryOnUnauthorized?: boolean;
+    showGlobalLoading?: boolean;
 };
 
 type RequestBody = BodyInit | object | number | boolean | null | undefined;
@@ -62,7 +64,7 @@ async function refreshAccessToken(accessToken?: string | null) {
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const { auth = false, retryOnUnauthorized = true, headers, ...rest } = options;
+    const { auth = false, retryOnUnauthorized = true, showGlobalLoading = true, headers, ...rest } = options;
     const nextHeaders = new Headers(headers);
     const isFormData = rest.body instanceof FormData;
 
@@ -78,26 +80,36 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
         }
     }
 
-    const response = await fetch(`${appConfig.apiBaseUrl}${path}`, {
-        ...rest,
-        headers: nextHeaders,
-        credentials: 'include',
-        cache: 'no-store',
-    });
-
-    if (response.status === 401 && auth && retryOnUnauthorized) {
-        const accessToken = tokenStorage.get();
-        const nextToken = await refreshAccessToken(accessToken);
-
-        if (nextToken) {
-            return request<T>(path, {
-                ...options,
-                retryOnUnauthorized: false,
-            });
-        }
+    if (showGlobalLoading) {
+        globalLoadingStore.start();
     }
 
-    return parseResponse<T>(response);
+    try {
+        const response = await fetch(`${appConfig.apiBaseUrl}${path}`, {
+            ...rest,
+            headers: nextHeaders,
+            credentials: 'include',
+            cache: 'no-store',
+        });
+
+        if (response.status === 401 && auth && retryOnUnauthorized) {
+            const accessToken = tokenStorage.get();
+            const nextToken = await refreshAccessToken(accessToken);
+
+            if (nextToken) {
+                return request<T>(path, {
+                    ...options,
+                    retryOnUnauthorized: false,
+                });
+            }
+        }
+
+        return parseResponse<T>(response);
+    } finally {
+        if (showGlobalLoading) {
+            globalLoadingStore.stop();
+        }
+    }
 }
 
 export const httpClient = {

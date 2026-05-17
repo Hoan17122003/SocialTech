@@ -83,7 +83,7 @@ export default function ForgetPasswordValidatePage() {
                     <p className="font-mono text-xs uppercase tracking-[0.28em] text-[var(--muted)]">
                         Password Recovery
                     </p>
-                    <h1 className="text-4xl font-semibold">Nhap mat khau moi</h1>
+                    <h1 className="text-4xl font-semibold">Nhập mật khẩu mới</h1>
                     <p className="text-sm leading-7 text-[var(--muted)]">
                         Token duoc lay truc tiep tu URL va gui len backend de xac nhan yeu cau doi mat khau.
                     </p>

@@ -120,14 +120,13 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
         }
     }
 
-    public Task<Post> GetDetailArticleById(int articleId, CancellationToken cancellationToken = default)
+    public Task<Post?> GetDetailArticleById(int articleId, CancellationToken cancellationToken = default)
     {
         return DbContext.Posts
             .AsNoTracking()
             .Include(post => post.Author)
             .Include(post => post.Attachments)
-            .FirstAsync(post => post.Id == articleId, cancellationToken);
+            .FirstOrDefaultAsync(post => post.Id == articleId, cancellationToken);
     }
-
 
 }

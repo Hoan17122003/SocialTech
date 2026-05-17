@@ -9,6 +9,7 @@ public sealed class GlobalExceptionMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<GlobalExceptionMiddleware> _logger;
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new(JsonSerializerDefaults.Web);
 
     public GlobalExceptionMiddleware(
         RequestDelegate next,
@@ -26,8 +27,26 @@ public sealed class GlobalExceptionMiddleware
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Unhandled exception");
+            LogException(exception);
             await HandleExceptionAsync(context, exception);
+        }
+    }
+
+    private void LogException(Exception exception)
+    {
+        switch (exception)
+        {
+            case ValidationException:
+            case NotFoundException:
+            case ConflicException:
+            case AppException:
+            case ArgumentException:
+            case UnauthorizedAccessException:
+                _logger.LogWarning("Handled exception: {ExceptionType} - {Message}", exception.GetType().Name, exception.Message);
+                break;
+            default:
+                _logger.LogError(exception, "Unhandled exception");
+                break;
         }
     }
 
@@ -41,6 +60,15 @@ public sealed class GlobalExceptionMiddleware
             NotFoundException notFoundException => (
                 HttpStatusCode.NotFound,
                 ApiResponse<object>.Fail(notFoundException.Message)),
+            ConflicException conflicException => (
+                HttpStatusCode.Conflict,
+                ApiResponse<object>.Fail(conflicException.Message)),
+            UnauthorizedAccessException unauthorizedAccessException => (
+                HttpStatusCode.Forbidden,
+                ApiResponse<object>.Fail(unauthorizedAccessException.Message)),
+            ArgumentException argumentException => (
+                HttpStatusCode.BadRequest,
+                ApiResponse<object>.Fail(argumentException.Message)),
             AppException appException => (
                 HttpStatusCode.BadRequest,
                 ApiResponse<object>.Fail(appException.Message)),
@@ -52,6 +80,6 @@ public sealed class GlobalExceptionMiddleware
         context.Response.ContentType = "application/json";
         context.Response.StatusCode = (int)statusCode;
 
-        await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response, JsonSerializerOptions));
     }
 }
