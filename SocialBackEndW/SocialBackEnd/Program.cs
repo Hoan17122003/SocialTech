@@ -42,7 +42,7 @@ public class Program
                 Scheme = "bearer",
                 BearerFormat = "JWT",
                 In = ParameterLocation.Header,
-                Description = "Nhap token theo dinh dang: Bearer <your-jwt-token>"
+                Description = "Nhập token theo định dạng: Bearer <your-jwt-token>"
             });
 
             // Áp dụng security scheme này cho các endpoint trong Swagger.
