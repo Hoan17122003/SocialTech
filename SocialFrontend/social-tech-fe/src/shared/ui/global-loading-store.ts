@@ -20,6 +20,9 @@ export const globalLoadingStore = {
     getSnapshot() {
         return activeRequests;
     },
+    getServerSnapshot() {
+        return 0;
+    },
     start() {
         activeRequests += 1;
         emitChange();

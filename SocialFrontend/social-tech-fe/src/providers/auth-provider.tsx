@@ -42,6 +42,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             async logout() {
                 try {
                     await authApi.logout();
+                } catch (error) {
+                    // Logout should be best-effort: if the API fails (network/back-end down),
+                    // still clear local auth state and continue without crashing the UI.
+                    console.warn('Logout request failed; clearing local auth state anyway.', error);
                 } finally {
                     tokenStorage.clear();
                     publicIdStorage.clear();

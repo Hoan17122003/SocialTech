@@ -4,7 +4,11 @@ import { useSyncExternalStore } from 'react';
 import { globalLoadingStore } from '@/shared/ui/global-loading-store';
 
 export function GlobalLoadingOverlay() {
-    const activeRequests = useSyncExternalStore(globalLoadingStore.subscribe, globalLoadingStore.getSnapshot);
+    const activeRequests = useSyncExternalStore(
+        globalLoadingStore.subscribe,
+        globalLoadingStore.getSnapshot,
+        globalLoadingStore.getServerSnapshot,
+    );
 
     if (activeRequests < 1) {
         return null;
@@ -21,10 +25,7 @@ export function GlobalLoadingOverlay() {
                     </div>
 
                     <div className="space-y-1">
-                        <p className="text-base font-semibold text-[var(--foreground)]">Dang xu ly yeu cau</p>
-                        <p className="text-sm leading-6 text-[var(--muted)]">
-                            He thong dang thao tac voi du lieu. Tam thoi khoa tuong tac de tranh action trung.
-                        </p>
+                        <p className="text-base font-semibold text-[var(--foreground)]">Đang xử lý yêu cầu</p>
                     </div>
                 </div>
             </div>

@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-@import '@uiw/react-md-editor/markdown-editor.css';
 
 :root {
     --background: #f4efe6;
@@ -16,6 +15,8 @@
     --warning: #c98728;
     --danger: #b93d39;
     --shadow: 0 24px 80px rgba(25, 37, 49, 0.12);
+    --bg-hover: gray;
+    --line-hover : rgb(88, 233, 213);
 }
 
 /* @theme inline {
@@ -28,46 +29,46 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  /* Font chính cho text (sans-serif) */
-  --font-sans: "Montserrat", sans-serif;
-
-  /* Font cho code/mono hoặc body text */
-  --font-mono: "Roboto", sans-serif;
+  /* Map Tailwind font tokens to next/font variables set on <html> */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
 
-* {
-    box-sizing: border-box;
-}
+@layer base {
+    * {
+        box-sizing: border-box;
+    }
 
-html {
-    background:
-        radial-gradient(circle at top left, rgba(204, 95, 61, 0.14), transparent 35%),
-        radial-gradient(circle at top right, rgba(17, 33, 45, 0.12), transparent 30%),
-        linear-gradient(180deg, #fcfaf6 0%, #f2ebdf 100%);
-}
+    html {
+        background:
+            radial-gradient(circle at top left, rgba(204, 95, 61, 0.14), transparent 35%),
+            radial-gradient(circle at top right, rgba(17, 33, 45, 0.12), transparent 30%),
+            linear-gradient(180deg, #fcfaf6 0%, #f2ebdf 100%);
+    }
 
-body {
-    margin: 0;
-    color: var(--foreground);
-    font-family: var(--font-sans), sans-serif;
-    background: transparent;
-}
+    body {
+        margin: 0;
+        color: var(--foreground);
+        font-family: var(--font-sans), sans-serif;
+        background: transparent;
+    }
 
-a {
-    color: inherit;
-    text-decoration: none;
-}
+    a {
+        color: inherit;
+        text-decoration: none;
+    }
 
-button,
-input,
-textarea,
-select {
-    font: inherit;
-}
+    button,
+    input,
+    textarea,
+    select {
+        font: inherit;
+    }
 
-::selection {
-    background: rgba(204, 95, 61, 0.18);
+    ::selection {
+        background: rgba(204, 95, 61, 0.18);
+    }
 }
 
 .page-shell {
