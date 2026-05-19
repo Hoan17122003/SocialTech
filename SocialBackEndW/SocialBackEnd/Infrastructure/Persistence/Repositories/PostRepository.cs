@@ -3,12 +3,15 @@ using SocialBackEnd.Application.Ports.Outbound;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Common.Constants;
 using SocialBackEnd.Common.Events;
+using SocialBackEnd.Common.Models.Article;
 using SocialBackEnd.Domain.Entities;
 
 namespace SocialBackEnd.Infrastructure.Persistence.Repositories;
 
 public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
 {
+
+
     public PostRepository(AppDbContext dbContext) : base(dbContext)
     {
     }
@@ -120,13 +123,17 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
         }
     }
 
-    public Task<Post?> GetDetailArticleById(int articleId, CancellationToken cancellationToken = default)
+    public Task<Post?> GetDetailArticleById(
+        int articleId,
+        int userId,
+        CancellationToken cancellationToken = default)
     {
         return DbContext.Posts
             .AsNoTracking()
-            .Include(post => post.Author)
-            .Include(post => post.Attachments)
-            .FirstOrDefaultAsync(post => post.Id == articleId, cancellationToken);
+            .Where(x => x.Id == articleId)
+            .Include(x => x.Author)
+            .Include(x => x.Attachments)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
 }

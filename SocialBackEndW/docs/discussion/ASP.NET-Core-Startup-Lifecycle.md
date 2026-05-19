@@ -1190,3 +1190,311 @@ Khi nắm được chuỗi này, bạn sẽ đọc `Program.cs` rất khác:
 - mà thấy đó là toàn bộ kiến trúc khởi động và điều phối của ứng dụng web ASP.NET Core
 
 Đó là một cột mốc rất quan trọng để đi từ mức "dùng framework" sang mức "hiểu framework".
+
+## 32. Options pattern (`IOptions<T>`) và vì sao project dùng nó
+
+Trong project này, bạn sẽ thấy 2 mảnh ghép liên quan:
+
+- Ở startup: `services.Configure<MinioOptions>(configuration.GetSection("Minio"))`
+- Ở adapter/service: constructor nhận `IOptions<MinioOptions>`
+
+Mục tiêu của Options pattern là biến configuration (JSON/env/in-memory/secret store...) thành một object strongly-typed để phần còn lại của code không phải đọc key string rải rác.
+
+### 32.1. Luồng hoạt động trong project hiện tại
+
+1. `Program.cs` gọi `builder.AddDotEnvFile()` để nạp `.env.prod` (nếu có) và ghi đè lên `builder.Configuration`.
+2. Trong `ServiceDependencyInjection.AddServiceDependencies(...)`:
+   - `services.Configure<MinioOptions>(configuration.GetSection(MinioOptions.SectionName))` sẽ bind section `Minio` sang object `MinioOptions`.
+   - `services.AddScoped<IMinioFileStoragePort, MinioFileStorageAdapter>()` để DI biết cách tạo adapter.
+3. Khi có request/use-case cần `IMinioFileStoragePort`, DI tạo `MinioFileStorageAdapter` và inject `IOptions<MinioOptions>`.
+4. Trong constructor adapter, code lấy config thật sự bằng `options.Value` và dùng các giá trị như `_options.Endpoint`, `_options.BucketName`, ...
+
+### 32.2. Vì sao không inject thẳng `IConfiguration`?
+
+Inject `IOptions<MinioOptions>` (thay vì `IConfiguration`) giúp:
+
+- Giảm sai sót key string: tránh dùng "Minio:Endpoint" rải rác nhiều nơi.
+- Strongly-typed: refactor an toàn (đổi tên property sẽ lỗi compile thay vì lỗi runtime).
+- Tách bạch trách nhiệm: adapter chỉ phụ thuộc vào cụm config của Minio, không ôm cả cây config.
+
+### 32.3. 3 biến thể options hay gặp
+
+- `IOptions<T>`: đọc 1 lần (phù hợp config ít thay đổi).
+- `IOptionsSnapshot<T>`: lấy giá trị theo scope (thường mỗi request là 1 snapshot).
+- `IOptionsMonitor<T>`: theo dõi thay đổi realtime, có `OnChange` (hợp với service chạy lâu).
+
+Trong backend thường không cần đổi config runtime, `IOptions<T>` là đủ dùng.
+
+## 33. Minio storage service: các phương thức và cách dùng
+
+Trong project `SocialBackEnd`, Minio được đăng ký theo hướng:
+
+- Bind cấu hình vào `MinioOptions`.
+- Tạo `IMinioClient` (Singleton) từ `MinioOptions`.
+- Adapter `MinioFileStorageAdapter` implement port `IMinioFileStoragePort` để che giấu chi tiết SDK khỏi Application layer.
+
+### 33.1. Vì sao lại có lớp Adapter/Port?
+
+- Application/Domain chỉ biết đến interface (port) `IMinioFileStoragePort`.
+- Infrastructure chứa code SDK (Minio) và hiện thực cụ thể.
+- Nhờ vậy bạn có thể đổi storage (S3/Azure/local) mà không lan thay đổi vào Application.
+
+### 33.2. Các phương thức thường có trong storage port
+
+Trong `IMinioFileStoragePort` (và adapter `MinioFileStorageAdapter`) thường sẽ có các nhóm method:
+
+- `UploadAsync(Stream stream, string objectKey, string contentType, CancellationToken ct)`
+  - Upload một object lên bucket.
+  - `objectKey` là "đường dẫn" object trong bucket (không phải file system path).
+  - `contentType` nên set đúng (ví dụ `image/jpeg`).
+
+- `DownloadAsync(string objectKey, CancellationToken ct)`
+  - Tải object về dưới dạng stream.
+  - Nên stream thẳng ra response để tránh load hết vào RAM.
+
+- `DeleteAsync(string objectKey, CancellationToken ct)`
+  - Xóa object.
+
+- `GetPresignedUrlAsync(string objectKey, int expiryInSeconds)`
+  - Tạo URL ký sẵn (pre-signed) cho client download/upload trực tiếp.
+  - Nên set expiry ngắn.
+
+### 33.3. Cách dùng trong service/controller
+
+Nguyên tắc: bạn inject `IMinioFileStoragePort` (port) vào Application service hoặc controller, không inject `IMinioClient` trực tiếp ở tầng Application.
+
+Ví dụ luồng thường gặp:
+
+1. API nhận file từ client (`IFormFile`).
+2. Validate file (size/type) + generate `objectKey`.
+3. Gọi `UploadAsync(...)`.
+4. Lưu metadata (objectKey, url, contentType, size, ...) vào DB.
+
+Gợi ý naming `objectKey`:
+
+- Không dùng nguyên filename từ user.
+- Dùng prefix theo domain: `posts/{postId}/{guid}.{ext}` hoặc `users/{userId}/avatar/{guid}.{ext}`.
+
+### 33.4. Best practices khi implement Minio adapter
+
+- **Đăng ký `IMinioClient` dạng Singleton**: client là thread-safe và tránh tạo mới nhiều lần.
+- **Truyền `CancellationToken` xuống SDK**: để request bị hủy thì upload/download dừng ngay.
+- **Không đọc hết file vào RAM**: ưu tiên stream.
+- **Set `contentType` chuẩn**: để browser/CDN xử lý đúng.
+- **Chuẩn hóa objectKey**: tránh ký tự lạ, backslash, `..`, khoảng trắng.
+- **Bucket tồn tại trước khi upload**: có thể tạo bucket ở startup (hosted service) hoặc tài liệu hóa bước provisioning.
+- **Presigned URL**: expiry ngắn, chỉ cấp khi user được phép truy cập.
+
+## 34. Security checklist cho Minio/S3
+
+### 34.1. Secrets & cấu hình
+
+- Không hardcode access key/secret key trong source.
+- Ưu tiên env vars/secret store, và **không log** giá trị secret.
+- Rotate key định kỳ.
+
+### 34.2. Transport security (TLS)
+
+- Bật HTTPS/TLS cho Minio nếu chạy qua network không tin cậy.
+- `MinioOptions.UseSSL = true` khi endpoint là `https://...`.
+
+### 34.3. Access control
+
+- Dùng key theo nguyên tắc **least privilege** (chỉ quyền cần thiết trên bucket/prefix).
+- Mặc định object là private; chỉ public qua presigned URL hoặc proxy API.
+
+### 34.4. Upload validation
+
+- Chặn file quá lớn (limit ở controller + reverse proxy).
+- Whitelist content type/extension (ví dụ chỉ image/video được phép).
+- Không tin vào filename từ client.
+- (Nếu cần) quét virus/malware cho file upload.
+
+### 34.5. Presigned URL
+
+- Expiry ngắn (vài phút) và gắn theo user/permission.
+- Không dùng presigned URL như link public lâu dài.
+
+### 34.6. Logging & audit
+
+- Log event ở mức metadata (userId, objectKey, bucket, size) nhưng không log credential.
+- Nếu hệ thống lớn: audit trail cho upload/delete.
+
+## 35. Tổng quan các thành phần trong `services` của ASP.NET Core: dùng khi nào, để làm gì?
+
+Trong ASP.NET Core, `builder.Services` là nơi bạn đăng ký **năng lực** cho ứng dụng. Những thứ bạn `Add.../Configure...` ở đây **chưa chạy ngay**; chúng chỉ nói với DI container:
+
+- Khi cần type X, hãy tạo nó thế nào.
+- Nó sống bao lâu (lifetime).
+- Nó phụ thuộc vào những gì.
+
+Từ đó, framework sẽ tạo object khi có request hoặc khi pipeline cần.
+
+### 35.1. Dependency Injection (DI) và lifetimes
+
+Ba lifetime phổ biến:
+
+- `AddSingleton<TService, TImpl>()`
+  - 1 instance cho toàn bộ app.
+  - Dùng cho: client thread-safe (ví dụ `IMinioClient`), cache in-memory, stateless services, router, configuration wrapper.
+  - Tránh giữ state theo request/user.
+
+- `AddScoped<TService, TImpl>()`
+  - 1 instance cho mỗi request (mỗi scope).
+  - Dùng cho: unit-of-work, EF Core `DbContext` (thường scoped), service xử lý nghiệp vụ cần share trong 1 request.
+
+- `AddTransient<TService, TImpl>()`
+  - Mỗi lần resolve là 1 instance mới.
+  - Dùng cho: small stateless helpers; tránh dùng cho thứ nặng/giữ kết nối.
+
+Best practices:
+
+- Tránh inject Scoped vào Singleton (lỗi runtime hoặc behavior khó lường). Nếu cần, dùng `IServiceScopeFactory`.
+- Đặt interface ở Application layer, implementation ở Infrastructure để dễ thay thế.
+
+### 35.2. Configuration và Options pattern
+
+- `IConfiguration` là cây config hợp nhất từ JSON/env/in-memory/secret store.
+- `services.Configure<TOptions>(configuration.GetSection("Section"))` bind config vào class.
+- Inject `IOptions<T>` (hoặc `IOptionsSnapshot<T>`, `IOptionsMonitor<T>`) để dùng strongly-typed.
+
+Khi dùng:
+
+- Dùng Options cho cấu hình theo module: SMTP, Kafka, Minio, Redis, JWT...
+- Dùng `IOptionsMonitor<T>` khi bạn cần phản ứng thay đổi runtime.
+
+Security:
+
+- Không log secrets.
+- Ưu tiên env vars/secret store thay vì hardcode.
+
+### 35.3. `HttpClientFactory` (AddHttpClient)
+
+`services.AddHttpClient<TClient, TImpl>()` giúp:
+
+- Reuse handler/pool kết nối, tránh socket exhaustion.
+- Có nơi central để cấu hình base address, timeout, header.
+- Dễ gắn Polly/retry/circuit breaker (nếu dùng).
+
+Khi dùng:
+
+- Tích hợp API ngoài (OAuth2 token endpoint, LLM provider, payment, ...).
+
+Best practices:
+
+- Set timeout hợp lý.
+- Không tạo `new HttpClient()` thủ công rải rác.
+
+### 35.4. Authentication/Authorization
+
+Mục tiêu:
+
+- Authentication: xác định bạn là ai (JWT, cookie, OAuth).
+- Authorization: bạn được phép làm gì (role/policy/claims).
+
+Khi dùng:
+
+- Backend API có user login, token, phân quyền.
+
+Best practices:
+
+- Dùng `Policy` thay vì check role thủ công trong controller.
+- Không nhét logic phân quyền vào service thấp tầng; để policy/attribute xử lý.
+
+Security:
+
+- JWT secret đủ dài; rotate khi cần.
+- Validate issuer/audience/clock skew phù hợp.
+
+### 35.5. Controllers, routing, model binding, validation
+
+- `services.AddControllers()` đăng ký MVC stack: routing, model binding, formatters JSON, validation.
+- Request đi vào -> routing chọn action -> model binding map JSON/form/query vào DTO -> validation -> action.
+
+Khi dùng:
+
+- API REST.
+
+Best practices:
+
+- DTO riêng cho request/response; không dùng entity làm request model.
+- Validate sớm (DataAnnotations/FluentValidation).
+- Chuẩn hóa response lỗi (ProblemDetails / custom middleware).
+
+### 35.6. Middleware pipeline
+
+Trong `Program.cs`, `app.Use...` / `app.Map...` là nơi xếp tuyến xử lý request:
+
+- Exception handling
+- HTTPS redirection
+- Static files
+- CORS
+- Authentication/Authorization
+- Map controllers
+
+Best practices:
+
+- Thứ tự middleware quan trọng (auth trước endpoints, exception sớm, ...).
+- Một middleware chỉ làm 1 trách nhiệm.
+
+### 35.7. Hosted services (background processing)
+
+- `services.AddHostedService<T>()` chạy background trong cùng process.
+
+Khi dùng:
+
+- Consumer Kafka, cron job, cleanup, outbox publisher.
+
+Best practices:
+
+- Tôn trọng `CancellationToken`.
+- Không block thread lâu; dùng async.
+- Không để hosted service crash kéo sập app (try/catch, retry strategy phù hợp).
+
+### 35.8. Caching
+
+- `AddStackExchangeRedisCache` / `IConnectionMultiplexer` là cho Redis.
+
+Khi dùng:
+
+- Cache data read-heavy, session-like token blacklist, rate limit.
+
+Best practices:
+
+- TTL rõ ràng.
+- Cache key có prefix theo module + version.
+- Không cache dữ liệu nhạy cảm nếu không encrypt.
+
+Security:
+
+- Redis không public internet; bật auth/TLS nếu cần.
+
+### 35.9. Forwarded headers và reverse proxy
+
+Khi deploy sau Nginx/Ingress/Load balancer:
+
+- `ForwardedHeadersOptions` để đọc `X-Forwarded-For`/`X-Forwarded-Proto`.
+
+Best practices:
+
+- Chỉ tin forwarded headers từ proxy tin cậy.
+- Cấu hình KnownNetworks/KnownProxies đúng khi production (tránh spoof IP/proto).
+
+## 36. Checklist best practices chung cho `services`
+
+- Giữ `Program.cs` mỏng: dồn cấu hình đăng ký service vào các extension (như `AddServiceDependencies`).
+- Nhóm đăng ký theo module (Mail, Kafka, Minio, Auth, Cache...).
+- Mọi external client (Kafka/Minio/HTTP/Redis) nên cấu hình từ Options + đăng ký lifetime hợp lý.
+- Fail fast: nếu config thiếu, throw ở startup (nhưng tránh log secret).
+- Không trộn responsibility: Infrastructure không phụ thuộc ngược lên Presentation.
+
+## 37. Security baseline cho ASP.NET Core backend
+
+- Bật HTTPS mọi nơi (prod) + HSTS (nếu phù hợp).
+- CORS: chỉ allow origin cần thiết, tránh `AllowAnyOrigin` + `AllowCredentials` cùng lúc.
+- Authentication/Authorization: policy-based, deny-by-default cho endpoint nhạy cảm.
+- Input validation: size limit, content-type, sanitize output khi cần.
+- Rate limiting / throttling (nếu public API).
+- Logging: không log PII/secrets; mask token/password; có correlation id.
+- Secrets: dùng env/secret store, rotate, quyền least privilege.
+

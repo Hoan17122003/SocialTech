@@ -21,6 +21,9 @@ using Microsoft.AspNetCore.HttpOverrides;
 using SocialBackEnd.Application.Ports.Inbound.web;
 using SocialBackEnd.Infrastructure.Gemini;
 using SocialBackEnd.Application.Ports.Outbound.LLM;
+using SocialBackEnd.Infrastructure.Minio;
+using SocialBackEnd.Application.Ports.Outbound.Minio;
+using Minio;
 
 namespace SocialBackEnd.DependencyInjection;
 
@@ -51,9 +54,9 @@ public static class ServiceDependencyInjection
         services.AddSingleton<IGeminiClientRouter, GeminiClientRouter>();
         services.AddScoped<IGeminiPort, GeminiAdapter>();
         services.AddScoped<IGeminiArticlePort, GeminiArticleAdapter>();
-        
+
         services.AddScoped<IPasswordHashService, Argon2PasswordHashService>();
-        services.AddScoped<IEntityMediaStorageService, LocalEntityMediaStorageService>();
+        services.AddScoped<IEntityMediaStorageService, MinioEntityMediaStorageService>();
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<IArticlePort, ArticleAdapterPort>();
         services.AddScoped<ICacheInternal, CacheAdapter>();
@@ -67,6 +70,31 @@ public static class ServiceDependencyInjection
             return ConnectionMultiplexer.Connect(redisConfiguration);
 
         });
+        services.Configure<MinioOptions>(configuration.GetSection(MinioOptions.SectionName));
+        services.AddSingleton<IMinioClient>(sp =>
+        {
+            // DI sẽ gọi factory này đúng 1 lần để tạo instance `IMinioClient` (Singleton).
+            // Tham số `sp` là `IServiceProvider`, dùng để resolve các dependency đã đăng ký trước đó.
+            var minioOptions = sp.GetRequiredService<IOptions<MinioOptions>>().Value;
+
+            // Tạo Minio client theo builder pattern:
+            // - `WithEndpoint(...)`: endpoint của Minio/S3 (ví dụ: http://localhost:9000 hoặc https://...)
+            // - `WithCredentials(...)`: access key / secret key để authenticate
+            var clientBuilder = new MinioClient()
+                .WithEndpoint(minioOptions.Endpoint)
+                .WithCredentials(minioOptions.AccessKey, minioOptions.SecretKey);
+
+            // Nếu bật SSL (https) thì cấu hình client dùng TLS.
+            if (minioOptions.UseSSL)
+            {
+                clientBuilder = clientBuilder.WithSSL();
+            }
+
+            // `Build()` trả về `IMinioClient` hoàn chỉnh và được DI giữ lại để inject cho các service khác.
+            return clientBuilder.Build();
+        });
+
+        services.AddScoped<IMinioFileStoragePort, MinioFileStorageAdapter>();
 
         services.Configure<ForwardedHeadersOptions>(options =>
         {
