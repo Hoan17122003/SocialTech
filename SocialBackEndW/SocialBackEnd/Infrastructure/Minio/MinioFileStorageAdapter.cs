@@ -153,4 +153,24 @@ public sealed class MinioFileStorageAdapter : IMinioFileStoragePort
 
         return await _minioClient.PresignedGetObjectAsync(presignedArgs).ConfigureAwait(false);
     }
+
+    private async Task<string?> TryGetContentTypeAsync(string objectKey, CancellationToken cancellationToken)
+    {
+        // Lay metadata de xac dinh content-type (anh/video) de browser render duoc.
+        // Neu object khong ton tai thi de Minio throw o DownloadAsync.
+        var bucketName = _options.BucketName;
+
+        if (string.IsNullOrWhiteSpace(bucketName))
+        {
+            return null;
+        }
+
+        var statArgs = new StatObjectArgs()
+            .WithBucket(bucketName)
+            .WithObject(objectKey);
+
+        var stat = await _minioClient.StatObjectAsync(statArgs, cancellationToken).ConfigureAwait(false);
+        return stat?.ContentType;
+    }
+
 }

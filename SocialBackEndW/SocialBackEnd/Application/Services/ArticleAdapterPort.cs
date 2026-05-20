@@ -102,7 +102,7 @@ public class ArticleAdapterPort : IArticlePort
         {
             throw new NotFoundException($"Bài viết không tồn tại.");
         }
-
+        
         var result = new ArticleDetailModelView
         {
             Title = article.Title,

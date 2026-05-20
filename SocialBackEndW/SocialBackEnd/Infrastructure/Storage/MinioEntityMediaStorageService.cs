@@ -156,14 +156,15 @@ public sealed class MinioEntityMediaStorageService : IEntityMediaStorageService
 
         // Thay vi cho FE truy cap Minio truc tiep (de vuong CORS/policy/private bucket),
         // backend se cung cap endpoint proxy: GET /media/{objectKey} va stream ve.
-        var publicBaseUrl = GetPublicBaseUrl();
-        if (string.IsNullOrWhiteSpace(publicBaseUrl))
+        // var publicBaseUrl = GetPublicBaseUrl();
+        var presignUrlMinio = _minioFileStorage.GetPresignedUrlAsync(path).Result;
+        if (string.IsNullOrWhiteSpace(presignUrlMinio))
         {
             return string.Empty;
         }
-
-        var encodedKey = EncodeObjectKeyForUrl(path);
-        return $"{publicBaseUrl.TrimEnd('/')}/media/view/{encodedKey}";
+        return presignUrlMinio;
+        // var encodedKey = EncodeObjectKeyForUrl(path);
+        // return $"{publicBaseUrl.TrimEnd('/')}/media/view/{encodedKey}";
     }
 
     private string GetPublicBaseUrl()
