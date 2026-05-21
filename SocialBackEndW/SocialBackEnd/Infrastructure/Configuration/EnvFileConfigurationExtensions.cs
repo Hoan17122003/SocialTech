@@ -38,13 +38,16 @@ public static class EnvFileConfigurationExtensions
             Environment.SetEnvironmentVariable(key, value);
         }
 
-        var minioEndpointRaw = GetEnvironmentVariable("Minio__Endpoint", "Minio_ENDPOINT");
+        var minioEndpointRaw = GetEnvironmentVariable("Minio__Endpoint", "Minio_ENDPOINT", "MINIO_ENDPOINT");
         var (minioEndpoint, derivedUseSsl) = NormalizeEndpoint(minioEndpointRaw);
-        var minioUseSslRaw = GetEnvironmentVariable("Minio__UseSSL", "Minio_USE_SSL");
+        var minioUseSslRaw = GetEnvironmentVariable("Minio__UseSSL", "Minio_USE_SSL", "MINIO_USE_SSL", "USESSL");
         if (string.IsNullOrWhiteSpace(minioUseSslRaw) && derivedUseSsl is not null)
         {
             minioUseSslRaw = derivedUseSsl.Value ? "true" : "false";
         }
+
+        var normalizedBucketLocation = NormalizeBucketLocation(
+            GetEnvironmentVariable("Minio__Location", "Minio_Location", "MINIO_LOCATION"));
 
         var overrides = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
         {
@@ -54,13 +57,29 @@ public static class EnvFileConfigurationExtensions
             ["Smtp:OAuth2:RefreshToken"] = GetEnvironmentVariable("Smtp__OAuth2__RefreshToken", "MAIL_REFRESH"),
             ["Smtp:OAuth2:TokenEndpoint"] = GetEnvironmentVariable("Smtp__OAuth2__TokenEndpoint", "MAIL_TOKEN_ENDPOINT"),
             ["Smtp:OAuth2:Scope"] = GetEnvironmentVariable("Smtp__OAuth2__Scope", "MAIL_SCOPE"),
-            ["Minio:AccessKey"] = GetEnvironmentVariable("Minio__AccessKey", "Minio_AccessKey"),
-            ["Minio:SecretKey"] = GetEnvironmentVariable("Minio__SecretKey", "Minio_SECRET_KEY"),
+            ["Minio:AccessKey"] = GetEnvironmentVariable(
+                "Minio__AccessKey",
+                "Minio_AccessKey",
+                "MINIO_ACCESSKEY",
+                "MINIO_ACCESS_KEY",
+                "S3_ACCESS_KEY"),
+            ["Minio:SecretKey"] = GetEnvironmentVariable(
+                "Minio__SecretKey",
+                "Minio_SECRET_KEY",
+                "MINIO_SecretKey",
+                "MINIO_SECRETKEY",
+                "MINIO_SECRET_KEY",
+                "S3_SECRET_KEY"),
             // Minio .NET SDK expects endpoint as host[:port] (khong co scheme http/https).
             // Neu env truyen vao dang http(s)://..., ta normalize ve host[:port] va suy ra UseSSL neu chua set.
             ["Minio:Endpoint"] = minioEndpoint,
-            ["Minio:BucketName"] = GetEnvironmentVariable("Minio__BucketName", "Minio_BUCKET"),
-            ["Minio:MinioLocation"] = GetEnvironmentVariable("Minio__Location", "Minio_Location"),
+            ["Minio:BucketName"] = GetEnvironmentVariable(
+                "Minio__BucketName",
+                "Minio_BUCKET",
+                "MINIO_Bucket",
+                "MINIO_BUCKETNAME",
+                "MINIO_BUCKET"),
+            ["Minio:MinioLocation"] = normalizedBucketLocation,
             ["Minio:UseSSL"] = minioUseSslRaw
         };
 
@@ -88,6 +107,25 @@ public static class EnvFileConfigurationExtensions
         }
 
         return (trimmed, null);
+    }
+
+    private static string? NormalizeBucketLocation(string? rawLocation)
+    {
+        if (string.IsNullOrWhiteSpace(rawLocation))
+        {
+            return null;
+        }
+
+        var trimmed = rawLocation.Trim();
+
+        // Docker volume paths such as "./minio-data", "/data", "C:\\data"
+        // are not S3 bucket regions and will break MakeBucket requests.
+        if (trimmed.Contains('/') || trimmed.Contains('\\') || trimmed.Contains(':'))
+        {
+            return null;
+        }
+
+        return trimmed;
     }
 
     private static string? GetEnvironmentVariable(params string[] keys)

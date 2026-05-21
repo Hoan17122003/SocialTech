@@ -77,6 +77,23 @@ public static class ServiceDependencyInjection
             // Tham số `sp` là `IServiceProvider`, dùng để resolve các dependency đã đăng ký trước đó.
             var minioOptions = sp.GetRequiredService<IOptions<MinioOptions>>().Value;
 
+            if (string.IsNullOrWhiteSpace(minioOptions.Endpoint))
+            {
+                throw new InvalidOperationException("Minio:Endpoint is not configured.");
+            }
+
+            if (string.IsNullOrWhiteSpace(minioOptions.AccessKey) || string.IsNullOrWhiteSpace(minioOptions.SecretKey))
+            {
+                throw new InvalidOperationException(
+                    "Minio credentials are missing. Configure Minio:AccessKey and Minio:SecretKey or matching environment variables such as MINIO_ACCESSKEY and MINIO_SECRETKEY.");
+            }
+
+            if (minioOptions.Endpoint.EndsWith(":9001", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException(
+                    "Minio:Endpoint is pointing to port 9001, which is the MinIO console. Use the S3 API port instead, typically 9000.");
+            }
+
             // Tạo Minio client theo builder pattern:
             // - `WithEndpoint(...)`: endpoint của Minio/S3 (ví dụ: http://localhost:9000 hoặc https://...)
             // - `WithCredentials(...)`: access key / secret key để authenticate

@@ -52,8 +52,13 @@ public sealed class MinioFileStorageAdapter : IMinioFileStoragePort
         if (!found)
         {
             var makeBucketArgs = new MakeBucketArgs()
-                .WithBucket(bucketName)
-                .WithLocation(_options.MinioLocation);
+                .WithBucket(bucketName);
+
+            if (!string.IsNullOrWhiteSpace(_options.MinioLocation))
+            {
+                makeBucketArgs = makeBucketArgs.WithLocation(_options.MinioLocation);
+            }
+
             await _minioClient.MakeBucketAsync(makeBucketArgs, cancellationToken)
                 .ConfigureAwait(false);
         }
