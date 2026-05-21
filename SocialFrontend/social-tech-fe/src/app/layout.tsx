@@ -26,7 +26,25 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="vi" className={`${manrope.variable} ${ibmPlexMono.variable} h-full antialiased`}>
+        <html lang="vi" className={`${manrope.variable} ${ibmPlexMono.variable} h-full antialiased`} suppressHydrationWarning>
+            <head>
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                            (function() {
+                                try {
+                                    var saved = localStorage.getItem('theme');
+                                    if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                                        document.documentElement.classList.add('dark');
+                                    } else {
+                                        document.documentElement.classList.remove('dark');
+                                    }
+                                } catch (e) {}
+                            })();
+                        `,
+                    }}
+                />
+            </head>
             <body className="min-h-full font-sans bg-background text-foreground">
                 <AppProvider>
                     <AppHeader />

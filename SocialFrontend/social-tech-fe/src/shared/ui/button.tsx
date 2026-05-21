@@ -6,9 +6,9 @@ type ButtonProps = PropsWithChildren<ButtonHTMLAttributes<HTMLButtonElement>> & 
 };
 
 const variants: Record<NonNullable<ButtonProps['variant']>, string> = {
-    primary: 'bg-[var(--accent)] text-white hover:bg-[var(--accent-strong)]',
-    secondary: 'border border-[var(--line)] bg-white/80 text-[var(--foreground)] hover:bg-white',
-    ghost: 'bg-transparent text-[var(--foreground)] hover:bg-white/60',
+    primary: 'bg-[var(--accent)] text-white hover:bg-[var(--accent-strong)] shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]',
+    secondary: 'border border-[var(--line)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface-strong)] hover:border-[var(--line-hover)] hover:scale-[1.02] active:scale-[0.98]',
+    ghost: 'bg-transparent text-[var(--foreground)] hover:bg-[var(--bg-hover)] hover:scale-[1.02] active:scale-[0.98]',
 };
 
 export function Button({ children, className, variant = 'primary', ...props }: ButtonProps) {
