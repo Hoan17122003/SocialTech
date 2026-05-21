@@ -62,11 +62,13 @@ services:
       - "9000:9000"   # S3 API
       - "9001:9001"   # Web console
     environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESSKEY}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRETKEY}
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
     volumes:
-      - ./minio-data:/data
+      - ${Minio_Location}:/data
     command: server /data --console-address ":9001"
+    env_file:
+      - .env.prod
 
 volumes:
   mysql-data:

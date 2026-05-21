@@ -617,410 +617,438 @@ export function ArticleComposer({ titlePage }: PropsWithChildren<{ mode: string;
     }
 
     return (
-        <SectionShell eyebrow="Article" title={titlePage} description="">
-            <div className="relative">
-                <form
-                    className="grid gap-6"
-                    onSubmit={handleSubmit}
-                    aria-busy={isSubmitting}
-                >
-                <Card className="space-y-5 rounded-[1.75rem] p-5">
-                    <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                            Basic info
-                        </p>
-                        <h3 className="text-xl font-semibold">Thông tin bài viết</h3>
-                        {/* <p className="text-sm leading-6 text-[var(--muted)]">
-                            Cac truong nay duoc giu chung cho ca bai viet thuong va tech article.
-                        </p> */}
-                    </div>
-
-                    <div className="grid gap-4">
-                        <Input
-                            placeholder="Tiêu đề bài viết"
-                            value={form.title}
-                            onChange={(event) => setForm((previous) => ({ ...previous, title: event.target.value }))}
-                        />
-
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <Input
-                                placeholder="Community Id"
-                                value={form.comunityId}
-                                onChange={(event) =>
-                                    setForm((previous) => ({ ...previous, comunityId: event.target.value }))
-                                }
-                            />
-                            <select
-                                value={form.articleStatus}
-                                onChange={(event) =>
-                                    setForm((previous) => ({
-                                        ...previous,
-                                        articleStatus: event.target.value as 'Draft' | 'Published',
-                                    }))
-                                }
-                                className="w-full rounded-2xl border border-[var(--line)] bg-white/80 px-4 py-3 text-sm outline-none transition focus:border-[var(--accent)]"
-                            >
-                                <option value="Published">Published</option>
-                                <option value="Draft">Draft</option>
-                            </select>
+        <SectionShell eyebrow="Article Engine" title={titlePage} description="Trình biên soạn và xuất bản bài viết công nghệ phân cấp cao cấp.">
+            <form
+                className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] items-start animate-fade-in-up"
+                onSubmit={handleSubmit}
+                aria-busy={isSubmitting}
+            >
+                {/* Left Sidebar Column: Configuration & Controls */}
+                <div className="flex flex-col gap-6">
+                    {/* Basic Info Card */}
+                    <Card className="space-y-4 rounded-[2rem] p-6 border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] relative overflow-hidden">
+                        <div className="absolute -top-12 -left-12 w-24 h-24 rounded-full bg-indigo-500/5 blur-xl pointer-events-none" />
+                        <div className="space-y-1 relative z-10 flex items-center justify-between">
+                            <h3 className="text-lg font-bold text-[var(--foreground)]">Thông tin bài viết</h3>
+                            <span className="font-mono text-[9px] text-indigo-400 bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/15">
+                                Metadata
+                            </span>
                         </div>
-                    </div>
-                </Card>
-                <Card className="space-y-5 rounded-[1.75rem] p-5">
-                    <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                            Article mode
-                        </p>
-                        <h3 className="text-xl font-semibold">Chọn cách viết bài</h3>
-                    </div>
-                    <div className="grid gap-3 md:grid-cols-2">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setArticleMode('standard');
-                                setMarkdownTab('write');
-                            }}
-                            className={`rounded-[1.5rem] border px-5 py-4 text-left transition ${
-                                articleMode === 'standard'
-                                    ? 'border-[var(--accent)] bg-[rgba(204,95,61,0.12)]'
-                                    : 'border-[var(--line)] bg-white/65 hover:bg-white'
-                            }`}
-                        >
-                            <p className="text-sm font-semibold">Standard article</p>
-                            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                                Dùng cho content editor đơn gian, phù hợp với bài viết ngắn dạng sosial life hoặc update
-                                thông thường
-                            </p>
-                        </button>
 
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setArticleMode('tech');
-                                setMarkdownTab('write');
-                                setForm((previous) => ({
-                                    ...previous,
-                                    content: previous.content || starterMarkdown,
-                                }));
-                            }}
-                            className={`rounded-[1.5rem] border px-5 py-4 text-left transition ${
-                                articleMode === 'tech'
-                                    ? 'border-[var(--accent)] bg-[rgba(204,95,61,0.12)]'
-                                    : 'border-[var(--line)] bg-white/65 hover:bg-white'
-                            }`}
-                        >
-                            <p className="text-sm font-semibold">Tech article</p>
-                            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                                Hiển thị markdown editor, media upload và chế độ preview để kiểm tra toàn bộ bài viết.
-                            </p>
-                        </button>
-                    </div>
-                </Card>
-                <Card className="space-y-5 rounded-[1.75rem] p-5">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                        <div className="space-y-2">
-                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                                Content
-                            </p>
-                            <h3 className="text-xl font-semibold">
-                                {isTechArticle ? 'Markdown editor' : 'Noi dung bai viet'}
-                            </h3>
-                        </div>
-                    </div>
-
-                    {isTechArticle ? (
-                        <div className="space-y-4" data-color-mode="light">
-                            <div className="overflow-hidden rounded-[1.75rem] border border-[var(--line)] bg-white/75">
-                                <div className="flex flex-col gap-3 border-b border-[var(--line)] px-4 py-3 md:flex-row md:items-center md:justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => setMarkdownTab('write')}
-                                            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                                                markdownTab === 'write'
-                                                    ? 'bg-[var(--accent)] text-white'
-                                                    : 'bg-[var(--background-soft)] text-[var(--muted)] hover:bg-white'
-                                            }`}
-                                        >
-                                            Write
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setMarkdownTab('preview')}
-                                            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                                                markdownTab === 'preview'
-                                                    ? 'bg-[var(--accent)] text-white'
-                                                    : 'bg-[var(--background-soft)] text-[var(--muted)] hover:bg-white'
-                                            }`}
-                                        >
-                                            Preview
-                                        </button>
-                                    </div>
-
-                                    {/* <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted)]">
-                                        <span className="rounded-full bg-[var(--background-soft)] px-3 py-1.5">
-                                            `#` heading
-                                        </span>
-                                        <span className="rounded-full bg-[var(--background-soft)] px-3 py-1.5">
-                                            `-` list
-                                        </span>
-                                        <span className="rounded-full bg-[var(--background-soft)] px-3 py-1.5">
-                                            ``` code ```
-                                        </span>
-                                        <span className="rounded-full bg-[var(--background-soft)] px-3 py-1.5">
-                                            `![alt](url)` image
-                                        </span>
-                                    </div> */}
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-2 border-b border-[var(--line)] bg-[var(--background-soft)] px-4 py-3 text-sm text-[var(--muted)]">
-                                    <button
-                                        type="button"
-                                        onClick={() => inlineImageInputRef.current?.click()}
-                                        className="rounded-full border border-[var(--line)] bg-white px-3 py-1.5 font-semibold text-[var(--foreground)] transition hover:border-[var(--accent)]"
-                                    >
-                                        Chèn ảnh vào nội dung
-                                    </button>
-                                    <span className="rounded-full border border-dashed border-[var(--line)] px-3 py-1.5">
-                                        Double click khu preview để quay lại chế độ Write
-                                    </span>
-                                </div>
-
-                                {markdownTab === 'write' ? (
-                                    <div ref={editorSurfaceRef} className="relative">
-                                        <MarkdownEditor
-                                            value={form.content}
-                                            preview="edit"
-                                            visibleDragbar={false}
-                                            height={460}
-                                            // Dong bo cach render inline image cho live preview/code preview cua editor.
-                                            previewOptions={{
-                                                components: markdownComponents,
-                                                urlTransform: transformMarkdownUrl,
-                                            }}
-                                            textareaProps={{
-                                                placeholder:
-                                                    'Mo ta thay doi, ghi chu ky thuat, checklist, snippets... giong khu vuc description trong GitHub PR.',
-                                                onFocus: (event) => {
-                                                    if (!isTextareaElement(event.currentTarget)) {
-                                                        return;
-                                                    }
-                                                    editorTextareaRef.current = event.currentTarget;
-                                                    syncSlashMenu(event.currentTarget);
-                                                },
-                                                onClick: (event) => {
-                                                    if (!isTextareaElement(event.currentTarget)) {
-                                                        return;
-                                                    }
-                                                    editorTextareaRef.current = event.currentTarget;
-                                                    syncSlashMenu(event.currentTarget);
-                                                },
-                                                onSelect: (event) => {
-                                                    if (!isTextareaElement(event.currentTarget)) {
-                                                        return;
-                                                    }
-                                                    editorTextareaRef.current = event.currentTarget;
-                                                    syncSlashMenu(event.currentTarget);
-                                                },
-                                                onKeyUp: (event) => {
-                                                    if (!isTextareaElement(event.currentTarget)) {
-                                                        return;
-                                                    }
-                                                    editorTextareaRef.current = event.currentTarget;
-                                                    syncSlashMenu(event.currentTarget);
-                                                },
-                                                onScroll: (event) => {
-                                                    if (!isTextareaElement(event.currentTarget)) {
-                                                        return;
-                                                    }
-                                                    editorTextareaRef.current = event.currentTarget;
-                                                    syncSlashMenu(event.currentTarget);
-                                                },
-                                                onBlur: () => {
-                                                    window.setTimeout(() => closeSlashMenu(), 120);
-                                                },
-                                                onChange: (event) => {
-                                                    if (!isTextareaElement(event.currentTarget)) {
-                                                        return;
-                                                    }
-                                                    editorTextareaRef.current = event.currentTarget;
-                                                    syncSlashMenu(event.currentTarget, event.currentTarget.value);
-                                                },
-                                                onKeyDownCapture: (event) => {
-                                                    if (!slashMenu) {
-                                                        return;
-                                                    }
-
-                                                    if (event.key === 'ArrowDown') {
-                                                        event.preventDefault();
-                                                        event.stopPropagation();
-                                                        setSlashMenu((previous) =>
-                                                            previous
-                                                                ? {
-                                                                      ...previous,
-                                                                      selectedIndex:
-                                                                          (previous.selectedIndex + 1) %
-                                                                          previous.items.length,
-                                                                  }
-                                                                : previous,
-                                                        );
-                                                        return;
-                                                    }
-
-                                                    if (event.key === 'ArrowUp') {
-                                                        event.preventDefault();
-                                                        event.stopPropagation();
-                                                        setSlashMenu((previous) =>
-                                                            previous
-                                                                ? {
-                                                                      ...previous,
-                                                                      selectedIndex:
-                                                                          (previous.selectedIndex -
-                                                                              1 +
-                                                                              previous.items.length) %
-                                                                          previous.items.length,
-                                                                  }
-                                                                : previous,
-                                                        );
-                                                        return;
-                                                    }
-
-                                                    if (event.key === 'Enter' || event.key === 'Tab') {
-                                                        event.preventDefault();
-                                                        event.stopPropagation();
-                                                        applySlashCommand(slashMenu.items[slashMenu.selectedIndex]);
-                                                        return;
-                                                    }
-
-                                                    if (event.key === 'Escape') {
-                                                        event.preventDefault();
-                                                        event.stopPropagation();
-                                                        closeSlashMenu();
-                                                    }
-                                                },
-                                            }}
-                                            onChange={(value) => updateContent(value ?? '')}
-                                        />
-
-                                        {slashMenu ? (
-                                            <div
-                                                className="absolute z-20 w-72 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-strong)] shadow-[var(--shadow)]"
-                                                style={{
-                                                    left: slashMenu.position.left,
-                                                    top: slashMenu.position.top,
-                                                }}
-                                            >
-                                                <div className="border-b border-[var(--line)] bg-[var(--background-soft)] px-4 py-2 text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
-                                                    Slash command
-                                                </div>
-                                                <div className="max-h-72 overflow-y-auto p-2">
-                                                    {slashMenu.items.map((command, index) => (
-                                                        <button
-                                                            key={command.id}
-                                                            type="button"
-                                                            className={`flex w-full flex-col rounded-xl px-3 py-2 text-left transition ${
-                                                                index === slashMenu.selectedIndex
-                                                                    ? 'bg-[rgba(204,95,61,0.14)]'
-                                                                    : 'hover:bg-[var(--background-soft)]'
-                                                            }`}
-                                                            onMouseDown={(event) => {
-                                                                event.preventDefault();
-                                                                applySlashCommand(command);
-                                                            }}
-                                                        >
-                                                            <span className="text-sm font-semibold text-[var(--foreground)]">
-                                                                /{command.id}
-                                                            </span>
-                                                            <span className="text-sm text-[var(--muted)]">
-                                                                {command.description}
-                                                            </span>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ) : null}
-                                    </div>
-                                ) : (
-                                    <div
-                                        className="min-h-[460px] bg-white/70 px-5 py-5"
-                                        onDoubleClick={() => setMarkdownTab('write')}
-                                    >
-                                        <article className="article-markdown-preview">
-                                            <ReactMarkdown
-                                                remarkPlugins={[remarkGfm]}
-                                                components={markdownComponents}
-                                                urlTransform={transformMarkdownUrl}
-                                            >
-                                                {form.content || 'Noi dung markdown se duoc render o day.'}
-                                            </ReactMarkdown>
-                                        </article>
-                                    </div>
-                                )}
+                        <div className="grid gap-4 mt-2 relative z-10">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-[var(--foreground)] opacity-85">Tiêu đề bài viết</label>
+                                <Input
+                                    placeholder="Ví dụ: Hướng dẫn Next.js toàn tập"
+                                    value={form.title}
+                                    onChange={(event) => setForm((previous) => ({ ...previous, title: event.target.value }))}
+                                    required
+                                />
                             </div>
 
-                            <input
-                                ref={inlineImageInputRef}
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                className="hidden"
-                                onChange={(event) => {
-                                    handleInlineImageUpload(Array.from(event.target.files ?? []));
-                                    event.target.value = '';
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-[var(--foreground)] opacity-85">Community ID</label>
+                                    <Input
+                                        placeholder="Số (ví dụ: 1)"
+                                        value={form.comunityId}
+                                        onChange={(event) =>
+                                            setForm((previous) => ({ ...previous, comunityId: event.target.value }))
+                                        }
+                                    />
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-[var(--foreground)] opacity-85">Trạng thái</label>
+                                    <select
+                                        value={form.articleStatus}
+                                        onChange={(event) =>
+                                            setForm((previous) => ({
+                                                ...previous,
+                                                articleStatus: event.target.value as 'Draft' | 'Published',
+                                            }))
+                                        }
+                                        className="w-full rounded-2xl border border-[var(--line)] bg-[var(--surface)] text-[var(--foreground)] px-4 py-3 text-sm outline-none transition focus:border-[var(--accent)]"
+                                    >
+                                        <option value="Published">Published</option>
+                                        <option value="Draft">Draft</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
+
+                    {/* Article Mode Selector Card */}
+                    <Card className="space-y-4 rounded-[2rem] p-6 border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] relative overflow-hidden">
+                        <div className="space-y-1 relative z-10">
+                            <h3 className="text-lg font-bold text-[var(--foreground)]">Chế độ viết bài</h3>
+                            <p className="text-xs text-[var(--muted)]">Chọn định dạng biên soạn phù hợp với nội dung.</p>
+                        </div>
+                        <div className="grid gap-3 relative z-10">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setArticleMode('standard');
+                                    setMarkdownTab('write');
                                 }}
-                            />
+                                className={`rounded-2xl border p-4 text-left transition-all duration-300 cursor-pointer ${
+                                    articleMode === 'standard'
+                                        ? 'border-[var(--accent)] bg-[var(--accent)]/5 shadow-md shadow-[var(--accent)]/5'
+                                        : 'border-[var(--line)] bg-[var(--background-soft)] hover:bg-[var(--surface)]'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <svg className={`h-4.5 w-4.5 ${articleMode === 'standard' ? 'text-[var(--accent)]' : 'text-[var(--muted)]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
+                                    </svg>
+                                    <p className="text-sm font-bold text-[var(--foreground)]">Standard Article</p>
+                                </div>
+                                <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
+                                    Trình soạn thảo thuần văn bản đơn giản. Thích hợp cho bài đăng xã hội ngắn hoặc cập nhật thông tin thông thường.
+                                </p>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setArticleMode('tech');
+                                    setMarkdownTab('write');
+                                    setForm((previous) => ({
+                                        ...previous,
+                                        content: previous.content || starterMarkdown,
+                                    }));
+                                }}
+                                className={`rounded-2xl border p-4 text-left transition-all duration-300 cursor-pointer ${
+                                    articleMode === 'tech'
+                                        ? 'border-[var(--accent)] bg-[var(--accent)]/5 shadow-md shadow-[var(--accent)]/5'
+                                        : 'border-[var(--line)] bg-[var(--background-soft)] hover:bg-[var(--surface)]'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <svg className={`h-4.5 w-4.5 ${articleMode === 'tech' ? 'text-[var(--accent)]' : 'text-[var(--muted)]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                    </svg>
+                                    <p className="text-sm font-bold text-[var(--foreground)]">Tech Article (Markdown)</p>
+                                </div>
+                                <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
+                                    Trình soạn thảo Markdown chuyên nghiệp hỗ trợ code snippet, phím tắt nhanh và live preview để kiểm tra kỹ bài viết.
+                                </p>
+                            </button>
                         </div>
-                    ) : (
-                        <Textarea
-                            placeholder="Nội dung bài viết"
-                            value={form.content}
-                            onChange={(event) => updateContent(event.target.value)}
+                    </Card>
+
+                    {/* Standard Mode Media Attachments Card */}
+                    <Card className={`space-y-4 rounded-[2rem] p-6 border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] ${articleMode === 'tech' ? 'hidden' : ''}`}>
+                        <div className="space-y-1">
+                            <h3 className="text-lg font-bold text-[var(--foreground)]">Phương tiện đính kèm</h3>
+                            <p className="text-xs text-[var(--muted)]">Đính kèm hình ảnh, video ngắn hoặc ảnh GIF.</p>
+                        </div>
+
+                        <Input
+                            type="file"
+                            multiple
+                            accept="image/*,video/*,.gif"
+                            onChange={(event) => replaceAttachments(Array.from(event.target.files ?? []))}
                         />
-                    )}
-                </Card>{' '}
-                <Card className={`space-y-5 rounded-[1.75rem] p-5 ${articleMode === 'tech' ? 'hidden' : ''}`}>
-                    <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">Media</p>
-                        <h3 className="text-xl font-semibold">Đính kèm image, video và gif</h3>
-                    </div>
 
-                    <Input
-                        type="file"
-                        multiple
-                        accept="image/*,video/*,.gif"
-                        onChange={(event) => replaceAttachments(Array.from(event.target.files ?? []))}
-                    />
+                        {attachmentPreviews.length ? (
+                            <div className="rounded-xl border border-[var(--line)] bg-[var(--background-soft)] px-4 py-3 text-xs text-[var(--muted)]">
+                                Đã chọn {attachmentPreviews.length} tệp đính kèm.
+                            </div>
+                        ) : (
+                            <div className="rounded-xl border border-dashed border-[var(--line)] bg-[var(--background-soft)] px-4 py-5 text-xs text-[var(--muted)] text-center">
+                                Chưa có tệp tin nào được chọn.
+                            </div>
+                        )}
+                    </Card>
 
-                    {attachmentPreviews.length ? (
-                        <div className="rounded-[1.5rem] border border-[var(--line)] bg-white/70 px-4 py-3 text-sm text-[var(--muted)]">
-                            Đã chọn {attachmentPreviews.length} tệp đính kèm.
+                    {/* Submit Actions Card */}
+                    <Card className="space-y-4 rounded-[2rem] p-6 border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] relative overflow-hidden">
+                        <div className="absolute -bottom-12 -right-12 w-24 h-24 rounded-full bg-cyan-500/5 blur-xl pointer-events-none" />
+                        <div className="space-y-1 relative z-10">
+                            <h3 className="text-lg font-bold text-[var(--foreground)]">Hành động</h3>
                         </div>
-                    ) : (
-                        <div className="rounded-[1.5rem] border border-dashed border-[var(--line)] bg-[var(--background-soft)] px-5 py-6 text-sm text-[var(--muted)]">
-                            Chưa có attachments nào được chọn.
+
+                        {error ? <FormMessage type="error" message={error} /> : null}
+                        {status ? <FormMessage type="success" message={status} /> : null}
+
+                        <div className="grid gap-3 pt-2 relative z-10">
+                            <Button type="submit" className="w-full py-3.5 bg-gradient-to-r from-[var(--accent)] to-[#4facfe] hover:from-[var(--accent-strong)] hover:to-[#00f2fe] text-white font-semibold rounded-full shadow-lg transition-all duration-300 flex items-center justify-center gap-2" disabled={isSubmitting}>
+                                {isSubmitting ? (
+                                    'Đang gửi...'
+                                ) : (
+                                    <>
+                                        <span>{form.articleStatus === 'Draft' ? 'Lưu bản nháp' : 'Xuất bản bài viết'}</span>
+                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </>
+                                )}
+                            </Button>
+                            <Button type="button" variant="secondary" className="w-full py-3 rounded-full" onClick={resetComposer} disabled={isSubmitting}>
+                                Đặt lại biểu mẫu
+                            </Button>
                         </div>
-                    )}
-                </Card>
-                <Card className="space-y-4 rounded-[1.75rem] p-5">
-                    <div className="space-y-2">
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">Submit</p>
-                        <h3 className="text-xl font-semibold">Hành động</h3>
-                    </div>
+                    </Card>
+                </div>
 
-                    {error ? <FormMessage type="error" message={error} /> : null}
-                    {status ? <FormMessage type="success" message={status} /> : null}
+                {/* Right Column: Content Editor Workspace */}
+                <div className="h-full">
+                    <Card className="rounded-[2rem] p-6 border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] flex flex-col h-full min-h-[500px]">
+                        <div className="flex items-center justify-between border-b border-[var(--line)] pb-4 mb-4">
+                            <div className="space-y-1">
+                                <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-[var(--muted)]">Content Area</span>
+                                <h3 className="text-lg font-bold text-[var(--foreground)]">
+                                    {isTechArticle ? 'Markdown Workspace' : 'Nội dung bài viết'}
+                                </h3>
+                            </div>
+                            {isTechArticle && (
+                                <span className="font-mono text-[9px] text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/15">
+                                    Gõ / để dùng lệnh nhanh
+                                </span>
+                            )}
+                        </div>
 
-                    <div className="flex flex-col gap-3 md:ml-auto md:w-auto md:min-w-52">
-                        <Button type="button" variant="secondary" onClick={resetComposer} disabled={isSubmitting}>
-                            Đặt lại form
-                        </Button>
-                        <Button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? 'Đang gửi...' : form.articleStatus === 'Draft' ? 'Lưu nháp' : 'Đăng bài'}
-                        </Button>
-                    </div>
-                </Card>
-                </form>
-            </div>
+                        {isTechArticle ? (
+                            <div className="space-y-4" data-color-mode="light">
+                                <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
+                                    {/* Tabs */}
+                                    <div className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--background-soft)] px-4 py-2">
+                                        <div className="flex items-center gap-1.5">
+                                            <button
+                                                type="button"
+                                                onClick={() => setMarkdownTab('write')}
+                                                className={`rounded-xl px-4 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                                                    markdownTab === 'write'
+                                                        ? 'bg-[var(--surface)] text-[var(--accent)] border border-[var(--line)] shadow-sm'
+                                                        : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+                                                }`}
+                                            >
+                                                Biên soạn
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setMarkdownTab('preview')}
+                                                className={`rounded-xl px-4 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                                                    markdownTab === 'preview'
+                                                        ? 'bg-[var(--surface)] text-[var(--accent)] border border-[var(--line)] shadow-sm'
+                                                        : 'text-[var(--muted)] hover:text-[var(--foreground)]'
+                                                }`}
+                                            >
+                                                Xem trước
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Inline Media Upload Area */}
+                                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] bg-[var(--background-soft)]/50 px-4 py-2 text-xs text-[var(--muted)]">
+                                        <button
+                                            type="button"
+                                            onClick={() => inlineImageInputRef.current?.click()}
+                                            className="rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 font-semibold text-[var(--foreground)] hover:border-[var(--accent)] transition-all cursor-pointer flex items-center gap-1.5"
+                                        >
+                                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            </svg>
+                                            Chèn ảnh vào bài viết
+                                        </button>
+                                        <span className="hidden sm:inline italic">Nhấn đúp vùng Xem trước để quay lại viết bài</span>
+                                    </div>
+
+                                    {markdownTab === 'write' ? (
+                                        <div ref={editorSurfaceRef} className="relative">
+                                            <MarkdownEditor
+                                                value={form.content}
+                                                preview="edit"
+                                                visibleDragbar={false}
+                                                height={400}
+                                                previewOptions={{
+                                                    components: markdownComponents,
+                                                    urlTransform: transformMarkdownUrl,
+                                                }}
+                                                textareaProps={{
+                                                    placeholder: 'Gõ nội dung markdown, sử dụng phím / để kích hoạt danh sách lệnh nhanh...',
+                                                    onFocus: (event) => {
+                                                        if (!isTextareaElement(event.currentTarget)) {
+                                                            return;
+                                                        }
+                                                        editorTextareaRef.current = event.currentTarget;
+                                                        syncSlashMenu(event.currentTarget);
+                                                    },
+                                                    onClick: (event) => {
+                                                        if (!isTextareaElement(event.currentTarget)) {
+                                                            return;
+                                                        }
+                                                        editorTextareaRef.current = event.currentTarget;
+                                                        syncSlashMenu(event.currentTarget);
+                                                    },
+                                                    onSelect: (event) => {
+                                                        if (!isTextareaElement(event.currentTarget)) {
+                                                            return;
+                                                        }
+                                                        editorTextareaRef.current = event.currentTarget;
+                                                        syncSlashMenu(event.currentTarget);
+                                                    },
+                                                    onKeyUp: (event) => {
+                                                        if (!isTextareaElement(event.currentTarget)) {
+                                                            return;
+                                                        }
+                                                        editorTextareaRef.current = event.currentTarget;
+                                                        syncSlashMenu(event.currentTarget);
+                                                    },
+                                                    onScroll: (event) => {
+                                                        if (!isTextareaElement(event.currentTarget)) {
+                                                            return;
+                                                        }
+                                                        editorTextareaRef.current = event.currentTarget;
+                                                        syncSlashMenu(event.currentTarget);
+                                                    },
+                                                    onBlur: () => {
+                                                        window.setTimeout(() => closeSlashMenu(), 120);
+                                                    },
+                                                    onChange: (event) => {
+                                                        if (!isTextareaElement(event.currentTarget)) {
+                                                            return;
+                                                        }
+                                                        editorTextareaRef.current = event.currentTarget;
+                                                        syncSlashMenu(event.currentTarget, event.currentTarget.value);
+                                                    },
+                                                    onKeyDownCapture: (event) => {
+                                                        if (!slashMenu) {
+                                                            return;
+                                                        }
+
+                                                        if (event.key === 'ArrowDown') {
+                                                            event.preventDefault();
+                                                            event.stopPropagation();
+                                                            setSlashMenu((previous) =>
+                                                                previous
+                                                                    ? {
+                                                                          ...previous,
+                                                                          selectedIndex:
+                                                                              (previous.selectedIndex + 1) %
+                                                                              previous.items.length,
+                                                                      }
+                                                                    : previous,
+                                                            );
+                                                            return;
+                                                        }
+
+                                                        if (event.key === 'ArrowUp') {
+                                                            event.preventDefault();
+                                                            event.stopPropagation();
+                                                            setSlashMenu((previous) =>
+                                                                previous
+                                                                    ? {
+                                                                          ...previous,
+                                                                          selectedIndex:
+                                                                              (previous.selectedIndex -
+                                                                                  1 +
+                                                                                  previous.items.length) %
+                                                                              previous.items.length,
+                                                                      }
+                                                                    : previous,
+                                                            );
+                                                            return;
+                                                        }
+
+                                                        if (event.key === 'Enter' || event.key === 'Tab') {
+                                                            event.preventDefault();
+                                                            event.stopPropagation();
+                                                            applySlashCommand(slashMenu.items[slashMenu.selectedIndex]);
+                                                            return;
+                                                        }
+
+                                                        if (event.key === 'Escape') {
+                                                            event.preventDefault();
+                                                            event.stopPropagation();
+                                                            closeSlashMenu();
+                                                        }
+                                                    },
+                                                }}
+                                                onChange={(value) => updateContent(value ?? '')}
+                                            />
+
+                                            {/* Slash command floating dropdown menu */}
+                                            {slashMenu ? (
+                                                <div
+                                                    className="absolute z-20 w-72 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-strong)] shadow-[var(--shadow)]"
+                                                    style={{
+                                                        left: slashMenu.position.left,
+                                                        top: slashMenu.position.top,
+                                                    }}
+                                                >
+                                                    <div className="border-b border-[var(--line)] bg-[var(--background-soft)] px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--muted)]">
+                                                        Lệnh nhanh (Slash command)
+                                                    </div>
+                                                    <div className="max-h-72 overflow-y-auto p-1.5">
+                                                        {slashMenu.items.map((command, index) => (
+                                                            <button
+                                                                key={command.id}
+                                                                type="button"
+                                                                className={`flex w-full flex-col rounded-xl px-3 py-2 text-left transition ${
+                                                                    index === slashMenu.selectedIndex
+                                                                        ? 'bg-[var(--accent)]/10 text-[var(--accent)]'
+                                                                        : 'hover:bg-[var(--background-soft)]'
+                                                                }`}
+                                                                onMouseDown={(event) => {
+                                                                    event.preventDefault();
+                                                                    applySlashCommand(command);
+                                                                }}
+                                                            >
+                                                                <span className="text-sm font-bold text-[var(--foreground)]">
+                                                                    /{command.id}
+                                                                </span>
+                                                                <span className="text-xs text-[var(--muted)]">
+                                                                    {command.description}
+                                                                </span>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    ) : (
+                                        <div
+                                            className="min-h-[400px] bg-[var(--surface)] px-6 py-6 overflow-y-auto"
+                                            onDoubleClick={() => setMarkdownTab('write')}
+                                        >
+                                            <article className="article-markdown-preview prose prose-indigo max-w-none">
+                                                <ReactMarkdown
+                                                    remarkPlugins={[remarkGfm]}
+                                                    components={markdownComponents}
+                                                    urlTransform={transformMarkdownUrl}
+                                                >
+                                                    {form.content || 'Nội dung Markdown của bài viết sẽ hiển thị trực quan ở đây.'}
+                                                </ReactMarkdown>
+                                            </article>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <input
+                                    ref={inlineImageInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                    onChange={(event) => {
+                                        handleInlineImageUpload(Array.from(event.target.files ?? []));
+                                        event.target.value = '';
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <Textarea
+                                placeholder="Hãy bắt đầu biên soạn câu chuyện của bạn..."
+                                value={form.content}
+                                onChange={(event) => updateContent(event.target.value)}
+                                className="min-h-[400px] flex-grow rounded-2xl resize-y"
+                                required
+                            />
+                        )}
+                    </Card>
+                </div>
+            </form>
         </SectionShell>
     );
 }

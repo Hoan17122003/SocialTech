@@ -1,4 +1,5 @@
 using System;
+using Minio.Exceptions;
 using SocialBackEnd.Application.Ports.Inbound;
 using SocialBackEnd.Application.Ports.Outbound;
 using SocialBackEnd.Application.Ports.Outbound.Events;
@@ -74,19 +75,9 @@ public class ArticleAdapterPort : IArticlePort
                 throw new Exception("Tạo bài viết thất bại, không thể lưu tệp đính kèm.");
             }
 
-            foreach (var file in fileUrl)
-            {
-                fileUploadUrls.Add(new Attachments
-                {
-                    FilePath = file.FilePath,
-                    FileName = file.FileName,
-                    FileExtension = file.FileExtension,
-                    FileSize = file.FileSize,
-                    PostId = articleEntity.Id
-                });
-            }
-            var attachmentCount = await _attachmentRepository.AddAttachmentsAsync(fileUploadUrls) == requestCreateArticle.Attachments.Count ? true : false;
-            if (!attachmentCount)
+            fileUploadUrls = BuildAttachmentEntities(articleEntity.Id, fileUrl);
+            var attachmentCount = await _attachmentRepository.AddAttachmentsAsync(fileUploadUrls);
+            if (attachmentCount != requestCreateArticle.Attachments.Count)
             {
                 _logger.LogError("Lưu tệp đính kèm thất bại, số lượng tệp đính kèm lưu không khớp với số lượng tệp đính kèm đã tải lên.");
                 throw new ConflicException("Lưu tệp đính kèm thất bại, số lượng tệp đính kèm lưu không khớp với số lượng tệp đính kèm đã tải lên.");
@@ -105,25 +96,26 @@ public class ArticleAdapterPort : IArticlePort
 
     public async Task<ArticleDetailModelView?> GetDetailArticle(int articleId, int userId)
     {
-        var article = await _repository.GetDetailArticleById(articleId);
+        var article = await _repository.GetDetailArticleById(articleId, userId);
 
         if (article is null)
         {
             throw new NotFoundException($"Bài viết không tồn tại.");
         }
-
-        return new ArticleDetailModelView
+        
+        var result = new ArticleDetailModelView
         {
             Title = article.Title,
             Content = article.Body ?? string.Empty,
-            attachments = article.Attachments
-                .Select(attachment => attachment.FilePath)
+            Attachments = article.Attachments
+                .Select(attachment => _entityMediaStorageService.GetAbsolutePathImageEcomsystem(attachment.FilePath))
                 .ToList(),
             IsPermissionEdit = article.AuthorId == userId,
             CreateDate = article.CreatedAtUtc,
             NameAuthor = article.Author.DisplayName,
-            AvatarAuthor = article.Author.ProfileImageUrl ?? string.Empty
+            AvatarAuthor = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(article.Author.ProfileImageUrl) ?? string.Empty
         };
+        return result;
     }
 
 
@@ -235,14 +227,14 @@ public class ArticleAdapterPort : IArticlePort
 
     public async Task<bool> DeleteArticle(int articleId, int userId)
     {
-        var existsArticle = await _repository.GetDetailArticleById(articleId);
+        var existsArticle = await _repository.GetDetailArticleById(articleId, userId);
         if (existsArticle is null)
         {
             throw new NotFoundException("Bài viết không tồn tại.");
         }
         if (existsArticle.AuthorId != userId)
         {
-            throw new UnauthorizedAccessException("Bạn không có quyền xóa bài viết này.");
+            throw new ForbiddenException("Bạn không có quyền xoá bài viết này");
         }
         if (existsArticle.Attachments.Count > 0)
         {

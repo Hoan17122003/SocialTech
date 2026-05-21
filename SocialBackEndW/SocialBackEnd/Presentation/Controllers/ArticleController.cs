@@ -8,6 +8,7 @@ using SocialBackEnd.Application.Ports.Inbound;
 using SocialBackEnd.Common.Constants;
 using SocialBackEnd.Common.DTOs.Article;
 using SocialBackEnd.Common.Models;
+using SocialBackEnd.Common.Models.Article;
 
 namespace SocialBackEnd.Presentation.Controllers
 {
@@ -50,7 +51,7 @@ namespace SocialBackEnd.Presentation.Controllers
                 return Unauthorized("Token không chứa user id hợp lệ.");
             }
             var result = await _articlePort.GetDetailArticle(articleId, userId);
-            return Ok(ApiResponse<Object>.Ok(result));
+            return Ok(ApiResponse<ArticleDetailModelView>.Ok(result));
         }
 
         [Authorize]

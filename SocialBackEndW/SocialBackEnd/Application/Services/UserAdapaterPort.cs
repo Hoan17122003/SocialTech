@@ -13,6 +13,7 @@ using SocialBackEnd.Application.Ports.Inbound;
 using SocialBackEnd.Application.Ports.Outbound;
 using SocialBackEnd.Application.Ports.Outbound.cache;
 using SocialBackEnd.Application.Ports.Outbound.Events;
+using SocialBackEnd.Application.Ports.Outbound.Minio;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Application.Ports.Outbound.Security;
 using SocialBackEnd.Common.Constants;
@@ -35,6 +36,7 @@ public sealed class UserAdapaterPort : IUserPort
     private readonly ICacheInternal _cacheInternal;
     private readonly IApplicationEventPublisher _applicationEventPublisher;
     private readonly JwtOptions _jwtOptions;
+    private readonly IMinioFileStoragePort _minioFileStorage;
 
     public UserAdapaterPort(
         IUserRepository repository,
@@ -44,7 +46,8 @@ public sealed class UserAdapaterPort : IUserPort
         IUserFollowRepository userFollowRepository,
         ICacheInternal cacheInternal,
         IApplicationEventPublisher applicationEventPublisher,
-        IOptions<JwtOptions> jwtOptions)
+        IOptions<JwtOptions> jwtOptions,
+        IMinioFileStoragePort minioFileStoragePort)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -54,6 +57,7 @@ public sealed class UserAdapaterPort : IUserPort
         _cacheInternal = cacheInternal ?? throw new ArgumentNullException(nameof(cacheInternal));
         _applicationEventPublisher = applicationEventPublisher ?? throw new ArgumentNullException(nameof(applicationEventPublisher));
         _jwtOptions = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
+        _minioFileStorage = minioFileStoragePort ?? throw new ArgumentNullException(nameof(minioFileStoragePort));
     }
 
     public async Task<int> CreateUserAsync(RequestCreateAccount requestCreateAccount)
@@ -102,7 +106,7 @@ public sealed class UserAdapaterPort : IUserPort
         requestCreateAccount.DisplayName = normalizedDisplayName;
         requestCreateAccount.Email = normalizedEmail;
         requestCreateAccount.Password = passwordHash;
-        
+
 
         var userEntity = await _repository.CreateUserAsync(requestCreateAccount);
         if (userEntity is null)
@@ -296,6 +300,10 @@ public sealed class UserAdapaterPort : IUserPort
         var profile = await _repository.GetProfileAsync(publicId);
         profile.IsPermissionEdit = userId == profile.Id;
         profile.Id = 0;
+        if (!string.IsNullOrEmpty(profile.ProfileImageUrl))
+        {
+            profile.ProfileImageUrl = await _minioFileStorage.GetPresignedUrlAsync(profile.ProfileImageUrl);
+        }
         return profile;
     }
 

@@ -4,6 +4,7 @@ using SocialBackEnd.Infrastructure.Security;
 using SocialBackEnd.Presentation.Middlewares;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
+using Minio;
 
 namespace SocialBackEnd;
 
@@ -63,6 +64,7 @@ public class Program
         });
         builder.Services.AddServiceDependencies(builder.Configuration);
         builder.Services.AddRepositoryDependencies(builder.Configuration);
+
 
         // Gom toàn bộ cấu hình authentication/authorization vào một extension
         // để Program.cs gọn hơn và phần security tập trung ở Infrastructure/Security.
