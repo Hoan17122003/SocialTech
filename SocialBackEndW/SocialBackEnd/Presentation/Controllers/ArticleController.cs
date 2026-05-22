@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SocialBackEnd.Application.Ports.Inbound;
 using SocialBackEnd.Common.Constants;
+using SocialBackEnd.Common.DTOs;
 using SocialBackEnd.Common.DTOs.Article;
 using SocialBackEnd.Common.Models;
 using SocialBackEnd.Common.Models.Article;
@@ -52,6 +53,19 @@ namespace SocialBackEnd.Presentation.Controllers
             }
             var result = await _articlePort.GetDetailArticle(articleId, userId);
             return Ok(ApiResponse<ArticleDetailModelView>.Ok(result));
+        }
+
+        [Authorize]
+        [HttpGet("news")]
+        public async Task<IActionResult> GetArticles([FromQuery] Paganation paganation)
+        {
+            var userClaims = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userClaims, out var userId))
+            {
+                return Unauthorized("Token không chứa user id hợp lệ");
+            }
+            var result = await _articlePort.GetArticles(paganation, userId);
+            return Ok(ApiResponse<List<ArticleDetailModelView>>.Ok(result));
         }
 
         [Authorize]

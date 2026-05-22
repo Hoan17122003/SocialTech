@@ -6,6 +6,7 @@ using SocialBackEnd.Application.Ports.Outbound.Events;
 using SocialBackEnd.Application.Ports.Outbound.LLM;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Common.Constants;
+using SocialBackEnd.Common.DTOs;
 using SocialBackEnd.Common.DTOs.Article;
 using SocialBackEnd.Common.Events;
 using SocialBackEnd.Common.Exceptions;
@@ -102,7 +103,7 @@ public class ArticleAdapterPort : IArticlePort
         {
             throw new NotFoundException($"Bài viết không tồn tại.");
         }
-        
+
         var result = new ArticleDetailModelView
         {
             Title = article.Title,
@@ -116,6 +117,22 @@ public class ArticleAdapterPort : IArticlePort
             AvatarAuthor = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(article.Author.ProfileImageUrl) ?? string.Empty
         };
         return result;
+    }
+
+    public async Task<List<ArticleDetailModelView>> GetArticles(Paganation paganation, int userId, CancellationToken cancellationToken = default)
+    {
+        var result = await _repository.GetArticlesAsync(paganation, cancellationToken);
+
+        return result.Select(x => new ArticleDetailModelView
+        {
+            Title = x.Title,
+            Content = x.Body ?? "",
+            Attachments = x.Attachments.Select(attachment => _entityMediaStorageService.GetAbsolutePathImageEcomsystem(attachment.FilePath)).ToList(),
+            IsPermissionEdit = userId == x.AuthorId,
+            CreateDate = x.CreatedAtUtc,
+            NameAuthor = x.Author.DisplayName,
+            AvatarAuthor = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(x.Author.ProfileImageUrl) ?? string.Empty
+        }).ToList();
     }
 
 

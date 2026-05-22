@@ -1,6 +1,7 @@
 import { objectToFormData } from '@/common/utils/object-to-form-data';
 import { httpClient } from '@/shared/api/http-client';
-import type { ArticleDetailResponse, CreateArticleRequest, UpdateArticleRequest } from './contracts';
+import { ResponseGetNewsPaper, type ArticleDetailResponse, type CreateArticleRequest, type RequestGetNewsPaper, type UpdateArticleRequest } from './contracts';
+import { toQueryString } from '@/common/utils/query-string';
 
 export const articlesApi = {
     create(payload: CreateArticleRequest) {
@@ -23,4 +24,13 @@ export const articlesApi = {
             auth: true,
         });
     },
+    news(requestGetNewPapers: RequestGetNewsPaper) {
+        const query = toQueryString({
+            "paganation.page": requestGetNewPapers.page,
+            "paganation.limit": requestGetNewPapers.limit
+        })
+        return httpClient.get<ResponseGetNewsPaper>(`/api/Article/news${requestGetNewPapers}`, {
+            auth: true
+        })
+    }
 };

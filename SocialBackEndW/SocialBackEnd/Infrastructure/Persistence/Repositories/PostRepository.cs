@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using SocialBackEnd.Application.Ports.Outbound;
+using SocialBackEnd.Application.Ports.Outbound.Minio;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Common.Constants;
+using SocialBackEnd.Common.DTOs;
 using SocialBackEnd.Common.Events;
 using SocialBackEnd.Common.Models.Article;
 using SocialBackEnd.Domain.Entities;
@@ -10,7 +13,6 @@ namespace SocialBackEnd.Infrastructure.Persistence.Repositories;
 
 public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
 {
-
 
     public PostRepository(AppDbContext dbContext) : base(dbContext)
     {
@@ -134,6 +136,20 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
             .Include(x => x.Author)
             .Include(x => x.Attachments)
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<List<Post>> GetArticlesAsync(Paganation paganation, CancellationToken cancellationToken = default)
+    {
+        var page = paganation.Page <= 0 ? 1 : paganation.Page;
+        var limit = paganation.Limit <= 0 ? 10 : paganation.Limit;
+        return DbContext.Posts
+            .AsNoTracking()
+            .Include(x => x.Author)
+            .Include(x => x.Attachments)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .Skip((page - 1) * limit)
+            .Take(limit)
+            .ToListAsync();
     }
 
 }

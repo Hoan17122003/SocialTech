@@ -2,6 +2,8 @@ using SocialBackEnd.Common.Models.User;
 using SocialBackEnd.Domain.Entities;
 using SocialBackEnd.Common.Events;
 using SocialBackEnd.Common.Models.Article;
+using SocialBackEnd.Common.DTOs;
+using SocialBackEnd.Application.Ports.Outbound.Minio;
 
 namespace SocialBackEnd.Application.Ports.Outbound.Repositories;
 
@@ -16,4 +18,5 @@ public interface IPostRepository : IRepository<Post>
     Task<bool> UpdateArticleAsync(Post post, CancellationToken cancellationToken = default);
     Task<bool> UpdateAndDeletArticleAsync(Post postToUpdate, Post postToDelete, CancellationToken cancellationToken = default);
     Task<Post?> GetDetailArticleById(int articleId, int userId, CancellationToken cancellationToken = default);
+    public Task<List<Post>> GetArticlesAsync(Paganation paganation, CancellationToken cancellationToken = default);
 }

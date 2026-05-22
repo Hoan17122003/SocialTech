@@ -28,4 +28,22 @@ export type ArticleDetail = {
     avatarAuthor: string;
 };
 
+export type BasicArticle = ArticleDetail & {
+    id: number
+};
+
+export type RequestGetNewsPaper = {
+    limit: 10,
+    page: 1,
+};
+
+export type ResponseGetNewsPaper = {
+    Success: boolean,
+    Message: string,
+    Article: ArticleDetail & {
+        Id: number
+    }
+}
+
+
 export type ArticleDetailResponse = ApiResponse<ArticleDetail>;
