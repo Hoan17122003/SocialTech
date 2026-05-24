@@ -15,11 +15,12 @@ public class Comment : EntityBase
 
     public string Body { get; set; } = string.Empty;
     public CommentStatus Status { get; set; } = CommentStatus.Published;
-    public bool IsLocked { get; set; }
-    public int Score { get; set; }
-    public int Depth { get; set; }
+    // public bool IsLocked { get; set; }
+    public int Score { get; set; } = 0;
+    public int Depth { get; set; } = 0;
 
     public ICollection<Comment> Replies { get; set; } = new List<Comment>();
     public ICollection<CommentVote> Votes { get; set; } = new List<CommentVote>();
     public ICollection<ContentReport> Reports { get; set; } = new List<ContentReport>();
+    public ICollection<Attachments> Attachments { get; set; } = new List<Attachments>();
 }

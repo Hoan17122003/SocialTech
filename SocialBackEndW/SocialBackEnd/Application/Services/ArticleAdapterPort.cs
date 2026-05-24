@@ -8,6 +8,7 @@ using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Common.Constants;
 using SocialBackEnd.Common.DTOs;
 using SocialBackEnd.Common.DTOs.Article;
+using SocialBackEnd.Common.DTOs.Comment;
 using SocialBackEnd.Common.Events;
 using SocialBackEnd.Common.Exceptions;
 using SocialBackEnd.Common.Models.Article;
@@ -20,6 +21,7 @@ namespace SocialBackEnd.Application.Services;
 public class ArticleAdapterPort : IArticlePort
 {
     private readonly IPostRepository _repository;
+    private readonly ICommentRepository _commentRepository;
     private readonly IEntityMediaStorageService _entityMediaStorageService;
     private readonly IAttachmentRepository _attachmentRepository;
     private readonly IApplicationEventPublisher _applicationEventPublisher;
@@ -28,6 +30,7 @@ public class ArticleAdapterPort : IArticlePort
 
 
     public ArticleAdapterPort(IPostRepository repository,
+        ICommentRepository commentRepository,
         IEntityMediaStorageService entityMediaStorageService,
         IAttachmentRepository attachmentRepository,
         IApplicationEventPublisher applicationEventPublisher,
@@ -35,6 +38,7 @@ public class ArticleAdapterPort : IArticlePort
         IGeminiArticlePort geminiArticlePort)
     {
         _repository = repository ?? throw new ArgumentException(nameof(repository));
+        _commentRepository = commentRepository ?? throw new ArgumentException(nameof(commentRepository));
         _entityMediaStorageService = entityMediaStorageService ?? throw new ArgumentException(nameof(entityMediaStorageService));
         _attachmentRepository = attachmentRepository ?? throw new ArgumentException(nameof(attachmentRepository));
         _applicationEventPublisher = applicationEventPublisher ?? throw new ArgumentNullException(nameof(applicationEventPublisher));
@@ -132,6 +136,147 @@ public class ArticleAdapterPort : IArticlePort
             CreateDate = x.CreatedAtUtc,
             NameAuthor = x.Author.DisplayName,
             AvatarAuthor = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(x.Author.ProfileImageUrl) ?? string.Empty
+        }).ToList();
+    }
+
+    public async Task<CommentView> CreateCommentOfArticle(int articleId, RequestCreateComment requestCreateComment, int userId)
+    {
+        var existingArticle = await _repository.GetByIdAsync(articleId);
+        if (existingArticle is null)
+        {
+            throw new NotFoundException("Bài viết không tồn tại.");
+        }
+        var validateContentOfComment = await _geminiArticlePort.ValidateComment(requestCreateComment.Body);
+
+        if (!validateContentOfComment)
+        {
+            _logger.LogInformation($"value of validate comment: {validateContentOfComment}");
+            throw new ForbiddenException("Nội dung bình luận không hợp lệ.");
+        }
+
+        var comment = new Comment
+        {
+            PostId = articleId,
+            Body = requestCreateComment.Body,
+            AuthorId = userId,
+            ParentCommentId = requestCreateComment.ParentCommentId == int.MinValue ? null : requestCreateComment.ParentCommentId,
+            Status = requestCreateComment.status
+        };
+
+        var commentSaved = await _commentRepository.CreateCommentOfArticleAsync(comment);
+        List<Attachments>? fileUploadUrls = new List<Attachments>();
+        if (requestCreateComment.Attachments is not null && requestCreateComment.Attachments.Count > 0)
+        {
+            var fileUrl = await _entityMediaStorageService.SavePostAttachmentsAsync(commentSaved.Id, requestCreateComment.Attachments);
+            if (fileUrl is null || fileUrl.Count == 0)
+            {
+                await _commentRepository.DeleteCommentOfArticleAsync(commentSaved.Id);
+                _logger.LogError("Lưu tệp đính kèm thất bại, không thể lưu bình luận với id {CommentId}", commentSaved.Id);
+                throw new Exception("Tạo bình luận thất bại, không thể lưu tệp đính kèm.");
+            }
+
+            fileUploadUrls = BuildAttachmentEntities(commentSaved.Id, fileUrl);
+            var attachmentCount = await _attachmentRepository.AddAttachmentsAsync(fileUploadUrls);
+            if (attachmentCount != requestCreateComment.Attachments.Count)
+            {
+                _logger.LogError("Lưu tệp đính kèm thất bại, số lượng tệp đính kèm lưu không khớp với số lượng tệp đính kèm đã tải lên.");
+                throw new ConflicException("Lưu tệp đính kèm thất bại, số lượng tệp đính kèm lưu không khớp với số lượng tệp đính kèm đã tải lên.");
+            }
+        }
+        return new CommentView
+        {
+            Id = commentSaved.Id,
+            AuthorPublicId = new CommentAuthorModelView
+            {
+                AuthorPublicId = commentSaved.AuthorId,
+                NameAuthor = commentSaved.Author.DisplayName,
+                AvatarAuthor = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(commentSaved.Author.ProfileImageUrl) ?? string.Empty
+            },
+            Content = commentSaved.Body ?? string.Empty,
+            Attachments = commentSaved.Attachments
+                .Select(attachment => _entityMediaStorageService.GetAbsolutePathImageEcomsystem(attachment.FilePath))
+                .ToList(),
+            CreatedAtUtc = commentSaved.CreatedAtUtc
+        };
+
+    }
+
+    public async Task<CommentView> UpdateCommentOfArticle(int commentId, RequestUpdateComment requestUpdateComment, int userId)
+    {
+        var existingComment = await _commentRepository.GetCommentByIdAsync(commentId);
+        if (existingComment is null)
+        {
+            throw new NotFoundException("Bình luận không tồn tại.");
+        }
+
+        if (existingComment.AuthorId != userId)
+        {
+            throw new ForbiddenException("Bạn không có quyền sửa bình luận này");
+        }
+
+        var validateContentOfComment = await _geminiArticlePort.ValidateComment(requestUpdateComment.Body);
+
+        if (!validateContentOfComment)
+        {
+            _logger.LogInformation($"value of validate comment: {validateContentOfComment}");
+            throw new ForbiddenException("Nội dung bình luận không hợp lệ.");
+        }
+
+        existingComment.Body = requestUpdateComment.Body ?? existingComment.Body;
+        existingComment.UpdatedAtUtc = DateTime.UtcNow;
+        existingComment.Status = requestUpdateComment.status ?? existingComment.Status;
+
+        var updatedComment = await _commentRepository.UpdateCommentOfArticleAsync(existingComment);
+        return new CommentView
+        {
+            Id = updatedComment.Id,
+            AuthorPublicId = new CommentAuthorModelView
+            {
+                AuthorPublicId = updatedComment.AuthorId,
+                NameAuthor = updatedComment.Author.DisplayName,
+                AvatarAuthor = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(updatedComment.Author.ProfileImageUrl) ?? string.Empty
+            },
+            Content = updatedComment.Body ?? string.Empty,
+            Attachments = updatedComment.Attachments
+                .Select(attachment => _entityMediaStorageService.GetAbsolutePathImageEcomsystem(attachment.FilePath))
+                .ToList(),
+            CreatedAtUtc = updatedComment.CreatedAtUtc
+        };
+    }
+
+    public async Task<bool> DeleteCommentOfArticle(int commentId, int userId)
+    {
+        var existingComment = await _commentRepository.GetCommentByIdAsync(commentId);
+        if (existingComment is null)
+        {
+            throw new NotFoundException("Bình luận không tồn tại.");
+        }
+
+        if (existingComment.AuthorId != userId)
+        {
+            throw new ForbiddenException("Bạn không có quyền xoá bình luận này");
+        }
+
+        return await _commentRepository.DeleteCommentOfArticleAsync(commentId);
+    }
+
+    public async Task<List<CommentOfArticleModelView>> GetCommentsOfArticle(int articleId, int userId, Paganation paganation)
+    {
+        var comments = await _commentRepository.GetCommentsOfArticleAsync(articleId, paganation);
+
+        return comments.Select(comment => new CommentOfArticleModelView
+        {
+            AuthorOfComment = new CommentAuthorModelView
+            {
+                NameAuthor = comment.Author.DisplayName,
+                AvatarAuthor = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(comment.Author.ProfileImageUrl) ?? string.Empty
+            },
+            Content = comment.Body ?? string.Empty,
+            Attachments = comment.Attachments
+                .Select(attachment => _entityMediaStorageService.GetAbsolutePathImageEcomsystem(attachment.FilePath))
+                .ToList(),
+            IsPermissionEdit = comment.AuthorId == userId,
+            CreateDate = comment.CreatedAtUtc,
         }).ToList();
     }
 

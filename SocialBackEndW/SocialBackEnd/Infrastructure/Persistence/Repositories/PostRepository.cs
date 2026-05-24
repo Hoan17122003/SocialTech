@@ -149,7 +149,7 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
             .OrderByDescending(x => x.CreatedAtUtc)
             .Skip((page - 1) * limit)
             .Take(limit)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
 }

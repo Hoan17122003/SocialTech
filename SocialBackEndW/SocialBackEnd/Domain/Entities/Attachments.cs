@@ -10,4 +10,6 @@ public class Attachments : EntityBase
     public long FileSize { get; set; }
     public int PostId { get; set; }
     public Post Post { get; set; } = null!;
+    public int? CommentId { get; set; } = null;
+    public Comment? Comment { get; set; } = null!;
 }

@@ -8,6 +8,7 @@ using SocialBackEnd.Application.Ports.Inbound;
 using SocialBackEnd.Common.Constants;
 using SocialBackEnd.Common.DTOs;
 using SocialBackEnd.Common.DTOs.Article;
+using SocialBackEnd.Common.DTOs.Comment;
 using SocialBackEnd.Common.Models;
 using SocialBackEnd.Common.Models.Article;
 
@@ -66,6 +67,60 @@ namespace SocialBackEnd.Presentation.Controllers
             }
             var result = await _articlePort.GetArticles(paganation, userId);
             return Ok(ApiResponse<List<ArticleDetailModelView>>.Ok(result));
+        }
+
+        [Authorize]
+        [HttpPost("comment/{articleId:int}")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> CreateCommentOfArticle([FromRoute] int articleId, [FromForm] RequestCreateComment requestCreateComment)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized("Token không chứa user id hợp lệ.");
+            }
+            var result = await _articlePort.CreateCommentOfArticle(articleId, requestCreateComment, userId);
+            return Ok(ApiResponse<CommentView>.Ok(result, "Tạo bình luận thành công"));
+        }
+
+        [Authorize]
+        [HttpPut("comment/{commentId:int}")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateCommentOfArticle([FromRoute] int commentId, [FromForm] RequestUpdateComment requestUpdateComment)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized("Token không chứa user id hợp lệ.");
+            }
+            var result = await _articlePort.UpdateCommentOfArticle(commentId, requestUpdateComment, userId);
+            return Ok(ApiResponse<CommentView>.Ok(result, "Cập nhật bình luận thành công"));
+        }
+
+        [Authorize]
+        [HttpDelete("comment/{commentId:int}")]
+        public async Task<IActionResult> DeleteCommentOfArticle([FromRoute] int commentId)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized("Token không chứa user id hợp lệ.");
+            }
+            var result = await _articlePort.DeleteCommentOfArticle(commentId, userId);
+            return Ok(ApiResponse<bool>.Ok(result, "Xóa bình luận thành công"));
+        }
+
+        [Authorize]
+        [HttpGet("comment/{articleId:int}")]
+        public async Task<IActionResult> GetCommentsOfArticle([FromRoute] int articleId, [FromQuery] Paganation paganation)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized("Token không chứa user id hợp lệ.");
+            }
+            var result = await _articlePort.GetCommentsOfArticle(articleId, userId, paganation);
+            return Ok(ApiResponse<List<CommentOfArticleModelView>>.Ok(result));
         }
 
         [Authorize]

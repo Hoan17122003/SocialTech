@@ -8,4 +8,5 @@ namespace SocialBackEnd.Application.Ports.Outbound.LLM;
 public interface IGeminiArticlePort : IGeminiPort
 {
     Task<bool> ValidateArticle(ArticleValidateRequest requestCreateArticle);
+    Task<bool> ValidateComment(string comment);
 }

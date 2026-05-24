@@ -78,6 +78,52 @@ public sealed class GeminiArticleAdapter : GeminiAdapter, IGeminiArticlePort
         return string.Equals(response?.Result, Constant.GeminiConfigModel25Flash.ApproveResult, StringComparison.OrdinalIgnoreCase);
     }
 
+    public async Task<bool> ValidateComment(string comment)
+    {
+        var formatJson = JsonSerializer.Serialize(
+            new FormatResponse.FormatResponseValidate
+            {
+                Result = $"{Constant.GeminiConfigModel25Flash.InAppropriateResult} or {Constant.GeminiConfigModel25Flash.ApproveResult}",
+                Explain = "Reason why the post is InAppropriate Result or Approve Result."
+            },
+            new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true
+            });
+
+        var prompt = $"""
+            {Constant.GeminiConfigModel25Flash.PromptValidateContent}
+
+            Content: {comment}
+            Return only valid JSON using this shape:
+            {formatJson}
+            """;
+
+        var config = new GeminiGenerateRequest
+        {
+            Prompt = prompt,
+            Model = Constant.GeminiConfigModel25Flash.Model,
+            Temperature = Constant.GeminiConfigModel25Flash.Temperature,
+            MaxOutputTokens = Constant.GeminiConfigModel25Flash.MaxOutputTokens,
+            SystemInstruction = Constant.GeminiConfigModel25Flash.SystemInstructionGenerateValidateContent
+        };
+        var responseRaw = await GenerateAsync(config);
+        var responseJson = ExtractJsonObject(responseRaw.Text);
+        var response = JsonSerializer.Deserialize<FormatResponse.FormatResponseValidate>(
+            responseJson,
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        if (!string.IsNullOrEmpty(response!.Explain))
+        {
+            _logger.LogInformation($"Explain why have result: {response?.Explain}");
+        }
+
+        return string.Equals(response?.Result, Constant.GeminiConfigModel25Flash.ApproveResult, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string ExtractJsonObject(string text)
     {
         var value = text.Trim();
