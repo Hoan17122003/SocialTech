@@ -33,17 +33,11 @@ export type BasicArticle = ArticleDetail & {
 };
 
 export type RequestGetNewsPaper = {
-    limit: 10,
-    page: 1,
+    limit: number;
+    page: number;
 };
 
-export type ResponseGetNewsPaper = {
-    Success: boolean,
-    Message: string,
-    Article: ArticleDetail & {
-        Id: number
-    }
-}
+export type ResponseGetNewsPaper = ApiResponse<BasicArticle[]>;
 
 
 export type ArticleDetailResponse = ApiResponse<ArticleDetail>;

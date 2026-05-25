@@ -305,9 +305,11 @@
 }
 
 /* Delay for cascading items */
-.fab-item:nth-child(1) { transition-delay: 150ms; }
-.fab-item:nth-child(2) { transition-delay: 100ms; }
-.fab-item:nth-child(3) { transition-delay: 50ms; }
+.fab-item:nth-child(1) { transition-delay: 200ms; }
+.fab-item:nth-child(2) { transition-delay: 160ms; }
+.fab-item:nth-child(3) { transition-delay: 120ms; }
+.fab-item:nth-child(4) { transition-delay: 80ms; }
+.fab-item:nth-child(5) { transition-delay: 40ms; }
 
 /* Custom Glassmorphic Utilities & Glowing Cards */
 .glass-panel {

@@ -29,7 +29,7 @@ export const articlesApi = {
             "paganation.page": requestGetNewPapers.page,
             "paganation.limit": requestGetNewPapers.limit
         })
-        return httpClient.get<ResponseGetNewsPaper>(`/api/Article/news${requestGetNewPapers}`, {
+        return httpClient.get<ResponseGetNewsPaper>(`/api/Article/news${query}`, {
             auth: true
         })
     }
