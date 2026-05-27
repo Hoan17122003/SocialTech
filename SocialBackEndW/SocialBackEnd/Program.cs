@@ -78,6 +78,9 @@ public class Program
         // Build tạo ra ứng dụng hoàn chỉnh từ toàn bộ cấu hình ở trên.
         var app = builder.Build();
 
+        // tạo hub cho signalR
+        app.MapHub<NotificationHub>("/notificationHub");
+
         // Middleware bắt lỗi toàn cục để chuẩn hóa response khi có exception.
         app.UseMiddleware<GlobalExceptionMiddleware>();
 

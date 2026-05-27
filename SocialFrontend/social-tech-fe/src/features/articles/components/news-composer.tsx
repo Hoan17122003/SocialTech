@@ -20,7 +20,7 @@ const FALLBACK_ARTICLES: BasicArticle[] = [
         isPermissionEdit: false,
         createDate: '2026-05-25T10:00:00.000Z',
         nameAuthor: 'Dr. Alexis Wright',
-        avatarAuthor: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb'
+        avatarAuthor: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb',
     },
     {
         id: 102,
@@ -30,7 +30,7 @@ const FALLBACK_ARTICLES: BasicArticle[] = [
         isPermissionEdit: false,
         createDate: '2026-05-25T08:30:00.000Z',
         nameAuthor: 'Tech lead Minh Trần',
-        avatarAuthor: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d'
+        avatarAuthor: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
     },
     {
         id: 103,
@@ -40,7 +40,7 @@ const FALLBACK_ARTICLES: BasicArticle[] = [
         isPermissionEdit: false,
         createDate: '2026-05-24T15:45:00.000Z',
         nameAuthor: 'CyberSec Specialist Nam Nguyễn',
-        avatarAuthor: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e'
+        avatarAuthor: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
     },
     {
         id: 104,
@@ -50,8 +50,8 @@ const FALLBACK_ARTICLES: BasicArticle[] = [
         isPermissionEdit: false,
         createDate: '2026-05-23T11:20:00.000Z',
         nameAuthor: 'UX/UI Designer Sarah Jenkins',
-        avatarAuthor: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330'
-    }
+        avatarAuthor: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
+    },
 ];
 
 // Interactive Network Connection Particles Background
@@ -208,13 +208,33 @@ function CyberCanvas() {
 // Categorizer helper
 function getArticleCategory(article: BasicArticle): string {
     const text = (article.title + ' ' + (article.content || '')).toLowerCase();
-    if (text.includes('ai') || text.includes('gemini') || text.includes('gpt') || text.includes('machine learning') || text.includes('trí tuệ')) {
+    if (
+        text.includes('ai') ||
+        text.includes('gemini') ||
+        text.includes('gpt') ||
+        text.includes('machine learning') ||
+        text.includes('trí tuệ')
+    ) {
         return 'AI & Machine Learning';
     }
-    if (text.includes('security') || text.includes('token') || text.includes('refresh') || text.includes('jwt') || text.includes('bảo mật') || text.includes('auth')) {
+    if (
+        text.includes('security') ||
+        text.includes('token') ||
+        text.includes('refresh') ||
+        text.includes('jwt') ||
+        text.includes('bảo mật') ||
+        text.includes('auth')
+    ) {
         return 'Cybersecurity';
     }
-    if (text.includes('css') || text.includes('next.js') || text.includes('tailwind') || text.includes('react') || text.includes('frontend') || text.includes('giao diện')) {
+    if (
+        text.includes('css') ||
+        text.includes('next.js') ||
+        text.includes('tailwind') ||
+        text.includes('react') ||
+        text.includes('frontend') ||
+        text.includes('giao diện')
+    ) {
         return 'Frontend Dev';
     }
     return 'General Tech';
@@ -230,23 +250,23 @@ export function NewComposer() {
     const [isDemoMode, setIsDemoMode] = useState(false);
 
     // Live monitor metrics
-    const [ping, setPing] = useState(15);
-    const [onlineReaders, setOnlineReaders] = useState(1284);
+    // const [ping, setPing] = useState(15);
+    // const [onlineReaders, setOnlineReaders] = useState(1284);
 
-    useEffect(() => {
-        const pingInterval = setInterval(() => {
-            setPing(p => Math.max(10, Math.min(45, p + Math.floor(Math.random() * 9) - 4)));
-        }, 3000);
+    // useEffect(() => {
+    //     const pingInterval = setInterval(() => {
+    //         setPing(p => Math.max(10, Math.min(45, p + Math.floor(Math.random() * 9) - 4)));
+    //     }, 3000);
 
-        const readersInterval = setInterval(() => {
-            setOnlineReaders(r => r + Math.floor(Math.random() * 5) - 2);
-        }, 5000);
+    //     const readersInterval = setInterval(() => {
+    //         setOnlineReaders(r => r + Math.floor(Math.random() * 5) - 2);
+    //     }, 5000);
 
-        return () => {
-            clearInterval(pingInterval);
-            clearInterval(readersInterval);
-        };
-    }, []);
+    //     return () => {
+    //         clearInterval(pingInterval);
+    //         clearInterval(readersInterval);
+    //     };
+    // }, []);
 
     useEffect(() => {
         let isMounted = true;
@@ -290,7 +310,7 @@ export function NewComposer() {
     // Filter categories
     const categories = ['All', 'AI & Machine Learning', 'Frontend Dev', 'Cybersecurity', 'General Tech'];
 
-    const filteredArticles = articles.filter(article => {
+    const filteredArticles = articles.filter((article) => {
         const categoryMatch = activeTab === 'All' || getArticleCategory(article) === activeTab;
         const searchMatch =
             article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -299,19 +319,20 @@ export function NewComposer() {
         return categoryMatch && searchMatch;
     });
 
+    /* eyebrow="WORKSPACE CORE / INTEL NEWS" */
     return (
         <div className="relative min-h-screen text-[var(--foreground)] py-6 z-10">
             {/* Cyber Canvas Background */}
             <CyberCanvas />
 
             <SectionShell
-                eyebrow="WORKSPACE CORE / INTEL NEWS"
-                title="Bản tin Khoa học & Công nghệ"
+                eyebrow=""
+                title="News"
                 description="Tổng hợp những đột phá kỹ thuật mới nhất, tối ưu hóa hệ thống và kiến thức kỹ nghệ hàng đầu."
             >
                 {/* Dashboard Tech Header widgets */}
                 <div className="grid gap-4 grid-cols-2 md:grid-cols-4 mt-6">
-                    <div className="glass-panel border border-[var(--line)] rounded-2xl px-5 py-3.5 flex flex-col justify-between shadow-[var(--shadow)] relative overflow-hidden group">
+                    {/* <div className="glass-panel border border-[var(--line)] rounded-2xl px-5 py-3.5 flex flex-col justify-between shadow-[var(--shadow)] relative overflow-hidden group">
                         <div className="absolute right-0 top-0 h-10 w-10 bg-indigo-500/5 blur-xl pointer-events-none rounded-full" />
                         <span className="text-[10px] uppercase font-mono tracking-wider text-[var(--muted)]">API Server Status</span>
                         <div className="flex items-center gap-2 mt-1.5">
@@ -319,17 +340,19 @@ export function NewComposer() {
                             <span className="h-2 w-2 rounded-full bg-emerald-500 absolute" />
                             <span className="text-sm font-bold tracking-wide font-mono text-emerald-500">ONLINE</span>
                         </div>
-                    </div>
-                    <div className="glass-panel border border-[var(--line)] rounded-2xl px-5 py-3.5 flex flex-col justify-between shadow-[var(--shadow)] relative overflow-hidden">
+                    </div> */}
+                    {/* <div className="glass-panel border border-[var(--line)] rounded-2xl px-5 py-3.5 flex flex-col justify-between shadow-[var(--shadow)] relative overflow-hidden">
                         <span className="text-[10px] uppercase font-mono tracking-wider text-[var(--muted)]">Network Latency (Ping)</span>
                         <span className="text-sm font-bold font-mono text-cyan-500 mt-1.5">{ping} ms</span>
                     </div>
                     <div className="glass-panel border border-[var(--line)] rounded-2xl px-5 py-3.5 flex flex-col justify-between shadow-[var(--shadow)] relative overflow-hidden">
                         <span className="text-[10px] uppercase font-mono tracking-wider text-[var(--muted)]">Active Tech Observers</span>
                         <span className="text-sm font-bold font-mono text-purple-500 mt-1.5">{onlineReaders.toLocaleString()}</span>
-                    </div>
+                    </div> */}
                     <div className="glass-panel border border-[var(--line)] rounded-2xl px-5 py-3.5 flex flex-col justify-between shadow-[var(--shadow)] relative overflow-hidden">
-                        <span className="text-[10px] uppercase font-mono tracking-wider text-[var(--muted)]">Data Feed Stream</span>
+                        <span className="text-[10px] uppercase font-mono tracking-wider text-[var(--muted)]">
+                            Data Feed Stream
+                        </span>
                         <span className="text-sm font-bold font-mono text-[var(--accent)] mt-1.5">
                             {isDemoMode ? 'SIMULATOR DEMO' : 'LIVE API BROADCAST'}
                         </span>
@@ -337,10 +360,10 @@ export function NewComposer() {
                 </div>
 
                 {/* Filters, search, category tabs */}
-                <div className="mt-8 flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
+                <div className="mt-8 flex flex-row md:flex-row gap-4 justify-between items-stretch md:items-center">
                     {/* Category tabs */}
                     <div className="flex flex-wrap gap-2.5">
-                        {categories.map(tab => {
+                        {categories.map((tab) => {
                             const isActive = activeTab === tab;
                             return (
                                 <button
@@ -362,15 +385,25 @@ export function NewComposer() {
                     {/* Cyber styled search input */}
                     <div className="relative max-w-sm w-full">
                         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                            <svg className="h-4 w-4 text-[var(--muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            <svg
+                                className="h-4 w-4 text-[var(--muted)]"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                />
                             </svg>
                         </div>
                         <input
                             type="text"
                             placeholder="Truy vấn dữ liệu bài viết..."
                             value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full pl-10 pr-4 py-2.5 rounded-full border border-[var(--line)] bg-[var(--surface)] text-xs text-[var(--foreground)] placeholder-[var(--muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all font-sans shadow-sm"
                         />
                         {searchQuery && (
@@ -379,7 +412,13 @@ export function NewComposer() {
                                 onClick={() => setSearchQuery('')}
                                 className="absolute inset-y-0 right-4 flex items-center text-[var(--muted)] hover:text-[var(--accent)]"
                             >
-                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <svg
+                                    className="h-3.5 w-3.5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                >
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
@@ -400,8 +439,18 @@ export function NewComposer() {
                     </div>
                 ) : filteredArticles.length === 0 ? (
                     <div className="flex flex-col items-center justify-center min-h-[350px] mt-8 rounded-3xl border border-dashed border-[var(--line)] bg-[var(--surface)] p-8 text-center shadow-inner">
-                        <svg className="h-12 w-12 text-[var(--muted)] opacity-40 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.008 1.24l.885 1.77a2.25 2.25 0 002.007 1.24h1.98a2.25 2.25 0 002.007-1.24l.885-1.77a2.25 2.25 0 012.007-1.24h3.86m-18 0h18" />
+                        <svg
+                            className="h-12 w-12 text-[var(--muted)] opacity-40 mb-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M2.25 13.5h3.86a2.25 2.25 0 012.008 1.24l.885 1.77a2.25 2.25 0 002.007 1.24h1.98a2.25 2.25 0 002.007-1.24l.885-1.77a2.25 2.25 0 012.007-1.24h3.86m-18 0h18"
+                            />
                         </svg>
                         <h4 className="text-sm font-bold text-[var(--foreground)]">Không có bản tin tương thích</h4>
                         <p className="text-xs text-[var(--muted)] mt-1.5 max-w-sm leading-relaxed">
@@ -409,17 +458,24 @@ export function NewComposer() {
                         </p>
                     </div>
                 ) : (
-                    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 mt-8">
+                    <div className="mt-8 flex flex-col gap-6">
                         {filteredArticles.map((article, index) => {
                             const authorInitials = article.nameAuthor
-                                ? article.nameAuthor.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+                                ? article.nameAuthor
+                                      .split(' ')
+                                      .map((n) => n[0])
+                                      .slice(0, 2)
+                                      .join('')
+                                      .toUpperCase()
                                 : 'T';
-                            
+
                             const cat = getArticleCategory(article);
                             let catStyle = 'border-indigo-500/20 bg-indigo-500/5 text-indigo-400';
                             if (cat === 'Cybersecurity') catStyle = 'border-amber-500/20 bg-amber-500/5 text-amber-400';
-                            else if (cat === 'Frontend Dev') catStyle = 'border-cyan-500/20 bg-cyan-500/5 text-cyan-400';
-                            else if (cat === 'General Tech') catStyle = 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400';
+                            else if (cat === 'Frontend Dev')
+                                catStyle = 'border-cyan-500/20 bg-cyan-500/5 text-cyan-400';
+                            else if (cat === 'General Tech')
+                                catStyle = 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400';
 
                             // Animated fade-in styling with staggered transition delay
                             return (
@@ -430,11 +486,13 @@ export function NewComposer() {
                                 >
                                     {/* Tech corner accents */}
                                     <div className="absolute top-0 right-0 h-16 w-16 bg-gradient-to-br from-indigo-500/5 to-cyan-500/0 rounded-bl-full pointer-events-none group-hover:scale-125 transition-transform duration-500" />
-                                    
+
                                     <div>
                                         {/* Card Header metadata */}
                                         <div className="flex items-center justify-between mb-4">
-                                            <span className={`border px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-widest ${catStyle}`}>
+                                            <span
+                                                className={`border px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-widest ${catStyle}`}
+                                            >
                                                 {cat}
                                             </span>
                                             <span className="text-[10px] text-[var(--muted)] font-mono opacity-80">
@@ -449,7 +507,9 @@ export function NewComposer() {
 
                                         {/* Brief content snippet */}
                                         <p className="text-[11px] text-[var(--muted)] font-medium leading-relaxed mb-5 opacity-90 truncate-3-lines">
-                                            {article.content ? article.content.replace(/#+\s/g, '').replace(/\*+/g, '') : 'Không có nội dung mô tả...'}
+                                            {article.content
+                                                ? article.content.replace(/#+\s/g, '').replace(/\*+/g, '')
+                                                : 'Không có nội dung mô tả...'}
                                         </p>
                                     </div>
 
@@ -459,23 +519,46 @@ export function NewComposer() {
                                             <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 p-0.5 shadow-sm shrink-0">
                                                 <div className="h-full w-full rounded-full bg-[var(--surface-strong)] flex items-center justify-center overflow-hidden">
                                                     {article.avatarAuthor ? (
-                                                        <img src={article.avatarAuthor} alt={article.nameAuthor} className="h-full w-full object-cover" />
+                                                        <img
+                                                            src={article.avatarAuthor}
+                                                            alt={article.nameAuthor}
+                                                            className="h-full w-full object-cover"
+                                                        />
                                                     ) : (
-                                                        <span className="text-[10px] font-bold text-indigo-400">{authorInitials}</span>
+                                                        <span className="text-[10px] font-bold text-indigo-400">
+                                                            {authorInitials}
+                                                        </span>
                                                     )}
                                                 </div>
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-xs font-bold text-[var(--foreground)] truncate leading-none">{article.nameAuthor}</p>
-                                                <p className="text-[9px] text-[var(--muted)] mt-1 font-mono">Contributor</p>
+                                                <p className="text-xs font-bold text-[var(--foreground)] truncate leading-none">
+                                                    {article.nameAuthor}
+                                                </p>
+                                                <p className="text-[9px] text-[var(--muted)] mt-1 font-mono">
+                                                    Contributor
+                                                </p>
                                             </div>
                                         </div>
 
                                         <div className="flex items-center gap-2">
                                             {article.attachments && article.attachments.length > 0 && (
-                                                <div className="flex items-center justify-center h-7 w-7 rounded-full bg-[var(--line)] text-[var(--muted)]" title={`${article.attachments.length} tệp đính kèm`}>
-                                                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                                <div
+                                                    className="flex items-center justify-center h-7 w-7 rounded-full bg-[var(--line)] text-[var(--muted)]"
+                                                    title={`${article.attachments.length} tệp đính kèm`}
+                                                >
+                                                    <svg
+                                                        className="h-3.5 w-3.5"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2.5"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                                                        />
                                                     </svg>
                                                 </div>
                                             )}
@@ -486,8 +569,18 @@ export function NewComposer() {
                                                 className="rounded-full bg-gradient-to-r from-indigo-500/10 to-cyan-500/10 hover:from-indigo-500 hover:hover:to-cyan-500 hover:text-white px-3.5 py-1.5 text-[10px] font-extrabold tracking-wider text-indigo-400 group-hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-1 cursor-pointer"
                                             >
                                                 ĐỌC TIẾP
-                                                <svg className="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                                <svg
+                                                    className="h-3 w-3 shrink-0"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                    strokeWidth="3"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        d="M9 5l7 7-7 7"
+                                                    />
                                                 </svg>
                                             </button>
                                         </div>
@@ -505,7 +598,7 @@ export function NewComposer() {
                     {/* Glowing outer box */}
                     <div className="relative max-w-3xl w-full rounded-[2rem] border border-indigo-500/40 bg-[var(--surface-strong)] shadow-[0_0_50px_rgba(99,102,241,0.15)] overflow-hidden max-h-[85vh] flex flex-col justify-between origin-center">
                         <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-400 animate-pulse" />
-                        
+
                         {/* Interactive digital scanline overlay effect */}
                         <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.12)_50%),linear-gradient(90deg,rgba(255,0,0,0.02),rgba(0,255,0,0.01),rgba(0,0,255,0.02))] bg-[length:100%_4px,6px_100%] opacity-20" />
 
@@ -515,7 +608,9 @@ export function NewComposer() {
                                 <span className="font-mono text-[9px] text-cyan-400 bg-cyan-400/10 px-2.5 py-0.5 rounded-full border border-cyan-400/25 font-bold uppercase tracking-widest animate-pulse">
                                     Digital Scanner
                                 </span>
-                                <span className="text-[10px] text-[var(--muted)] font-mono">ID: #{activeArticle.id}</span>
+                                <span className="text-[10px] text-[var(--muted)] font-mono">
+                                    ID: #{activeArticle.id}
+                                </span>
                             </div>
                             <button
                                 type="button"
@@ -523,7 +618,13 @@ export function NewComposer() {
                                 className="rounded-full border border-[var(--line)] bg-[var(--surface)] hover:bg-rose-500/15 hover:border-rose-500 hover:text-rose-500 p-2 text-[var(--foreground)] transition-all hover:rotate-90 duration-300 flex items-center justify-center cursor-pointer"
                                 aria-label="Close modal"
                             >
-                                <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <svg
+                                    className="h-4.5 w-4.5"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                >
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                             </button>
@@ -536,41 +637,58 @@ export function NewComposer() {
                                 <h2 className="text-xl md:text-2xl font-extrabold text-[var(--foreground)] tracking-tight leading-tight">
                                     {activeArticle.title}
                                 </h2>
-                                
+
                                 <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--muted)] pt-1 border-b border-[var(--line)] pb-4">
                                     <div className="flex items-center gap-2">
                                         <div className="h-6 w-6 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 p-0.5 shadow-sm shrink-0">
                                             <div className="h-full w-full rounded-full bg-[var(--surface-strong)] flex items-center justify-center overflow-hidden">
                                                 <span className="text-[8px] font-bold text-indigo-400">
-                                                    {activeArticle.nameAuthor.split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase()}
+                                                    {activeArticle.nameAuthor
+                                                        .split(' ')
+                                                        .map((n) => n[0])
+                                                        .slice(0, 2)
+                                                        .join('')
+                                                        .toUpperCase()}
                                                 </span>
                                             </div>
                                         </div>
-                                        <span className="font-bold text-[var(--foreground)] opacity-95">{activeArticle.nameAuthor}</span>
+                                        <span className="font-bold text-[var(--foreground)] opacity-95">
+                                            {activeArticle.nameAuthor}
+                                        </span>
                                     </div>
                                     <span>•</span>
-                                    <span className="font-mono text-[10px]">Xuất bản {formatDateTime(activeArticle.createDate)}</span>
+                                    <span className="font-mono text-[10px]">
+                                        Xuất bản {formatDateTime(activeArticle.createDate)}
+                                    </span>
                                 </div>
                             </div>
 
                             {/* Markdown Render Body */}
                             <div className="article-markdown-preview prose prose-indigo max-w-none text-xs md:text-sm leading-relaxed text-[var(--foreground)]/90 space-y-4">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {activeArticle.content}
-                                </ReactMarkdown>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{activeArticle.content}</ReactMarkdown>
                             </div>
 
                             {/* Attachments Section */}
                             {activeArticle.attachments && activeArticle.attachments.length > 0 && (
                                 <div className="mt-8 pt-6 border-t border-[var(--line)]">
                                     <h4 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--muted)] flex items-center gap-1.5 mb-3">
-                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                        <svg
+                                            className="h-4 w-4"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            strokeWidth="2.5"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                                            />
                                         </svg>
                                         Tệp đính kèm học liệu ({activeArticle.attachments.length})
                                     </h4>
                                     <div className="grid gap-3 sm:grid-cols-2">
-                                        {activeArticle.attachments.map(att => {
+                                        {activeArticle.attachments.map((att) => {
                                             const filename = att.split(/[/\\]/).pop() || att;
                                             return (
                                                 <a
@@ -580,9 +698,21 @@ export function NewComposer() {
                                                     rel="noreferrer"
                                                     className="group flex items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--background-soft)] px-4 py-2.5 text-xs font-semibold hover:border-indigo-500/40 hover:bg-[var(--surface)] transition-all duration-300 shadow-sm cursor-pointer"
                                                 >
-                                                    <span className="truncate group-hover:text-indigo-400 transition-colors">{filename}</span>
-                                                    <svg className="h-3.5 w-3.5 text-[var(--muted)] group-hover:text-indigo-400 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                    <span className="truncate group-hover:text-indigo-400 transition-colors">
+                                                        {filename}
+                                                    </span>
+                                                    <svg
+                                                        className="h-3.5 w-3.5 text-[var(--muted)] group-hover:text-indigo-400 transition-colors shrink-0"
+                                                        fill="none"
+                                                        viewBox="0 0 24 24"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2.5"
+                                                    >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                                        />
                                                     </svg>
                                                 </a>
                                             );
