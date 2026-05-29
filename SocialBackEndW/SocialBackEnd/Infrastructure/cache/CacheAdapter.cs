@@ -11,6 +11,9 @@ public class CacheAdapter : ICacheInternal
     private readonly IDistributedCache _cache;
 
     private readonly IConnectionMultiplexer _redis;
+    private const int MaxAttemptsLogin = 10;
+    private static readonly TimeSpan BlockTime = TimeSpan.FromMinutes(15);
+    private static readonly TimeSpan FailCounterTtl = TimeSpan.FromMinutes(15);
     public CacheAdapter(IDistributedCache cache, IConnectionMultiplexer redis)
     {
         _cache = cache ?? throw new ArgumentNullException(nameof(cache));
@@ -71,6 +74,67 @@ public class CacheAdapter : ICacheInternal
             }
         }
         return true;
+    }
+
+    public async Task<long> IncreaseFailedAttemptAsync(string username)
+    {
+        var failKey = FailKey(username);
+        var blockKey = BlockKey(username);
+        var db = _redis.GetDatabase();
+
+        var count = await db.StringIncrementAsync(failKey);
+
+        if (count == 1)
+        {
+            await db.KeyExpireAsync(failKey, FailCounterTtl);
+        }
+
+        if (count >= MaxAttemptsLogin)
+        {
+            await db.StringSetAsync(
+                blockKey,
+                "1",
+                BlockTime);
+
+            await db.KeyDeleteAsync(failKey);
+        }
+
+        return count;
+    }
+
+    private static string FailKey(string username)
+      => $"login:fail:{username.ToLowerInvariant()}";
+
+    private static string BlockKey(string username)
+     => $"login:block:{username.ToLowerInvariant()}";
+
+    public async Task<bool> IsBlockedAsync(string username)
+    {
+        var db = _redis.GetDatabase();
+        return await db.KeyExistsAsync(BlockKey(username));
+    }
+
+    public async Task<long> GetFailedCountAsync(string username)
+    {
+        var db = _redis.GetDatabase();
+        var value = await db.StringGetAsync(FailKey(username));
+
+        if (value.IsNullOrEmpty)
+            return 0;
+
+        return (long)value;
+    }
+
+    public async Task ResetFailedAttemptAsync(string username)
+    {
+        var db = _redis.GetDatabase();
+        await db.KeyDeleteAsync(FailKey(username));
+        await db.KeyDeleteAsync(BlockKey(username));
+    }
+    public async Task<TimeSpan?> GetBlockRemainingTimeAsync(string username)
+    {
+        var db = _redis.GetDatabase();
+        return await db.KeyTimeToLiveAsync(BlockKey(username));
     }
 
 }

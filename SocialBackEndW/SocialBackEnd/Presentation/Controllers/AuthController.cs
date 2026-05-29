@@ -10,6 +10,8 @@ using SocialBackEnd.Application.Ports.Inbound.web;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using SocialBackEnd.Common.Constants;
+using SocialBackEnd.Application.Ports.Outbound.cache;
+using System.Net;
 
 namespace SocialBackEnd.Presentation.Controllers
 {
@@ -19,10 +21,12 @@ namespace SocialBackEnd.Presentation.Controllers
     {
 
         private readonly IAuthenticationPort _authenticationPort;
+        private readonly ICacheInternal _cacheInternal;
 
-        public AuthController(IAuthenticationPort authenticationPort)
+        public AuthController(IAuthenticationPort authenticationPort, ICacheInternal cacheInternal)
         {
             _authenticationPort = authenticationPort ?? throw new ArgumentNullException(nameof(authenticationPort));
+            _cacheInternal = cacheInternal ?? throw new ArgumentNullException(nameof(cacheInternal));
         }
 
         [HttpPost("login")]
@@ -30,13 +34,18 @@ namespace SocialBackEnd.Presentation.Controllers
             CancellationToken cancellationToken
         )
         {
+            var isBlocked = await _cacheInternal.IsBlockedAsync(loginRequest.Email);
+            if (isBlocked)
+            {
+                return StatusCode((int)HttpStatusCode.TooManyRequests, "Qua nhiều lần đăng nhập thất bại. Vui lòng thử lại sau 15 phút.");
+            }
             var authResult = await _authenticationPort.LoginAsync(
                 loginRequest,
                 cancellationToken
             );
             if (string.IsNullOrEmpty(authResult.AccessToken))
             {
-                return Unauthorized(new { Message = "Invalid email or password" });
+                return Unauthorized(new { Message = "Invalid email or password, please try again!." });
             }
             return Ok(authResult);
         }

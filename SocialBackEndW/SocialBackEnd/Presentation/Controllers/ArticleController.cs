@@ -27,7 +27,7 @@ namespace SocialBackEnd.Presentation.Controllers
 
         [Authorize]
         [HttpPost("create")]
-        [Consumes("multipart/form-data")]
+        [Consumes("multipart/form-data")]   
         public async Task<IActionResult> CreateArticle([FromForm] RequestCreateArticle requestCreateArticle)
         {
             var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

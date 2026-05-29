@@ -51,6 +51,7 @@ public class AuthenticationAdapter : IAuthenticationPort
 
         if (user is null || !int.TryParse(user.UserId, out var userId))
         {
+
             return new LoginResponse(
                 AccessToken: string.Empty,
                 TokenType: string.Empty,
@@ -156,7 +157,7 @@ public class AuthenticationAdapter : IAuthenticationPort
             return ApiResponse<string>.Fail("Refresh token không hợp lệ hoặc đã hết hạn.");
         }
 
-        var accessTokenUserId =  accessTokenPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
+        var accessTokenUserId = accessTokenPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
         var refreshTokenUserId = refreshTokenPrincipal.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (!int.TryParse(accessTokenUserId, out var userId) ||

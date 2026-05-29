@@ -8,4 +8,7 @@ public interface ICacheInternal
     Task<bool> SetAsync<T>(string key, T value, TimeSpan? expiration = null, CancellationToken cancellationToken = default);
     Task<bool> RemoveAsync(string key, CancellationToken cancellationToken = default);
     Task<bool> ClearAsync(string keyPrefix, CancellationToken cancellationToken = default);
+    Task<long> IncreaseFailedAttemptAsync(string username);
+    Task<bool> IsBlockedAsync(string username);
+    Task ResetFailedAttemptAsync(string username);
 }

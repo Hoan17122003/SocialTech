@@ -5,6 +5,8 @@ using SocialBackEnd.Presentation.Middlewares;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using Minio;
+using SocialBackEnd.Infrastructure.Notifications.Internal;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace SocialBackEnd;
 
@@ -64,6 +66,19 @@ public class Program
         });
         builder.Services.AddServiceDependencies(builder.Configuration);
         builder.Services.AddRepositoryDependencies(builder.Configuration);
+        // cấu hình rate limit cho API, giới hạn số lượng request tối đa trong một khoảng thời gian nhất định.
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.AddFixedWindowLimiter("api",
+                limiterOptions =>
+                {
+                    limiterOptions.PermitLimit = 100; // Số lượng request tối đa trong một window
+                    limiterOptions.Window = TimeSpan.FromMinutes(1); // Thời gian của một window
+                    limiterOptions.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst; // Xử lý request theo thứ tự đến
+                    limiterOptions.QueueLimit = 0; // Không cho phép xếp hàng, trả về lỗi ngay khi vượt quá giới hạn
+                }
+            );
+        });
 
 
         // Gom toàn bộ cấu hình authentication/authorization vào một extension

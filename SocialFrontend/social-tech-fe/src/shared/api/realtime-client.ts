@@ -2,7 +2,7 @@ import * as signalR from "@microsoft/signalr";
 
 const connection = new signalR.HubConnectionBuilder()
     .withUrl("https://localhost:5001/hubs/notifications", {
-        accessTokenFactory: () => localStorage.getItem("access_token")
+        // accessTokenFactory: () => localStorage.getItem("access_token")
     })
     .withAutomaticReconnect()
     .build();
