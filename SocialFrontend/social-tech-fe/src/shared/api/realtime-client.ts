@@ -1,18 +1,17 @@
-import * as signalR from "@microsoft/signalr";
+'use client';
 
-const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://localhost:5001/hubs/notifications", {
-        // accessTokenFactory: () => localStorage.getItem("access_token")
-    })
-    .withAutomaticReconnect()
-    .build();
+import * as signalR from '@microsoft/signalr';
+import { appConfig } from '@/common/config/env';
+import { tokenStorage } from '@/shared/api/token-storage';
 
-connection.on("ReceiveNotification", (notification) => {
-    console.log("Notification:", notification);
-});
+export function createNotificationHubConnection() {
+    const hubUrl = new URL('/notificationHub', appConfig.apiBaseUrl).toString();
 
-connection.on("ReceiveSystemNews", (news) => {
-    console.log("System news:", news);
-});
-
-await connection.start();
+    return new signalR.HubConnectionBuilder()
+        .withUrl(hubUrl, {
+            accessTokenFactory: () => tokenStorage.get() ?? '',
+            withCredentials: true,
+        })
+        .withAutomaticReconnect()
+        .build();
+}

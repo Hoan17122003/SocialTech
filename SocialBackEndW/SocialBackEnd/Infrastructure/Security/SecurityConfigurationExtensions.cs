@@ -74,7 +74,19 @@ public static class SecurityConfigurationExtensions
                 // hoặc custom cách đọc token.
                 options.Events = new JwtBearerEvents
                 {
-                    OnMessageReceived = context => Task.CompletedTask,
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+
+                        if (!string.IsNullOrWhiteSpace(accessToken) &&
+                            path.StartsWithSegments("/notificationHub"))
+                        {
+                            context.Token = accessToken;
+                        }
+
+                        return Task.CompletedTask;
+                    },
                     OnTokenValidated = context =>
                     {
                         // resolve service ở runtime để tránh lỗi khởi động DI 
@@ -82,10 +94,14 @@ public static class SecurityConfigurationExtensions
 
                         var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
                         var authorizationHeader = context.HttpContext.Request.Headers.Authorization.ToString();
-                        var jwt = String.Empty;
+                        var jwt = string.Empty;
                         if (authorizationHeader.StartsWith($"{Constant.PrefixAuth} ", StringComparison.OrdinalIgnoreCase))
                         {
                             jwt = authorizationHeader[Constant.PrefixAuth.Length..].Trim();
+                        }
+                        else
+                        {
+                            jwt = context.HttpContext.Request.Query["access_token"].ToString();
                         }
                         // var email = context.Principal?.FindFirstValue(ClaimTypes.Email);
                         var tokenOfBlackList = cacheInternal.GetAsync<string>($"blacklist_token:{userId}@{jwt}").Result;

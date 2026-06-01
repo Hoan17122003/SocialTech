@@ -24,6 +24,7 @@ using SocialBackEnd.Application.Ports.Outbound.LLM;
 using SocialBackEnd.Infrastructure.Minio;
 using SocialBackEnd.Application.Ports.Outbound.Minio;
 using Minio;
+using SocialBackEnd.Application.Ports.Inbound.notification;
 
 namespace SocialBackEnd.DependencyInjection;
 
@@ -40,6 +41,7 @@ public static class ServiceDependencyInjection
         services.AddScoped<IUserPort, UserAdapaterPort>();
         services.AddScoped<IEmailPortOut, MailAdapter>();
         services.AddScoped<IEmailNotificationService, NotificationService>();
+        services.AddScoped<INotification, InAppNotificationService>();
         services.AddSingleton<IApplicationEventPublisher, KafkaEventPublisher>();
         services.AddHostedService<KafkaEventConsumer>();
         // Nhúng param vào template renderer để gửi mail 

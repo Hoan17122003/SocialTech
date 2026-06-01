@@ -12,6 +12,7 @@ public sealed record ArticleCreatedIntegrationEvent
     public string LinkProfileAuthor { get; init; }
     public string Thumbnail { get; set; }
     public string SubContent { get; init; }
+    public List<int> FollowerUserIds { get; init; } = [];
     public List<string> EmailUserFollow { get; init; }
     public DateTime CreateDate { get; init; }
 }

@@ -16,6 +16,7 @@ export type UserProfile = {
     followersCount: number;
     followingsCount: number;
     recentPosts: UserRecentPost[];
+    postCounts: number;
     isPermissionEdit: boolean;
 };
 

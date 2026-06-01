@@ -9,6 +9,7 @@ import { formatDateTime } from '@/common/utils/format-date';
 import { ApiError } from '@/common/types/api';
 import { Card } from '@/shared/ui/card';
 import { SectionShell } from '@/shared/ui/section-shell';
+import Link from 'next/link';
 
 // Staggered Cyber fallback articles to render in case API is empty or offline
 const FALLBACK_ARTICLES: BasicArticle[] = [
@@ -20,6 +21,7 @@ const FALLBACK_ARTICLES: BasicArticle[] = [
         isPermissionEdit: false,
         createDate: '2026-05-25T10:00:00.000Z',
         nameAuthor: 'Dr. Alexis Wright',
+        publicIdAuthor: '10000000-0000-0000-0000-000000000001',
         avatarAuthor: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb',
     },
     {
@@ -30,6 +32,7 @@ const FALLBACK_ARTICLES: BasicArticle[] = [
         isPermissionEdit: false,
         createDate: '2026-05-25T08:30:00.000Z',
         nameAuthor: 'Tech lead Minh Trần',
+        publicIdAuthor: '10000000-0000-0000-0000-000000000001',
         avatarAuthor: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
     },
     {
@@ -40,6 +43,7 @@ const FALLBACK_ARTICLES: BasicArticle[] = [
         isPermissionEdit: false,
         createDate: '2026-05-24T15:45:00.000Z',
         nameAuthor: 'CyberSec Specialist Nam Nguyễn',
+        publicIdAuthor: '10000000-0000-0000-0000-000000000001',
         avatarAuthor: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
     },
     {
@@ -50,6 +54,7 @@ const FALLBACK_ARTICLES: BasicArticle[] = [
         isPermissionEdit: false,
         createDate: '2026-05-23T11:20:00.000Z',
         nameAuthor: 'UX/UI Designer Sarah Jenkins',
+        publicIdAuthor: '10000000-0000-0000-0000-000000000001',
         avatarAuthor: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
     },
 ];
@@ -515,7 +520,10 @@ export function NewComposer() {
 
                                     {/* Card Footer author & actions */}
                                     <div className="flex items-center justify-between border-t border-[var(--line)] pt-4 mt-auto">
-                                        <div className="flex items-center gap-2.5">
+                                        <Link
+                                            href={`/profile/${article.publicIdAuthor}`}
+                                            className="flex items-center gap-2.5"
+                                        >
                                             <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 p-0.5 shadow-sm shrink-0">
                                                 <div className="h-full w-full rounded-full bg-[var(--surface-strong)] flex items-center justify-center overflow-hidden">
                                                     {article.avatarAuthor ? (
@@ -539,7 +547,7 @@ export function NewComposer() {
                                                     Contributor
                                                 </p>
                                             </div>
-                                        </div>
+                                        </Link>
 
                                         <div className="flex items-center gap-2">
                                             {article.attachments && article.attachments.length > 0 && (

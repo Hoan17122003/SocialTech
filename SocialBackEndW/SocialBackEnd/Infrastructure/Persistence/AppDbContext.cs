@@ -25,6 +25,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<ContentReport> ContentReports => Set<ContentReport>();
     public DbSet<IPLogin> IPLogins => Set<IPLogin>();
     public DbSet<Attachments> Attachments => Set<Attachments>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
