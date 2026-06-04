@@ -55,7 +55,9 @@ public class AuthenticationAdapter : IAuthenticationPort
             return new LoginResponse(
                 AccessToken: string.Empty,
                 TokenType: string.Empty,
-                PublicId: Guid.Empty);
+                PublicId: Guid.Empty,
+                Role: string.Empty
+            );
         }
 
         var existingIpLogin = await _ipLoginRepository.GetLatestIpLoginByUserIdAsync(userId, cancellationToken);
@@ -66,7 +68,9 @@ public class AuthenticationAdapter : IAuthenticationPort
             return new LoginResponse(
                 AccessToken: accessToken,
                 TokenType: Constant.PrefixAuth,
-                PublicId: userPublicId);
+                PublicId: userPublicId,
+                Role: user.Roles.FirstOrDefault()!.ToString() ?? string.Empty
+            );
         }
 
         var refreshToken = _tokenService.CreateRefreshToken(user);
@@ -92,7 +96,9 @@ public class AuthenticationAdapter : IAuthenticationPort
         return new LoginResponse(
             AccessToken: accessToken,
             TokenType: Constant.PrefixAuth,
-            PublicId: userPublicId);
+            PublicId: userPublicId,
+            Role: user.Roles.FirstOrDefault()!.ToString() ?? string.Empty
+        );
     }
 
     public async Task LogoutAsync(int userId, string accessToken, CancellationToken cancellationToken = default)
@@ -214,7 +220,17 @@ public class AuthenticationAdapter : IAuthenticationPort
             ?? throw new SecurityTokenException("Missing user id claim.");
         var email = principal.FindFirstValue(ClaimTypes.Email)
             ?? throw new SecurityTokenException("Missing email claim.");
-        var roles = principal.FindAll(ClaimTypes.Role).Select(x => x.Value).ToArray();
+        var roles = principal.FindAll(ClaimTypes.Role)
+            .Select(claim =>
+            {
+                if (Enum.TryParse<UserRole>(claim.Value, ignoreCase: true, out var role))
+                {
+                    return role;
+                }
+
+                throw new SecurityTokenException($"Invalid role claim: {claim.Value}");
+            })
+            .ToArray();
         var permissions = principal.FindAll("permission").Select(x => x.Value).ToArray();
 
         return new UserIdentity(userId, email, roles, permissions);

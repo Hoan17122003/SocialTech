@@ -12,6 +12,8 @@ Frontend Next.js cua Social Tech duoc to chuc theo huong `src/`-first de gom toa
 - `public`: static assets.
 - `docs`: tai lieu phan tich va kien truc.
 
+Tai lieu maintain lien quan den feature hand gesture va `GET /api/lover` nam tai `docs/discussion/Feature-Hand-Lover-Maintenance.md`.
+
 ## Scripts
 
 ```bash

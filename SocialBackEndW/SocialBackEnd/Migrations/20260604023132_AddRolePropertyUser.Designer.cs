@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SocialBackEnd.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using SocialBackEnd.Infrastructure.Persistence;
 namespace SocialBackEnd.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260604023132_AddRolePropertyUser")]
+    partial class AddRolePropertyUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -576,7 +579,7 @@ namespace SocialBackEnd.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAtUtc = new DateTime(2026, 6, 4, 2, 48, 2, 523, DateTimeKind.Utc).AddTicks(8097),
+                            CreatedAtUtc = new DateTime(2026, 6, 4, 2, 31, 32, 517, DateTimeKind.Utc).AddTicks(3407),
                             Environment = "Seed",
                             Name = "SocialBackEnd",
                             UtcTime = new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -664,9 +667,8 @@ namespace SocialBackEnd.Migrations
                     b.Property<int>("ReputationScore")
                         .HasColumnType("int");
 
-                    b.Property<string>("Roles")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime(6)");

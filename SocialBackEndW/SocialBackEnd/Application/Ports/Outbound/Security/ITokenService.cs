@@ -12,5 +12,5 @@ public interface ITokenService
 public sealed record UserIdentity(
     string UserId,
     string Email,
-    string[] Roles,
+    UserRole[] Roles,
     string[] Permissions);

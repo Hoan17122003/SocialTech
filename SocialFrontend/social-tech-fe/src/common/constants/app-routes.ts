@@ -4,4 +4,5 @@ export const APP_ROUTES = {
     register: '/register',
     dashboard: '/dashboard',
     createArticle: '/articles/new',
+    featureHand: '/feature-hand',
 } as const;
