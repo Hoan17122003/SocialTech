@@ -31,7 +31,7 @@ public sealed class JwtTokenService : ITokenService
 
         foreach (var role in user.Roles)
         {
-            claims.Add(new Claim(ClaimTypes.Role, role));
+            claims.Add(new Claim(ClaimTypes.Role, role.ToString()));
         }
 
         foreach (var permission in user.Permissions)
@@ -62,7 +62,7 @@ public sealed class JwtTokenService : ITokenService
         };
         foreach (var role in user.Roles)
         {
-            claims.Add(new Claim(ClaimTypes.Role, role));
+            claims.Add(new Claim(ClaimTypes.Role, role.ToString()));
         }
 
         foreach (var permission in user.Permissions)

@@ -194,7 +194,8 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
                 Username = x.Username,
                 DisplayName = x.DisplayName,
                 PasswordHash = x.PasswordHash,
-                PublicId = x.PublicId
+                PublicId = x.PublicId,
+                Roles = x.Roles
             })
             .FirstOrDefaultAsync(cancellationToken);
     }

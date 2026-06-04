@@ -12,6 +12,7 @@ public class User : EntityBase
     public bool IsEmailVerified { get; set; }
     public Guid PublicId { get; set; }
     public bool IsPrivateAccount { get; set; } = false;
+    public UserRole[] Roles { get; set; } = [UserRole.Role_Member];
 
     public ICollection<UserFollow> Followers { get; set; } = new List<UserFollow>();
     public ICollection<UserFollow> Followings { get; set; } = new List<UserFollow>();
