@@ -7,6 +7,7 @@ using Microsoft.OpenApi.Models;
 using Minio;
 using SocialBackEnd.Infrastructure.Notifications.Internal;
 using Microsoft.AspNetCore.RateLimiting;
+using SocialBackEnd.Infrastructure.chat;
 
 namespace SocialBackEnd;
 
@@ -95,6 +96,7 @@ public class Program
 
         // tạo hub cho signalR
         app.MapHub<NotificationHub>("/notificationHub");
+        app.MapHub<ChatHub>("/chatHub");
 
         // Middleware bắt lỗi toàn cục để chuẩn hóa response khi có exception.
         app.UseMiddleware<GlobalExceptionMiddleware>();

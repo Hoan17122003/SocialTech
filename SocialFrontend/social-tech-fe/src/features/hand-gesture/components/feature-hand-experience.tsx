@@ -328,6 +328,14 @@ function detectGestureState(
     };
 }
 
+// Animation timing constants (lerp factors per frame)
+// Lower values make the transitions slower and smoother (e.g. longer flight duration)
+// Higher values make them faster and snappier
+const CARD_POSITION_SPEED = 0.05; // Fly to position speed (default: 0.1)
+const CARD_ROTATION_SPEED = 0.06; // Rotate speed (default: 0.12)
+const CARD_SCALE_SPEED = 0.06;    // Zoom/scale speed (default: 0.12)
+const CARD_OPACITY_SPEED = 0.06;  // Opacity fade speed (default: 0.12)
+
 export function FeatureHandExperience() {
     const router = useRouter();
     const { hasRole, isAuthenticated, isHydrated } = useAuth();
@@ -447,12 +455,12 @@ export function FeatureHandExperience() {
                 const focusBoost = targetState.pinchActive && targetState.focusIndex === index ? 1.28 : 1;
                 const softFade = targetState.pinchActive && targetState.focusIndex !== index ? 0.78 : 1;
 
-                card.mesh.position.lerp(position, 0.1);
-                card.mesh.rotation.x = lerp(card.mesh.rotation.x, rotation.x, 0.12);
-                card.mesh.rotation.y = lerp(card.mesh.rotation.y, rotation.y, 0.12);
-                card.mesh.rotation.z = lerp(card.mesh.rotation.z, rotation.z, 0.12);
-                card.mesh.scale.lerp(card.baseScale.clone().multiplyScalar(focusBoost), 0.12);
-                card.mesh.material.opacity = lerp(card.mesh.material.opacity, softFade, 0.12);
+                card.mesh.position.lerp(position, CARD_POSITION_SPEED);
+                card.mesh.rotation.x = lerp(card.mesh.rotation.x, rotation.x, CARD_ROTATION_SPEED);
+                card.mesh.rotation.y = lerp(card.mesh.rotation.y, rotation.y, CARD_ROTATION_SPEED);
+                card.mesh.rotation.z = lerp(card.mesh.rotation.z, rotation.z, CARD_ROTATION_SPEED);
+                card.mesh.scale.lerp(card.baseScale.clone().multiplyScalar(focusBoost), CARD_SCALE_SPEED);
+                card.mesh.material.opacity = lerp(card.mesh.material.opacity, softFade, CARD_OPACITY_SPEED);
             });
 
             renderer.render(scene, camera);

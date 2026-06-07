@@ -493,15 +493,37 @@ export function NewComposer() {
                                     <div className="absolute top-0 right-0 h-16 w-16 bg-gradient-to-br from-indigo-500/5 to-cyan-500/0 rounded-bl-full pointer-events-none group-hover:scale-125 transition-transform duration-500" />
 
                                     <div>
-                                        {/* Card Header metadata */}
                                         <div className="flex items-center justify-between mb-4">
-                                            <span
-                                                className={`border px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-widest ${catStyle}`}
-                                            >
-                                                {cat}
-                                            </span>
                                             <span className="text-[10px] text-[var(--muted)] font-mono opacity-80">
                                                 {formatDateTime(article.createDate)}
+                                            </span>
+                                            <span
+                                                className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border ${catStyle}`}
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="20"
+                                                    height="20"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="#ffff"
+                                                    stroke-width="2"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                >
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                    <path
+                                                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 
+           1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 
+           1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 
+           1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09c.7 0 
+           1.31-.4 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 
+           2.83-2.83l.06.06c.51.51 1.25.66 1.82.33.46-.26.74-.76.74-1.29V3a2 
+           2 0 1 1 4 0v.09c0 .53.28 1.03.74 1.29.57.33 1.31.18 1.82-.33l.06-.06a2 
+           2 0 1 1 2.83 2.83l-.06.06c-.36.36-.51.88-.33 1.82.2.6.81 1 1.51 
+           1H21a2 2 0 1 1 0 4h-.09c-.7 0-1.31.4-1.51 1z"
+                                                    ></path>
+                                                </svg>
                                             </span>
                                         </div>
 
