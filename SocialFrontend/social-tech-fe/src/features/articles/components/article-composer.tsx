@@ -12,6 +12,7 @@ import { Card } from '@/shared/ui/card';
 import { Input, Textarea } from '@/shared/ui/field';
 import { FormMessage } from '@/shared/ui/form-message';
 import { SectionShell } from '@/shared/ui/section-shell';
+import { useTheme } from '@/providers/theme-provider';
 
 const MarkdownEditor = dynamic(() => import('@uiw/react-md-editor'), {
     ssr: false,
@@ -332,6 +333,7 @@ function buildSlashCommandSnippet(commandId: Exclude<SlashCommandId, 'image'>) {
 }
 
 export function ArticleComposer({ titlePage }: PropsWithChildren<{ mode: string; titlePage: string }>) {
+    const { theme } = useTheme();
     const [form, setForm] = useState<ArticleFormState>(initialState);
     const [articleMode, setArticleMode] = useState<ArticleMode>('standard');
     const [markdownTab, setMarkdownTab] = useState<MarkdownTab>('write');
@@ -617,7 +619,7 @@ export function ArticleComposer({ titlePage }: PropsWithChildren<{ mode: string;
     }
 
     return (
-        <SectionShell eyebrow="Article Engine" title={titlePage} description="Trình biên soạn và xuất bản bài viết công nghệ phân cấp cao cấp.">
+        <SectionShell eyebrow="Article Engine" title={titlePage} description="">
             <form
                 className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] items-start animate-fade-in-up"
                 onSubmit={handleSubmit}
@@ -637,18 +639,24 @@ export function ArticleComposer({ titlePage }: PropsWithChildren<{ mode: string;
 
                         <div className="grid gap-4 mt-2 relative z-10">
                             <div className="space-y-1.5">
-                                <label className="text-xs font-semibold text-[var(--foreground)] opacity-85">Tiêu đề bài viết</label>
+                                <label className="text-xs font-semibold text-[var(--foreground)] opacity-85">
+                                    Tiêu đề bài viết
+                                </label>
                                 <Input
                                     placeholder="Ví dụ: Hướng dẫn Next.js toàn tập"
                                     value={form.title}
-                                    onChange={(event) => setForm((previous) => ({ ...previous, title: event.target.value }))}
+                                    onChange={(event) =>
+                                        setForm((previous) => ({ ...previous, title: event.target.value }))
+                                    }
                                     required
                                 />
                             </div>
 
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold text-[var(--foreground)] opacity-85">Community ID</label>
+                                    <label className="text-xs font-semibold text-[var(--foreground)] opacity-85">
+                                        Community ID
+                                    </label>
                                     <Input
                                         placeholder="Số (ví dụ: 1)"
                                         value={form.comunityId}
@@ -658,7 +666,9 @@ export function ArticleComposer({ titlePage }: PropsWithChildren<{ mode: string;
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-semibold text-[var(--foreground)] opacity-85">Trạng thái</label>
+                                    <label className="text-xs font-semibold text-[var(--foreground)] opacity-85">
+                                        Trạng thái
+                                    </label>
                                     <select
                                         value={form.articleStatus}
                                         onChange={(event) =>
@@ -681,7 +691,9 @@ export function ArticleComposer({ titlePage }: PropsWithChildren<{ mode: string;
                     <Card className="space-y-4 rounded-[2rem] p-6 border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] relative overflow-hidden">
                         <div className="space-y-1 relative z-10">
                             <h3 className="text-lg font-bold text-[var(--foreground)]">Chế độ viết bài</h3>
-                            <p className="text-xs text-[var(--muted)]">Chọn định dạng biên soạn phù hợp với nội dung.</p>
+                            <p className="text-xs text-[var(--muted)]">
+                                Chọn định dạng biên soạn phù hợp với nội dung.
+                            </p>
                         </div>
                         <div className="grid gap-3 relative z-10">
                             <button
@@ -697,13 +709,20 @@ export function ArticleComposer({ titlePage }: PropsWithChildren<{ mode: string;
                                 }`}
                             >
                                 <div className="flex items-center gap-2">
-                                    <svg className={`h-4.5 w-4.5 ${articleMode === 'standard' ? 'text-[var(--accent)]' : 'text-[var(--muted)]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                    <svg
+                                        className={`h-4.5 w-4.5 ${articleMode === 'standard' ? 'text-[var(--accent)]' : 'text-[var(--muted)]'}`}
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        strokeWidth="2.5"
+                                    >
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
                                     </svg>
                                     <p className="text-sm font-bold text-[var(--foreground)]">Standard Article</p>
                                 </div>
                                 <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
-                                    Trình soạn thảo thuần văn bản đơn giản. Thích hợp cho bài đăng xã hội ngắn hoặc cập nhật thông tin thông thường.
+                                    Trình soạn thảo thuần văn bản đơn giản. Thích hợp cho bài đăng xã hội ngắn hoặc cập
+                                    nhật thông tin thông thường.
                                 </p>
                             </button>
 
@@ -724,20 +743,35 @@ export function ArticleComposer({ titlePage }: PropsWithChildren<{ mode: string;
                                 }`}
                             >
                                 <div className="flex items-center gap-2">
-                                    <svg className={`h-4.5 w-4.5 ${articleMode === 'tech' ? 'text-[var(--accent)]' : 'text-[var(--muted)]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                                    <svg
+                                        className={`h-4.5 w-4.5 ${articleMode === 'tech' ? 'text-[var(--accent)]' : 'text-[var(--muted)]'}`}
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                        strokeWidth="2.5"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                                        />
                                     </svg>
-                                    <p className="text-sm font-bold text-[var(--foreground)]">Tech Article (Markdown)</p>
+                                    <p className="text-sm font-bold text-[var(--foreground)]">
+                                        Tech Article (Markdown)
+                                    </p>
                                 </div>
                                 <p className="mt-2 text-xs leading-5 text-[var(--muted)]">
-                                    Trình soạn thảo Markdown chuyên nghiệp hỗ trợ code snippet, phím tắt nhanh và live preview để kiểm tra kỹ bài viết.
+                                    Trình soạn thảo Markdown chuyên nghiệp hỗ trợ code snippet, phím tắt nhanh và live
+                                    preview để kiểm tra kỹ bài viết.
                                 </p>
                             </button>
                         </div>
                     </Card>
 
                     {/* Standard Mode Media Attachments Card */}
-                    <Card className={`space-y-4 rounded-[2rem] p-6 border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] ${articleMode === 'tech' ? 'hidden' : ''}`}>
+                    <Card
+                        className={`space-y-4 rounded-[2rem] p-6 border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] ${articleMode === 'tech' ? 'hidden' : ''}`}
+                    >
                         <div className="space-y-1">
                             <h3 className="text-lg font-bold text-[var(--foreground)]">Phương tiện đính kèm</h3>
                             <p className="text-xs text-[var(--muted)]">Đính kèm hình ảnh, video ngắn hoặc ảnh GIF.</p>
@@ -772,19 +806,37 @@ export function ArticleComposer({ titlePage }: PropsWithChildren<{ mode: string;
                         {status ? <FormMessage type="success" message={status} /> : null}
 
                         <div className="grid gap-3 pt-2 relative z-10">
-                            <Button type="submit" className="w-full py-3.5 bg-gradient-to-r from-[var(--accent)] to-[#4facfe] hover:from-[var(--accent-strong)] hover:to-[#00f2fe] text-white font-semibold rounded-full shadow-lg transition-all duration-300 flex items-center justify-center gap-2" disabled={isSubmitting}>
+                            <Button
+                                type="submit"
+                                className="w-full py-3.5 bg-gradient-to-r from-[var(--accent)] to-[#4facfe] hover:from-[var(--accent-strong)] hover:to-[#00f2fe] text-white font-semibold rounded-full shadow-lg transition-all duration-300 flex items-center justify-center gap-2"
+                                disabled={isSubmitting}
+                            >
                                 {isSubmitting ? (
                                     'Đang gửi...'
                                 ) : (
                                     <>
-                                        <span>{form.articleStatus === 'Draft' ? 'Lưu bản nháp' : 'Xuất bản bài viết'}</span>
-                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <span>
+                                            {form.articleStatus === 'Draft' ? 'Lưu bản nháp' : 'Xuất bản bài viết'}
+                                        </span>
+                                        <svg
+                                            className="h-4 w-4"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                        >
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                                         </svg>
                                     </>
                                 )}
                             </Button>
-                            <Button type="button" variant="secondary" className="w-full py-3 rounded-full" onClick={resetComposer} disabled={isSubmitting}>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                className="w-full py-3 rounded-full"
+                                onClick={resetComposer}
+                                disabled={isSubmitting}
+                            >
                                 Đặt lại biểu mẫu
                             </Button>
                         </div>
@@ -796,7 +848,9 @@ export function ArticleComposer({ titlePage }: PropsWithChildren<{ mode: string;
                     <Card className="rounded-[2rem] p-6 border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow)] flex flex-col h-full min-h-[500px]">
                         <div className="flex items-center justify-between border-b border-[var(--line)] pb-4 mb-4">
                             <div className="space-y-1">
-                                <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-[var(--muted)]">Content Area</span>
+                                <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-[var(--muted)]">
+                                    Content Area
+                                </span>
                                 <h3 className="text-lg font-bold text-[var(--foreground)]">
                                     {isTechArticle ? 'Markdown Workspace' : 'Nội dung bài viết'}
                                 </h3>
@@ -809,7 +863,7 @@ export function ArticleComposer({ titlePage }: PropsWithChildren<{ mode: string;
                         </div>
 
                         {isTechArticle ? (
-                            <div className="space-y-4" data-color-mode="light">
+                            <div className="space-y-4" data-color-mode={theme}>
                                 <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)]">
                                     {/* Tabs */}
                                     <div className="flex items-center justify-between border-b border-[var(--line)] bg-[var(--background-soft)] px-4 py-2">
@@ -846,12 +900,24 @@ export function ArticleComposer({ titlePage }: PropsWithChildren<{ mode: string;
                                             onClick={() => inlineImageInputRef.current?.click()}
                                             className="rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 font-semibold text-[var(--foreground)] hover:border-[var(--accent)] transition-all cursor-pointer flex items-center gap-1.5"
                                         >
-                                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                            <svg
+                                                className="h-3.5 w-3.5"
+                                                fill="none"
+                                                viewBox="0 0 24 24"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                                />
                                             </svg>
                                             Chèn ảnh vào bài viết
                                         </button>
-                                        <span className="hidden sm:inline italic">Nhấn đúp vùng Xem trước để quay lại viết bài</span>
+                                        <span className="hidden sm:inline italic">
+                                            Nhấn đúp vùng Xem trước để quay lại viết bài
+                                        </span>
                                     </div>
 
                                     {markdownTab === 'write' ? (
@@ -866,7 +932,8 @@ export function ArticleComposer({ titlePage }: PropsWithChildren<{ mode: string;
                                                     urlTransform: transformMarkdownUrl,
                                                 }}
                                                 textareaProps={{
-                                                    placeholder: 'Gõ nội dung markdown, sử dụng phím / để kích hoạt danh sách lệnh nhanh...',
+                                                    placeholder:
+                                                        'Gõ nội dung markdown, sử dụng phím / để kích hoạt danh sách lệnh nhanh...',
                                                     onFocus: (event) => {
                                                         if (!isTextareaElement(event.currentTarget)) {
                                                             return;
@@ -1018,7 +1085,8 @@ export function ArticleComposer({ titlePage }: PropsWithChildren<{ mode: string;
                                                     components={markdownComponents}
                                                     urlTransform={transformMarkdownUrl}
                                                 >
-                                                    {form.content || 'Nội dung Markdown của bài viết sẽ hiển thị trực quan ở đây.'}
+                                                    {form.content ||
+                                                        'Nội dung Markdown của bài viết sẽ hiển thị trực quan ở đây.'}
                                                 </ReactMarkdown>
                                             </article>
                                         </div>

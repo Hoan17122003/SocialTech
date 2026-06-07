@@ -9,6 +9,7 @@ import { formatDateTime } from '@/common/utils/format-date';
 import { ApiError } from '@/common/types/api';
 import { Card } from '@/shared/ui/card';
 import { SectionShell } from '@/shared/ui/section-shell';
+import Link from 'next/link';
 
 // Staggered Cyber fallback articles to render in case API is empty or offline
 const FALLBACK_ARTICLES: BasicArticle[] = [
@@ -20,6 +21,7 @@ const FALLBACK_ARTICLES: BasicArticle[] = [
         isPermissionEdit: false,
         createDate: '2026-05-25T10:00:00.000Z',
         nameAuthor: 'Dr. Alexis Wright',
+        publicIdAuthor: '10000000-0000-0000-0000-000000000001',
         avatarAuthor: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb',
     },
     {
@@ -30,6 +32,7 @@ const FALLBACK_ARTICLES: BasicArticle[] = [
         isPermissionEdit: false,
         createDate: '2026-05-25T08:30:00.000Z',
         nameAuthor: 'Tech lead Minh Trần',
+        publicIdAuthor: '10000000-0000-0000-0000-000000000001',
         avatarAuthor: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
     },
     {
@@ -40,6 +43,7 @@ const FALLBACK_ARTICLES: BasicArticle[] = [
         isPermissionEdit: false,
         createDate: '2026-05-24T15:45:00.000Z',
         nameAuthor: 'CyberSec Specialist Nam Nguyễn',
+        publicIdAuthor: '10000000-0000-0000-0000-000000000001',
         avatarAuthor: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
     },
     {
@@ -50,6 +54,7 @@ const FALLBACK_ARTICLES: BasicArticle[] = [
         isPermissionEdit: false,
         createDate: '2026-05-23T11:20:00.000Z',
         nameAuthor: 'UX/UI Designer Sarah Jenkins',
+        publicIdAuthor: '10000000-0000-0000-0000-000000000001',
         avatarAuthor: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
     },
 ];
@@ -488,15 +493,37 @@ export function NewComposer() {
                                     <div className="absolute top-0 right-0 h-16 w-16 bg-gradient-to-br from-indigo-500/5 to-cyan-500/0 rounded-bl-full pointer-events-none group-hover:scale-125 transition-transform duration-500" />
 
                                     <div>
-                                        {/* Card Header metadata */}
                                         <div className="flex items-center justify-between mb-4">
-                                            <span
-                                                className={`border px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-widest ${catStyle}`}
-                                            >
-                                                {cat}
-                                            </span>
                                             <span className="text-[10px] text-[var(--muted)] font-mono opacity-80">
                                                 {formatDateTime(article.createDate)}
+                                            </span>
+                                            <span
+                                                className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border ${catStyle}`}
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="20"
+                                                    height="20"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="#ffff"
+                                                    stroke-width="2"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                >
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                    <path
+                                                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 
+           1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 
+           1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 
+           1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09c.7 0 
+           1.31-.4 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 
+           2.83-2.83l.06.06c.51.51 1.25.66 1.82.33.46-.26.74-.76.74-1.29V3a2 
+           2 0 1 1 4 0v.09c0 .53.28 1.03.74 1.29.57.33 1.31.18 1.82-.33l.06-.06a2 
+           2 0 1 1 2.83 2.83l-.06.06c-.36.36-.51.88-.33 1.82.2.6.81 1 1.51 
+           1H21a2 2 0 1 1 0 4h-.09c-.7 0-1.31.4-1.51 1z"
+                                                    ></path>
+                                                </svg>
                                             </span>
                                         </div>
 
@@ -515,7 +542,10 @@ export function NewComposer() {
 
                                     {/* Card Footer author & actions */}
                                     <div className="flex items-center justify-between border-t border-[var(--line)] pt-4 mt-auto">
-                                        <div className="flex items-center gap-2.5">
+                                        <Link
+                                            href={`/profile/${article.publicIdAuthor}`}
+                                            className="flex items-center gap-2.5"
+                                        >
                                             <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 p-0.5 shadow-sm shrink-0">
                                                 <div className="h-full w-full rounded-full bg-[var(--surface-strong)] flex items-center justify-center overflow-hidden">
                                                     {article.avatarAuthor ? (
@@ -539,7 +569,7 @@ export function NewComposer() {
                                                     Contributor
                                                 </p>
                                             </div>
-                                        </div>
+                                        </Link>
 
                                         <div className="flex items-center gap-2">
                                             {article.attachments && article.attachments.length > 0 && (

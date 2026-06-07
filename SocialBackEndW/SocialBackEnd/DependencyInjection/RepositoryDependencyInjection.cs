@@ -32,6 +32,7 @@ public static class RepositoryDependencyInjection
         services.AddScoped<IUserFollowRepository, UserFollowRepository>();
         services.AddScoped<IUserLoginRepository, IpLoginRepository>();
         services.AddScoped<IAttachmentRepository, AttachmentRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
 
         return services;
     }

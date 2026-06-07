@@ -25,6 +25,7 @@ export type ArticleDetail = {
     isPermissionEdit: boolean;
     createDate: string;
     nameAuthor: string;
+    publicIdAuthor: string;
     avatarAuthor: string;
 };
 

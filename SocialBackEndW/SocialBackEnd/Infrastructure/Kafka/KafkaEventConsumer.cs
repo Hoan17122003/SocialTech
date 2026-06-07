@@ -3,6 +3,7 @@ using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using Microsoft.Extensions.Options;
 using SocialBackEnd.Application.Notifications;
+using SocialBackEnd.Application.Ports.Inbound.notification;
 using SocialBackEnd.Common.DTOs.Mail;
 using SocialBackEnd.Common.Events;
 
@@ -199,6 +200,7 @@ public sealed class KafkaEventConsumer : BackgroundService
                     // Event domain khi bài viết được tạo; hiện tại mới log, có thể mở rộng handler sau.
                     var payload = DeserializePayload<ArticleCreatedIntegrationEvent>(envelope);
                     var emailService = scope.ServiceProvider.GetRequiredService<IEmailNotificationService>();
+                    var inAppNotificationService = scope.ServiceProvider.GetRequiredService<INotification>();
                     var model = new NotificationArticleCreate
                     {
                         Title = payload.Title,
@@ -216,10 +218,20 @@ public sealed class KafkaEventConsumer : BackgroundService
                         await emailService.SendEmailAsync(emailUserFollow, model, cancellationToken);
                     }
 
+                    var notificationMessage = $"{payload.NameAuthor} vua dang bai viet moi: {payload.Title}";
+                    foreach (var followerUserId in payload.FollowerUserIds.Distinct())
+                    {
+                        await inAppNotificationService.SendNotificationAsync(
+                            followerUserId.ToString(),
+                            notificationMessage,
+                            cancellationToken);
+                    }
+
                     _logger.LogInformation(
-                        "Handled article-created event for article {ArticleId} by author {AuthorId} with attachments",
+                        "Handled article-created event for article {ArticleId} by author {AuthorId}; sent realtime notifications to {FollowerCount} followers",
                         payload.ArticleId,
-                        payload.AuthorId);
+                        payload.AuthorId,
+                        payload.FollowerUserIds.Count);
                     break;
                 }
             default:

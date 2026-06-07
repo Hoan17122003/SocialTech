@@ -61,7 +61,7 @@ public sealed class UserAuthenticationService : IUserAuthenticationService
         return (new UserIdentity(
             UserId: user.Id.ToString(),
             Email: user.Email,
-            Roles: ["User"],
+            Roles: user.Roles,
             Permissions: ["users.read"]), publicIdOfuser);
     }
 

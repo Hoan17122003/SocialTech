@@ -7,7 +7,7 @@ public static class Constant
     public const string PrefixAuth = "Bearer";
     public const string PrefixRequestForgetPassword = "ForgetPassword:";
     public const string URLVALIDATEPASSWORD = "http://localhost:3000/forgetpassword-validate";
-    public const string PrefixArticle = "https://yourapp.com/Article/detail";
+    public const string PrefixArticle = "http://localhost:3000/articles";
     public const string PrefixAuthorLink = "https://yourapp.com/User/profile";
     public const string ReleativePathRoot = "";
     public static class GeminiConfigModel25Flash

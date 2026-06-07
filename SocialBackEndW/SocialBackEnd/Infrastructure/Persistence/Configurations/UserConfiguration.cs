@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using SocialBackEnd.Domain.Entities;
+using System.Text.Json;
 
 namespace SocialBackEnd.Infrastructure.Persistence.Configurations;
 
@@ -46,11 +47,18 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 
+        builder.Property(x => x.Roles)
+            .HasConversion(
+                roles => JsonSerializer.Serialize(roles, (JsonSerializerOptions?)null),
+                value => JsonSerializer.Deserialize<UserRole[]>(value, (JsonSerializerOptions?)null) ?? new[] { UserRole.Role_Member })
+            .IsRequired(true);
+
         builder.HasIndex(x => x.Username)
             .IsUnique();
 
         builder.HasIndex(x => x.Email)
             .IsUnique();
+
 
         builder.HasIndex(x => x.PublicId)
             .IsUnique();

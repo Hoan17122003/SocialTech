@@ -362,6 +362,41 @@ namespace SocialBackEnd.Migrations
                     b.ToTable("IPlogin", (string)null);
                 });
 
+            modelBuilder.Entity("SocialBackEnd.Domain.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<DateTime?>("ReadAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("RecipientUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecipientUserId", "CreatedAtUtc");
+
+                    b.ToTable("Notifications", (string)null);
+                });
+
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Post", b =>
                 {
                     b.Property<int>("Id")
@@ -541,7 +576,7 @@ namespace SocialBackEnd.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAtUtc = new DateTime(2026, 5, 24, 14, 19, 24, 296, DateTimeKind.Utc).AddTicks(4769),
+                            CreatedAtUtc = new DateTime(2026, 6, 4, 2, 48, 2, 523, DateTimeKind.Utc).AddTicks(8097),
                             Environment = "Seed",
                             Name = "SocialBackEnd",
                             UtcTime = new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -628,6 +663,10 @@ namespace SocialBackEnd.Migrations
 
                     b.Property<int>("ReputationScore")
                         .HasColumnType("int");
+
+                    b.Property<string>("Roles")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime(6)");
@@ -862,6 +901,17 @@ namespace SocialBackEnd.Migrations
                         .IsRequired();
 
                     b.Navigation("UserLogin");
+                });
+
+            modelBuilder.Entity("SocialBackEnd.Domain.Entities.Notification", b =>
+                {
+                    b.HasOne("SocialBackEnd.Domain.Entities.User", "RecipientUser")
+                        .WithMany()
+                        .HasForeignKey("RecipientUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RecipientUser");
                 });
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Post", b =>

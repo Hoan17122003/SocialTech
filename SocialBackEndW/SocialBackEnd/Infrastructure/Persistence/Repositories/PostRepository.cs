@@ -45,6 +45,9 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
                     .Select(attachment => attachment.FilePath)
                     .FirstOrDefault() ?? string.Empty,
                 SubContent = string.Join(" ", post.Body.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(200)) ?? string.Empty,
+                FollowerUserIds = post.Author.Followers
+                    .Select(userFollow => userFollow.FollowerId)
+                    .ToList(),
                 EmailUserFollow = post.Author.Followers
                     .Select(userFollow => userFollow.Follower.Email)
                     .ToList(),

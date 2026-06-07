@@ -15,7 +15,7 @@ public sealed class NotificationArticleCreateRenderer : IEmailTemplateRenderer<N
         var authorName = Html(model.NameAuthor);
         var subContent = Html(model.SubContent);
         var articleUrl = Html(model.LinkArticle);
-        var LinkArticle = Html(model.LinkProfileAuthor);
+        var LinkArticle = Html(model.LinkArticle);
         var createdDate = model.CreateDate.ToString("MMM d, yyyy", CultureInfo.InvariantCulture);
         // var avatarUrl = GetAbsoluteImageUrl(model.AvatarAuthor);
         var avatarUrl = model.AvatarAuthor;

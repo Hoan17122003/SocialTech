@@ -59,6 +59,16 @@ export function AppShell({ children }: { children: ReactNode }) {
             ),
             color: 'hover:bg-amber-500 hover:text-white dark:hover:bg-amber-600',
         },
+        {
+            href: APP_ROUTES.featureHand,
+            label: 'Feature Hand',
+            icon: (
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 11V7a2 2 0 114 0v4m0 0V5a2 2 0 114 0v6m-8 0V9a2 2 0 114 0v2m0 0a2 2 0 114 0v1a8 8 0 01-8 8H9a5 5 0 01-5-5v-1a2 2 0 114 0v1" />
+                </svg>
+            ),
+            color: 'hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600',
+        },
     ];
 
     return (

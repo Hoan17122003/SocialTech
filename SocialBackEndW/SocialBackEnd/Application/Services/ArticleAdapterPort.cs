@@ -118,6 +118,7 @@ public class ArticleAdapterPort : IArticlePort
             IsPermissionEdit = article.AuthorId == userId,
             CreateDate = article.CreatedAtUtc,
             NameAuthor = article.Author.DisplayName,
+            PublicIdAuthor = article.Author.PublicId,
             AvatarAuthor = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(article.Author.ProfileImageUrl) ?? string.Empty
         };
         return result;
@@ -135,6 +136,7 @@ public class ArticleAdapterPort : IArticlePort
             IsPermissionEdit = userId == x.AuthorId,
             CreateDate = x.CreatedAtUtc,
             NameAuthor = x.Author.DisplayName,
+            PublicIdAuthor = x.Author.PublicId,
             AvatarAuthor = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(x.Author.ProfileImageUrl) ?? string.Empty
         }).ToList();
     }
