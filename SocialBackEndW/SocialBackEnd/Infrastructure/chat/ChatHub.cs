@@ -12,6 +12,13 @@ public class ChatHub : Hub
     {
         var userId = Context.UserIdentifier; // Lấy userId từ claim NameIdentifier
 
+        if (userId == null)
+        {
+            // Nếu không có userId, ngắt kết nối
+            Context.Abort();
+            return;
+        }
+
         Console.WriteLine($"User connected: {userId}, ConnectionId: {Context.ConnectionId}");
 
         await base.OnConnectedAsync();

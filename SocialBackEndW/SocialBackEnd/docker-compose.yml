@@ -59,8 +59,8 @@ services:
     image: minio/minio
     container_name: minio
     ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # Web console
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web console
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
@@ -70,8 +70,21 @@ services:
     env_file:
       - .env.prod
 
+  ChatNodeVNArea:
+    image: cassandra:latest
+    container_name: cassandra1
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=ChatVNCluster
+      # - CASSANDRA_SEEDS=cassandra1,cassandra2
+    networks:
+      - cassandra-net
+
 volumes:
   mysql-data:
 networks:
   SocialNetwork:
+    driver: bridge
+  cassandra-net:
     driver: bridge
