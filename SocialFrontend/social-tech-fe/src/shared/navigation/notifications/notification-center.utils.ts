@@ -1,4 +1,4 @@
-import type { NotificationItem, SignalRNotificationPayload } from '@/shared/navigation/notification-center.types';
+import type { NotificationItem, SignalRNotificationPayload } from '@/shared/navigation/notifications/notification-center.types';
 
 const NOTIFICATION_STORAGE_KEY = 'social-tech.notifications';
 

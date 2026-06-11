@@ -1,5 +1,5 @@
-import type { NotificationItem } from '@/shared/navigation/notification-center.types';
-import { NotificationListItem } from '@/shared/navigation/notification-list-item';
+import type { NotificationItem } from '@/shared/navigation/notifications/notification-center.types';
+import { NotificationListItem } from '@/shared/navigation/notifications/notification-list-item';
 
 type NotificationPanelProps = {
     items: NotificationItem[];

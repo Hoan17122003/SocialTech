@@ -9,12 +9,12 @@ import type {
     NotificationItem,
     SignalRNotificationPayload,
     ToastNotification,
-} from '@/shared/navigation/notification-center.types';
+} from '@/shared/navigation/notifications/notification-center.types';
 import {
     readStoredNotifications,
     toNotificationItem,
     writeStoredNotifications,
-} from '@/shared/navigation/notification-center.utils';
+} from '@/shared/navigation/notifications/notification-center.utils';
 
 type NotificationHubConnection = ReturnType<typeof createNotificationHubConnection>;
 

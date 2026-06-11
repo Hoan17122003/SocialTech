@@ -1,4 +1,4 @@
-import type { ToastNotification } from '@/shared/navigation/notification-center.types';
+import type { ToastNotification } from '@/shared/navigation/notifications/notification-center.types';
 
 type NotificationToastListProps = {
     items: ToastNotification[];

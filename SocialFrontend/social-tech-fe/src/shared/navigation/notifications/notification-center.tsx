@@ -1,9 +1,9 @@
 'use client';
 
-import { NotificationBellButton } from '@/shared/navigation/notification-bell-button';
-import { NotificationPanel } from '@/shared/navigation/notification-panel';
-import { NotificationToastList } from '@/shared/navigation/notification-toast-list';
-import { useNotificationCenter } from '@/shared/navigation/use-notification-center';
+import { NotificationBellButton } from '@/shared/navigation/notifications/notification-bell-button';
+import { NotificationPanel } from '@/shared/navigation/notifications/notification-panel';
+import { NotificationToastList } from '@/shared/navigation/notifications/notification-toast-list';
+import { useNotificationCenter } from '@/shared/navigation/notifications/use-notification-center';
 
 export function NotificationCenter() {
     const {

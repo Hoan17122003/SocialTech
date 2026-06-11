@@ -1,5 +1,5 @@
 import { cn } from '@/common/utils/cn';
-import type { NotificationItem } from '@/shared/navigation/notification-center.types';
+import type { NotificationItem } from '@/shared/navigation/notifications/notification-center.types';
 
 type NotificationListItemProps = {
     item: NotificationItem;

@@ -7,7 +7,7 @@ import { DISPLAYCONTENT } from '@/common/constants/display-const';
 import { cn } from '@/common/utils/cn';
 import { useAuth } from '@/providers/auth-provider';
 import { useTheme } from '@/providers/theme-provider';
-import { NotificationCenter } from '@/shared/navigation/notification-center';
+import { NotificationCenter } from '@/shared/navigation/notifications/notification-center';
 import { Authorized, GuestOnly } from '@/shared/components/Authorized';
 import { Search } from '@/shared/ui/search';
 
