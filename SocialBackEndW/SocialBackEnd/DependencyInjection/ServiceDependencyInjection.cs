@@ -25,6 +25,9 @@ using SocialBackEnd.Infrastructure.Minio;
 using SocialBackEnd.Application.Ports.Outbound.Minio;
 using Minio;
 using SocialBackEnd.Application.Ports.Inbound.notification;
+using SocialBackEnd.Application.Ports.Inbound.Chat;
+using SocialBackEnd.Application.Ports.Outbound.Chat;
+using SocialBackEnd.Infrastructure.chat;
 
 namespace SocialBackEnd.DependencyInjection;
 
@@ -36,9 +39,11 @@ public static class ServiceDependencyInjection
         services.Configure<SmtpOptions>(configuration.GetSection(SmtpOptions.SectionName));
         services.Configure<KafkaOptions>(configuration.GetSection(KafkaOptions.SectionName));
         services.Configure<GeminiOptions>(configuration.GetSection(GeminiOptions.SectionName));
+        services.Configure<CassandraOptions>(configuration.GetSection(CassandraOptions.SectionName));
 
         services.AddHttpClient<IEmailAccessTokenProvider, OAuth2AccessTokenProvider>();
         services.AddScoped<IUserPort, UserAdapaterPort>();
+        services.AddScoped<IChatPort, ChatAdapter>();
         services.AddScoped<IEmailPortOut, MailAdapter>();
         services.AddScoped<IEmailNotificationService, NotificationService>();
         services.AddScoped<INotification, InAppNotificationService>();
@@ -62,6 +67,8 @@ public static class ServiceDependencyInjection
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<IArticlePort, ArticleAdapterPort>();
         services.AddScoped<ICacheInternal, CacheAdapter>();
+        services.AddSingleton<ICassandraSessionProvider, CassandraSessionProvider>();
+        services.AddScoped<IChatMessageStore, CassandraChatMessageStore>();
         services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
             var redisConfiguration = configuration.GetSection("RedisCacheSettings:Configuration").Value;

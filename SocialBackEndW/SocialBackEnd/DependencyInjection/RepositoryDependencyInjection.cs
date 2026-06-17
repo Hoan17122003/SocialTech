@@ -30,6 +30,7 @@ public static class RepositoryDependencyInjection
         services.AddScoped<ICommentVoteRepository, CommentVoteRepository>();
         services.AddScoped<IContentReportRepository, ContentReportRepository>();
         services.AddScoped<IUserFollowRepository, UserFollowRepository>();
+        services.AddScoped<IChatConversationRepository, ChatConversationRepository>();
         services.AddScoped<IUserLoginRepository, IpLoginRepository>();
         services.AddScoped<IAttachmentRepository, AttachmentRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();

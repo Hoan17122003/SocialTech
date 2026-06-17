@@ -5,4 +5,5 @@ export const APP_ROUTES = {
     dashboard: '/dashboard',
     createArticle: '/articles/new',
     featureHand: '/feature-hand',
+    chat: '/chat',
 } as const;

@@ -80,7 +80,7 @@ public static class SecurityConfigurationExtensions
                         var path = context.HttpContext.Request.Path;
 
                         if (!string.IsNullOrWhiteSpace(accessToken) &&
-                            path.StartsWithSegments("/notificationHub") && path.StartsWithSegments("/chathub"))
+                            (path.StartsWithSegments("/notificationHub") || path.StartsWithSegments("/chatHub")))
                         {
                             context.Token = accessToken;
                         }

@@ -1,19 +1,4 @@
 services:
-  # social-backend:
-  #   build: .
-  #   ports:
-  #     - "5000:80"
-  #   environment:
-  #     - ASPNETCORE_ENVIRONMENT=Development
-  #     - ASPNETCORE_URLS=http://+:80
-  #     - Kafka__BootstrapServers=kafka:9092
-  #   depends_on:
-  #     - mysqlhost
-  #     - redis
-  #     - kafka
-  #   networks:
-  #     - SocialNetwork
-
   mysqlhost:
     image: mysql:8.0.45
     restart: on-failure

@@ -79,16 +79,30 @@ public class UserFollowRepository : RepositoryBase<UserFollow>, IUserFollowRepos
 
     public Task<bool> IsFollowingAsync(int followerId, int followingId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return DbContext.Set<UserFollow>()
+            .AsNoTracking()
+            .AnyAsync(
+                x => x.FollowerId == followerId && x.FollowingId == followingId,
+                cancellationToken);
     }
 
     public Task<List<User>> GetFollowersAsync(int userId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return DbContext.Set<UserFollow>()
+            .AsNoTracking()
+            .Where(x => x.FollowingId == userId)
+            .Select(x => x.Follower)
+            .Distinct()
+            .ToListAsync(cancellationToken);
     }
 
     public Task<List<User>> GetFollowingsAsync(int userId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        return DbContext.Set<UserFollow>()
+            .AsNoTracking()
+            .Where(x => x.FollowerId == userId)
+            .Select(x => x.Following)
+            .Distinct()
+            .ToListAsync(cancellationToken);
     }
 }
