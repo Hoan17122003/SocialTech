@@ -1,5 +1,6 @@
 using SocialBackEnd.Common.DTOs.chat;
 using SocialBackEnd.Common.Models.chat;
+using SocialBackEnd.Common.Models;
 
 namespace SocialBackEnd.Application.Ports.Inbound.Chat;
 
@@ -29,5 +30,10 @@ public interface IChatPort
     Task EnsureConversationAccessAsync(
         int userId,
         string conversationKey,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<DetailUserFollow>> SearchCandidatesAsync(
+        int userId,
+        string query,
         CancellationToken cancellationToken = default);
 }

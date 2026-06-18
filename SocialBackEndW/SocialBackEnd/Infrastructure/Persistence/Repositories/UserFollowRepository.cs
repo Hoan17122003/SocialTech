@@ -105,4 +105,20 @@ public class UserFollowRepository : RepositoryBase<UserFollow>, IUserFollowRepos
             .Distinct()
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<List<User>> SearchTwoWayFollowersAsync(int userId, string query, CancellationToken cancellationToken = default)
+    {
+        var queryable = DbContext.Set<User>()
+            .AsNoTracking()
+            .Where(u => DbContext.Set<UserFollow>().Any(f => f.FollowerId == userId && f.FollowingId == u.Id)
+                     && DbContext.Set<UserFollow>().Any(f => f.FollowerId == u.Id && f.FollowingId == userId));
+
+        if (!string.IsNullOrWhiteSpace(query))
+        {
+            var normalizedQuery = query.Trim().ToLower();
+            queryable = queryable.Where(u => u.DisplayName.ToLower().Contains(normalizedQuery) || u.Username.ToLower().Contains(normalizedQuery));
+        }
+
+        return await queryable.ToListAsync(cancellationToken);
+    }
 }

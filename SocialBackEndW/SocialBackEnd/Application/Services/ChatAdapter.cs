@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using SocialBackEnd.Application.Ports.Inbound.Chat;
 using SocialBackEnd.Application.Ports.Outbound.Chat;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
+using SocialBackEnd.Application.Ports.Outbound.Minio;
 using SocialBackEnd.Common.DTOs.chat;
 using SocialBackEnd.Common.Exceptions;
 using SocialBackEnd.Common.Models.chat;
+using SocialBackEnd.Common.Models;
 using SocialBackEnd.Domain.Entities;
 using SocialBackEnd.Domain.Enums;
 using SocialBackEnd.Infrastructure.chat;
@@ -21,6 +23,7 @@ public sealed class ChatAdapter : IChatPort
     private readonly ICommunityMembershipRepository _communityMembershipRepository;
     private readonly IChatConversationRepository _chatConversationRepository;
     private readonly IChatMessageStore _chatMessageStore;
+    private readonly IMinioFileStoragePort _minioFileStorage;
 
     public ChatAdapter(
         IHubContext<ChatHub> hubContext,
@@ -29,7 +32,8 @@ public sealed class ChatAdapter : IChatPort
         ICommunityRepository communityRepository,
         ICommunityMembershipRepository communityMembershipRepository,
         IChatConversationRepository chatConversationRepository,
-        IChatMessageStore chatMessageStore)
+        IChatMessageStore chatMessageStore,
+        IMinioFileStoragePort minioFileStorage)
     {
         _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
@@ -38,6 +42,7 @@ public sealed class ChatAdapter : IChatPort
         _communityMembershipRepository = communityMembershipRepository ?? throw new ArgumentNullException(nameof(communityMembershipRepository));
         _chatConversationRepository = chatConversationRepository ?? throw new ArgumentNullException(nameof(chatConversationRepository));
         _chatMessageStore = chatMessageStore ?? throw new ArgumentNullException(nameof(chatMessageStore));
+        _minioFileStorage = minioFileStorage ?? throw new ArgumentNullException(nameof(minioFileStorage));
     }
 
     public async Task<ChatSendResult> SendDirectMessageAsync(
@@ -328,5 +333,29 @@ public sealed class ChatAdapter : IChatPort
             IsEdited = message.State == ChatMessageState.Edited,
             IsDeleted = message.State == ChatMessageState.Deleted
         };
+    }
+
+    public async Task<IReadOnlyList<DetailUserFollow>> SearchCandidatesAsync(
+        int userId,
+        string query,
+        CancellationToken cancellationToken = default)
+    {
+        var users = await _userFollowRepository.SearchTwoWayFollowersAsync(userId, query, cancellationToken);
+        var results = new List<DetailUserFollow>(users.Count);
+
+        foreach (var user in users)
+        {
+            var avatarUrl = string.IsNullOrEmpty(user.ProfileImageUrl)
+                ? string.Empty
+                : await _minioFileStorage.GetPresignedUrlAsync(user.ProfileImageUrl);
+
+            results.Add(new DetailUserFollow(
+                user.Id,
+                avatarUrl,
+                user.DisplayName
+            ));
+        }
+
+        return results;
     }
 }

@@ -5,6 +5,7 @@ import type {
     ChatSendResponse,
     SendCommunityMessageRequest,
     SendDirectMessageRequest,
+    ChatCandidatesResponse,
 } from '@/features/chat/contracts';
 
 export const chatApi = {
@@ -37,6 +38,13 @@ export const chatApi = {
     },
     sendCommunityMessage(payload: SendCommunityMessageRequest) {
         return httpClient.post<ChatSendResponse>('/api/Chat/community/send', payload, {
+            auth: true,
+            showGlobalLoading: false,
+        });
+    },
+    searchCandidates(query: string) {
+        const qs = query ? `?query=${encodeURIComponent(query)}` : '';
+        return httpClient.get<ChatCandidatesResponse>(`/api/Chat/candidates${qs}`, {
             auth: true,
             showGlobalLoading: false,
         });

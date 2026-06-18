@@ -76,6 +76,18 @@ public sealed class ChatController : ControllerBase
         return Ok(ApiResponse<ChatSendResult>.Ok(result));
     }
 
+    [HttpGet("candidates")]
+    public async Task<IActionResult> GetCandidates([FromQuery] string? query, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized(ApiResponse<string>.Fail("Token khong chua user id hop le."));
+        }
+
+        var result = await _chatPort.SearchCandidatesAsync(userId, query ?? "", cancellationToken);
+        return Ok(ApiResponse<IReadOnlyList<DetailUserFollow>>.Ok(result));
+    }
+
     private bool TryGetUserId(out int userId)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);

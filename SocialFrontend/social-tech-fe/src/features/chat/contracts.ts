@@ -44,3 +44,11 @@ export type SendCommunityMessageRequest = {
 export type ChatInboxResponse = ApiResponse<ChatConversationSummary[]>;
 export type ChatMessagesResponse = ApiResponse<ChatMessage[]>;
 export type ChatSendResponse = ApiResponse<ChatSendResult>;
+
+export type DetailUserFollow = {
+    id: number;
+    avatar: string;
+    displayName: string;
+};
+
+export type ChatCandidatesResponse = ApiResponse<DetailUserFollow[]>;

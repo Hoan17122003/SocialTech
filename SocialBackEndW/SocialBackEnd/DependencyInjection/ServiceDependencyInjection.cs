@@ -130,7 +130,10 @@ public static class ServiceDependencyInjection
             options.KnownProxies.Clear(); // Xóa danh sách KnownProxies mặc định để chấp nhận forwarded headers từ mọi IP.
         });
 
-        services.AddSignalR();
+        services.AddSignalR(options =>
+        {
+            options.EnableDetailedErrors = true;
+        });
 
         return services;
     }
