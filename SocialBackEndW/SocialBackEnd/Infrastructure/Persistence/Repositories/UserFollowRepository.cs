@@ -8,9 +8,11 @@ namespace SocialBackEnd.Infrastructure.Persistence.Repositories;
 public class UserFollowRepository : RepositoryBase<UserFollow>, IUserFollowRepository
 {
     private readonly AppDbContext _context;
+    private readonly DbSet<User> _usersContext;
     public UserFollowRepository(AppDbContext dbContext) : base(dbContext)
     {
         _context = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _usersContext = dbContext.Users;
     }
 
     public async Task<bool> FollowAsync(int followerId, int followingId, CancellationToken cancellationToken = default)
@@ -30,7 +32,7 @@ public class UserFollowRepository : RepositoryBase<UserFollow>, IUserFollowRepos
             return false;
         }
 
-        var alreadyFollowing = await DbContext.Set<UserFollow>()
+        var alreadyFollowing = await _context.UserFollows
             .AsNoTracking()
             .AnyAsync(
                 x => x.FollowerId == followerId && x.FollowingId == followingId,
@@ -41,13 +43,13 @@ public class UserFollowRepository : RepositoryBase<UserFollow>, IUserFollowRepos
             return false;
         }
 
-        await DbContext.Set<UserFollow>().AddAsync(new UserFollow
+        await _context.UserFollows.AddAsync(new UserFollow
         {
             FollowerId = followerId,
             FollowingId = followingId
         }, cancellationToken);
 
-        await DbContext.SaveChangesAsync(cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
 
@@ -63,7 +65,7 @@ public class UserFollowRepository : RepositoryBase<UserFollow>, IUserFollowRepos
             return false;
         }
 
-        var userFollow = await DbContext.Set<UserFollow>()
+        var userFollow = await _context.UserFollows
             .FirstOrDefaultAsync(x => x.FollowerId == followerId && x.FollowingId == followingId, cancellationToken);
 
         if (userFollow == null)
@@ -71,15 +73,15 @@ public class UserFollowRepository : RepositoryBase<UserFollow>, IUserFollowRepos
             return false;
         }
 
-        DbContext.Set<UserFollow>().Remove(userFollow);
-        await DbContext.SaveChangesAsync(cancellationToken);
+        _context.UserFollows.Remove(userFollow);
+        await _context.SaveChangesAsync(cancellationToken);
         return true;
 
     }
 
     public Task<bool> IsFollowingAsync(int followerId, int followingId, CancellationToken cancellationToken = default)
     {
-        return DbContext.Set<UserFollow>()
+        return _context.UserFollows
             .AsNoTracking()
             .AnyAsync(
                 x => x.FollowerId == followerId && x.FollowingId == followingId,
@@ -88,7 +90,7 @@ public class UserFollowRepository : RepositoryBase<UserFollow>, IUserFollowRepos
 
     public Task<List<User>> GetFollowersAsync(int userId, CancellationToken cancellationToken = default)
     {
-        return DbContext.Set<UserFollow>()
+        return _context.UserFollows
             .AsNoTracking()
             .Where(x => x.FollowingId == userId)
             .Select(x => x.Follower)
@@ -98,7 +100,7 @@ public class UserFollowRepository : RepositoryBase<UserFollow>, IUserFollowRepos
 
     public Task<List<User>> GetFollowingsAsync(int userId, CancellationToken cancellationToken = default)
     {
-        return DbContext.Set<UserFollow>()
+        return _context.UserFollows
             .AsNoTracking()
             .Where(x => x.FollowerId == userId)
             .Select(x => x.Following)
@@ -108,10 +110,10 @@ public class UserFollowRepository : RepositoryBase<UserFollow>, IUserFollowRepos
 
     public async Task<List<User>> SearchTwoWayFollowersAsync(int userId, string query, CancellationToken cancellationToken = default)
     {
-        var queryable = DbContext.Set<User>()
+        var queryable = _usersContext
             .AsNoTracking()
-            .Where(u => DbContext.Set<UserFollow>().Any(f => f.FollowerId == userId && f.FollowingId == u.Id)
-                     && DbContext.Set<UserFollow>().Any(f => f.FollowerId == u.Id && f.FollowingId == userId));
+            .Where(u => _context.UserFollows.Any(f => f.FollowerId == userId && f.FollowingId == u.Id)
+                     && _context.UserFollows.Any(f => f.FollowerId == u.Id && f.FollowingId == userId));
 
         if (!string.IsNullOrWhiteSpace(query))
         {

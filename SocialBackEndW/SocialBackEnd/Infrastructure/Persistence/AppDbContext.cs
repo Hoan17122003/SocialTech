@@ -12,6 +12,7 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<SystemStatus> SystemStatuses => Set<SystemStatus>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserFollow> UserFollows => Set<UserFollow>();
     public DbSet<Community> Communities => Set<Community>();
     public DbSet<CommunityMembership> CommunityMemberships => Set<CommunityMembership>();
     public DbSet<CommunityRule> CommunityRules => Set<CommunityRule>();

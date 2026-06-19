@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocialBackEnd.Application.Ports.Inbound.Chat;
 using SocialBackEnd.Common.DTOs.chat;
+using SocialBackEnd.Common.DTOs.Chat;
 using SocialBackEnd.Common.Models;
 using SocialBackEnd.Common.Models.chat;
 
@@ -92,5 +93,27 @@ public sealed class ChatController : ControllerBase
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
         return int.TryParse(userIdClaim, out userId);
+    }
+
+    [HttpPut("message/edit")]
+    public async Task<IActionResult> EditMessage([FromBody] EditMessageRequest request)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized("Token không chứa user id hợp lệ.");
+        }
+        return Ok();
+    }
+
+    [HttpDelete("message/delete/${messageId:int}")]
+    public async Task<IActionResult> DeleteMessage([FromRoute] int messageId)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized("Token không chứa user id hợp lệ.");
+        }
+        return Ok();
     }
 }

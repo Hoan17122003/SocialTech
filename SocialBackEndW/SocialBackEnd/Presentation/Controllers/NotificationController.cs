@@ -1,10 +1,12 @@
 
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocialBackEnd.Application.Ports.Inbound.notification;
 
 namespace SocialBackEnd.Presentation.Controllers;
 
+[Authorize]
 public class NotificationController : ControllerBase
 {
     private readonly INotification _notificationService;

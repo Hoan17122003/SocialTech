@@ -4,7 +4,7 @@ const NOTIFICATION_STORAGE_KEY = 'social-tech.notifications';
 
 function formatNotificationTime(value?: string | null) {
     if (!value) {
-        return 'Vua xong';
+        return 'Vừa xong';
     }
 
     const createdAt = new Date(value);
@@ -18,7 +18,7 @@ function formatNotificationTime(value?: string | null) {
     const formatter = new Intl.RelativeTimeFormat('vi', { numeric: 'auto' });
 
     if (Math.abs(diffMinutes) < 1) {
-        return 'Vua xong';
+        return 'Vừa xong';
     }
 
     if (Math.abs(diffMinutes) < 60) {
@@ -68,7 +68,7 @@ export function toNotificationItem(payload: SignalRNotificationPayload): Notific
 
     return {
         id: createNotificationId(payload.id),
-        title: payload.title?.trim() || 'Thong bao moi',
+        title: payload.title?.trim() || 'Thông báo mới',
         description:
             payload.description?.trim() ||
             payload.message?.trim() ||

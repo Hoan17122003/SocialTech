@@ -19,7 +19,7 @@ export function NotificationToastList({ items, onClick }: NotificationToastListP
                         <div>
                             <p className="text-sm font-bold text-[var(--foreground)]">{toast.title}</p>
                             <p className="mt-1 text-xs font-medium text-[var(--muted)]">
-                                {toast.description || 'Ban co thong bao moi.'}
+                                {toast.description || 'Bạn có thông báo mới.'}
                             </p>
                         </div>
                         <span className="shrink-0 rounded-full bg-[var(--accent)]/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">
