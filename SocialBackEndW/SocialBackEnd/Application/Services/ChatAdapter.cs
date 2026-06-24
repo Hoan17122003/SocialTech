@@ -86,6 +86,24 @@ public sealed class ChatAdapter : IChatPort
         var conversationCreated = conversation is null;
         conversation ??= ChatConversation.CreateDirect(senderUserId, request.TargetUserId, senderUserId);
 
+        /*
+         * =================================================================================
+         * GIẢI THÍCH VỀ CƠ CHẾ IDEMPOTENCY TRONG DIRECT CHAT (TRÁNH TRÙNG LẶP TIN NHẮN)
+         * =================================================================================
+         * - Tại sao cần: Khi frontend gửi tin nhắn qua SignalR/HTTP, nếu gặp sự cố mạng làm thất lạc
+         *   gói tin phản hồi, frontend sẽ tự động gửi lại (retry) tin nhắn đó.
+         * - Cơ chế Idempotency ở đây hoạt động như thế nào:
+         *   1. Mỗi tin nhắn mới được frontend gán một `ClientMessageId` duy nhất (dạng UUID).
+         *   2. Khi retry gửi lại tin nhắn bị lỗi, frontend bắt buộc giữ nguyên `ClientMessageId` này.
+         *   3. Backend nhận `ClientMessageId` từ request và lưu trực tiếp vào Cassandra.
+         * - Thực trạng dự án: Hiện tại backend CHƯA thực hiện check trùng lặp theo `ClientMessageId`.
+         *   Mỗi lượt gọi hàm này sẽ tạo mới `MessageId` (Guid.NewGuid()) và `SentAtUtc` rồi append 
+         *   vào Cassandra, dẫn tới ghi trùng nhiều dòng tin nhắn trong DB và phát đi nhiều event Websocket.
+         * - Hướng giải quyết đề xuất:
+         *   Trước khi lưu, kiểm tra xem `ClientMessageId` đã tồn tại trong Redis cache hoặc Cassandra chưa.
+         *   Nếu có rồi, chỉ trả về tin nhắn cũ mà không lưu mới hay broadcast lại (Idempotency Guard).
+         * =================================================================================
+         */
         var message = ChatMessage.Create(
             conversation.ConversationKey,
             senderUserId,
@@ -145,6 +163,24 @@ public sealed class ChatAdapter : IChatPort
         var conversationCreated = conversation is null;
         conversation ??= ChatConversation.CreateCommunity(request.CommunityId, senderUserId, community.Name);
 
+        /*
+         * =================================================================================
+         * GIẢI THÍCH VỀ CƠ CHẾ IDEMPOTENCY TRONG COMMUNITY CHAT (TRÁNH TRÙNG LẶP TIN NHẮN)
+         * =================================================================================
+         * - Tại sao cần: Khi frontend gửi tin nhắn qua SignalR/HTTP, nếu gặp sự cố mạng làm thất lạc
+         *   gói tin phản hồi, frontend sẽ tự động gửi lại (retry) tin nhắn đó.
+         * - Cơ chế Idempotency ở đây hoạt động như thế nào:
+         *   1. Mỗi tin nhắn mới được frontend gán một `ClientMessageId` duy nhất (dạng UUID).
+         *   2. Khi retry gửi lại tin nhắn bị lỗi, frontend bắt buộc giữ nguyên `ClientMessageId` này.
+         *   3. Backend nhận `ClientMessageId` từ request và lưu trực tiếp vào Cassandra.
+         * - Thực trạng dự án: Hiện tại backend CHƯA thực hiện check trùng lặp theo `ClientMessageId`.
+         *   Mỗi lượt gọi hàm này sẽ tạo mới `MessageId` (Guid.NewGuid()) và `SentAtUtc` rồi append 
+         *   vào Cassandra, dẫn tới ghi trùng nhiều dòng tin nhắn trong DB và phát đi nhiều event Websocket.
+         * - Hướng giải quyết đề xuất:
+         *   Trước khi lưu, kiểm tra xem `ClientMessageId` đã tồn tại trong Redis cache hoặc Cassandra chưa.
+         *   Nếu có rồi, chỉ trả về tin nhắn cũ mà không lưu mới hay broadcast lại (Idempotency Guard).
+         * =================================================================================
+         */
         var message = ChatMessage.Create(
             conversation.ConversationKey,
             senderUserId,

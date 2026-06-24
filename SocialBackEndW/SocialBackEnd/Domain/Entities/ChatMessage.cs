@@ -10,10 +10,10 @@ public sealed class ChatMessage
     public string Content { get; private set; } = string.Empty;
     public string? ClientMessageId { get; init; }
     public Guid? ReplyToMessageId { get; init; }
+    public ChatMessageState State { get; private set; } = ChatMessageState.Sent;
     public DateTimeOffset SentAtUtc { get; init; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? EditedAtUtc { get; private set; }
     public DateTimeOffset? DeletedAtUtc { get; private set; }
-    public ChatMessageState State { get; private set; } = ChatMessageState.Sent;
 
     private ChatMessage()
     {

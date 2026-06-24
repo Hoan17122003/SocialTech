@@ -78,5 +78,8 @@ public sealed class ChatConversation : EntityBase
         => $"dm:{lowUserId}:{highUserId}";
 
     public static string BuildCommunityKey(int communityId)
-        => $"group:{communityId}";
+        => $"com:{communityId}";
+
+    public static string BuildGroupKey(int groupId)
+        => $"group:{groupId}";
 }

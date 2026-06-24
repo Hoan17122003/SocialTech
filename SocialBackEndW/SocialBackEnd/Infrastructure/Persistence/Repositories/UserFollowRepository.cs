@@ -23,6 +23,7 @@ public class UserFollowRepository : RepositoryBase<UserFollow>, IUserFollowRepos
         }
 
         var usersExist = await _context.Users
+            .AsNoTracking()
             .Where(x => x.Id == followerId || x.Id == followingId)
             .Select(x => x.Id)
             .ToListAsync(cancellationToken);
@@ -56,6 +57,7 @@ public class UserFollowRepository : RepositoryBase<UserFollow>, IUserFollowRepos
     public async Task<bool> UnfollowAsync(int followerId, int followingId, CancellationToken cancellationToken = default)
     {
         var usersExist = await _context.Users
+            .AsNoTracking()
             .Where(x => x.Id == followerId || x.Id == followingId)
             .Select(x => x.Id)
             .ToListAsync(cancellationToken);
