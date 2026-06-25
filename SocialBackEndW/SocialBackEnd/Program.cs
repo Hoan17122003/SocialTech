@@ -8,6 +8,7 @@ using Minio;
 using SocialBackEnd.Infrastructure.Notifications.Internal;
 using Microsoft.AspNetCore.RateLimiting;
 using SocialBackEnd.Infrastructure.chat;
+using SocialBackEnd.Infrastructure.Elasticsearch;
 
 namespace SocialBackEnd;
 
@@ -90,6 +91,8 @@ public class Program
         {
             options.Configuration = builder.Configuration.GetSection("RedisCacheSettings:Configuration").Value;
         });
+        // Bật cấu hình elasticsearch connection
+        builder.Services.AddElasticsearch(builder.Configuration);
 
         // Build tạo ra ứng dụng hoàn chỉnh từ toàn bộ cấu hình ở trên.
         var app = builder.Build();

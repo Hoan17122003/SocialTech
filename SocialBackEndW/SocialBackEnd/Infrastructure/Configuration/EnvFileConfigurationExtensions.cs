@@ -80,7 +80,9 @@ public static class EnvFileConfigurationExtensions
                 "MINIO_BUCKETNAME",
                 "MINIO_BUCKET"),
             ["Minio:MinioLocation"] = normalizedBucketLocation,
-            ["Minio:UseSSL"] = minioUseSslRaw
+            ["Minio:UseSSL"] = minioUseSslRaw,
+            ["Elasticsearch:Username"] = GetEnvironmentVariable("Elasticsearch__UsernameElasticsearch", "ELASTICSEARCH_USERNAME"),
+            ["Elasticsearch:Password"] = GetEnvironmentVariable("Elasticsearch__PasswordElasticsearch", "ELASTICSEARCH_PASSWORD")
         };
 
         AddArrayOverride(overrides, "Gemini:ApiKeys", GetEnvironmentVariable("Gemini__ApiKeys", "GEMINI_API_KEYS"));
