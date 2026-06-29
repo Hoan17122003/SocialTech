@@ -1,6 +1,7 @@
 using SocialBackEnd.Common.DTOs.chat;
 using SocialBackEnd.Common.Models.chat;
 using SocialBackEnd.Common.Models;
+using SocialBackEnd.Common.DTOs;
 
 namespace SocialBackEnd.Application.Ports.Inbound.Chat;
 
@@ -18,6 +19,7 @@ public interface IChatPort
 
     Task<IReadOnlyList<ChatConversationSummaryDto>> GetInboxAsync(
         int userId,
+        Paganation paganation,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<ChatMessageDto>> GetMessagesAsync(

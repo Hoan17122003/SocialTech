@@ -11,6 +11,7 @@ using SocialBackEnd.Common.Models;
 using SocialBackEnd.Domain.Entities;
 using SocialBackEnd.Domain.Enums;
 using SocialBackEnd.Infrastructure.chat;
+using SocialBackEnd.Common.DTOs;
 
 namespace SocialBackEnd.Application.Services;
 
@@ -209,9 +210,10 @@ public sealed class ChatAdapter : IChatPort
 
     public async Task<IReadOnlyList<ChatConversationSummaryDto>> GetInboxAsync(
         int userId,
+        Paganation paganation,
         CancellationToken cancellationToken = default)
     {
-        var conversations = await _chatConversationRepository.GetInboxAsync(userId, cancellationToken);
+        var conversations = await _chatConversationRepository.GetInboxAsync(userId, paganation, cancellationToken);
         return conversations
             .Select(x => ToConversationSummary(x, userId))
             .ToList();

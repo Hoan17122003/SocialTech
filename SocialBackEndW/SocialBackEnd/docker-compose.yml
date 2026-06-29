@@ -64,7 +64,6 @@ services:
       - CASSANDRA_CLUSTER_NAME=ChatVNCluster
       # - CASSANDRA_SEEDS=cassandra1,cassandra2
     networks:
-      - SocialNetwork
       - cassandra-net
 
   es01:
@@ -119,9 +118,9 @@ services:
 
 volumes:
   mysql-data:
-  es01:
-  es02:
-  es03:
+  es01-data:
+  es02-data:
+  es03-data:
 networks:
   SocialNetwork:
     driver: bridge

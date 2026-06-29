@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SocialBackEnd.Application.Ports.Inbound.Chat;
+using SocialBackEnd.Common.DTOs;
 using SocialBackEnd.Common.DTOs.chat;
 using SocialBackEnd.Common.DTOs.Chat;
 using SocialBackEnd.Common.Models;
@@ -22,14 +23,14 @@ public sealed class ChatController : ControllerBase
     }
 
     [HttpGet("inbox")]
-    public async Task<IActionResult> GetInbox(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetInbox([FromQuery] Paganation paganation, CancellationToken cancellationToken)
     {
         if (!TryGetUserId(out var userId))
         {
             return Unauthorized(ApiResponse<string>.Fail("Token khong chua user id hop le."));
         }
 
-        var result = await _chatPort.GetInboxAsync(userId, cancellationToken);
+        var result = await _chatPort.GetInboxAsync(userId, paganation, cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<ChatConversationSummaryDto>>.Ok(result));
     }
 

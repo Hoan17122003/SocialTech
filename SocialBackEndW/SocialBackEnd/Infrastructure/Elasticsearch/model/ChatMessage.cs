@@ -2,7 +2,7 @@ using Nest;
 
 //  Dùng attribute [ElasticsearchType] để map với index
 [ElasticsearchType(RelationName = "chat_message")]
-public class ChatMessage
+public class ChatMessageElasitcsearch
 {
     // Elasticsearch sẽ dùng property này làm _id của document
     [Text(Name = "id")]
@@ -33,7 +33,7 @@ public class ChatMessage
 }
 
 // Class phụ cho attachment (nếu có)
-public class Attachment
+public class AttachmentElasticsearch
 {
     [Text(Name = "file_name")]
     public string FileName { get; set; } = string.Empty;

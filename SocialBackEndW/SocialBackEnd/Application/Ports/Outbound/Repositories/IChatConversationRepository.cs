@@ -1,3 +1,5 @@
+using SocialBackEnd.Common.DTOs;
+using SocialBackEnd.Common.Models.chat;
 using SocialBackEnd.Domain.Entities;
 
 namespace SocialBackEnd.Application.Ports.Outbound.Repositories;
@@ -17,8 +19,9 @@ public interface IChatConversationRepository : IRepository<ChatConversation>
         int communityId,
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<ChatConversation>> GetInboxAsync(
+    Task<List<ConvertstationResultModel>> GetInboxAsync(
         int userId,
+        Paganation paganation,
         CancellationToken cancellationToken = default);
 
     Task<bool> CanAccessAsync(

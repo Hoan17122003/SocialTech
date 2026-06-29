@@ -8,12 +8,12 @@ public static class ElasticSearchExtension
     public static void AddElasticsearch(this IServiceCollection services, IConfiguration configuration)
     {
         var settings = configuration.GetSection("Elasticsearch");
-        var uri = new Uri(settings["Uri"]);
+        var uri = new Uri(settings["Uri"] ?? "localhost:9200");
         var defaultIndex = settings["DefaultIndex"];
 
         var connectionSettings = new ConnectionSettings(uri)
             .DefaultIndex(defaultIndex)
-            .DefaultMappingFor<ChatMessage>(m => m
+            .DefaultMappingFor<ChatMessageElasitcsearch>(m => m
                 .IndexName(defaultIndex)
                 .IdProperty(p => p.Id)// ID của document sẽ lấy từ property Id
             );
