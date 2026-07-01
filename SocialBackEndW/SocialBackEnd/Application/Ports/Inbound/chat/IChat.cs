@@ -17,6 +17,10 @@ public interface IChatPort
         SendCommunityMessageRequest request,
         CancellationToken cancellationToken = default);
 
+    Task<ChatConversationSummaryDto> CreateGroupAsync(int creatorUserId, CreateGroupConversationRequest request, CancellationToken cancellationToken = default);
+
+    Task<ChatSendResult> SendGroupMessageAsync(int senderUserId, SendGroupMessageRequest request, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<ChatConversationSummaryDto>> GetInboxAsync(
         int userId,
         Paganation paganation,
@@ -27,6 +31,10 @@ public interface IChatPort
         string conversationKey,
         int take,
         DateTimeOffset? beforeUtc = null,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ChatMessageDto>> SearchMessagesAsync(
+        int userId, string conversationKey, string query, int take,
         CancellationToken cancellationToken = default);
 
     Task EnsureConversationAccessAsync(

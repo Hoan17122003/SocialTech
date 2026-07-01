@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Common.DTOs;
-using SocialBackEnd.Common.Models.c;
 using SocialBackEnd.Common.Models.chat;
 using SocialBackEnd.Domain.Entities;
 using SocialBackEnd.Domain.Enums;
@@ -61,9 +60,7 @@ public sealed class ChatConversationRepository
     {
         var page = paganation.Page <= 0 ? 1 : paganation.Page;
         var limit = paganation.Limit <= 0 ? 10 : paganation.Limit;
-        var DynamicTitle = string.Empty;
-
-        var directIds = DbContext.ChatConversationParticipants
+        var participantIds = DbContext.ChatConversationParticipants
             .Where(x => x.UserId == userId && x.LeftAtUtc == null)
             .Select(x => x.ConversationId);
 
@@ -75,7 +72,9 @@ public sealed class ChatConversationRepository
             .AsNoTracking()
             .Where(x =>
                 (x.Kind == ChatConversationKind.Direct &&
-                directIds.Contains(x.Id))
+                participantIds.Contains(x.Id))
+                ||
+                (x.Kind == ChatConversationKind.Group && participantIds.Contains(x.Id))
                 ||
                 (x.Kind == ChatConversationKind.Community &&
                 x.CommunityId.HasValue &&
@@ -88,13 +87,16 @@ public sealed class ChatConversationRepository
             .Take(limit)
             .Select(x => new ConvertstationResultModel
             {
-                ConverstationKey = x.ConversationKey,
+                ConversationKey = x.ConversationKey,
                 Kind = x.Kind,
                 CommunityId = x.CommunityId,
                 LastMessagePreview = x.LastMessagePreview,
-                TargetUserId = x.Kind == ChatConversationKind.Direct ? 1 : -1,
-                Title = DynamicTitle,
-                LastMesssageAtUtc = x.LastMessageAtUtc
+                TargetUserId = x.Kind == ChatConversationKind.Direct
+                    ? (x.DirectUserLowId == userId ? x.DirectUserHighId : x.DirectUserLowId)
+                    : null,
+                Title = x.Title,
+                HasCustomTitle = x.HasCustomTitle,
+                LastMessageAtUtc = x.LastMessageAtUtc
             })
             .ToListAsync(cancellationToken);
     }
@@ -113,7 +115,7 @@ public sealed class ChatConversationRepository
             return false;
         }
 
-        if (conversation.Kind == ChatConversationKind.Direct)
+        if (conversation.Kind is ChatConversationKind.Direct or ChatConversationKind.Group)
         {
             return await DbContext.ChatConversationParticipants
                 .AsNoTracking()

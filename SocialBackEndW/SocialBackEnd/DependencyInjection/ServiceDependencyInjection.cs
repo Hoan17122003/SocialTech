@@ -44,6 +44,7 @@ public static class ServiceDependencyInjection
         services.AddHttpClient<IEmailAccessTokenProvider, OAuth2AccessTokenProvider>();
         services.AddScoped<IUserPort, UserAdapaterPort>();
         services.AddScoped<IChatPort, ChatAdapter>();
+        services.AddScoped<IChatConversationSummaryBuilder, ChatConversationSummaryBuilder>();
         services.AddScoped<IEmailPortOut, MailAdapter>();
         services.AddScoped<IEmailNotificationService, NotificationService>();
         services.AddScoped<INotification, InAppNotificationService>();
@@ -69,6 +70,9 @@ public static class ServiceDependencyInjection
         services.AddScoped<ICacheInternal, CacheAdapter>();
         services.AddSingleton<ICassandraSessionProvider, CassandraSessionProvider>();
         services.AddScoped<IChatMessageStore, CassandraChatMessageStore>();
+        services.AddSingleton<ChatMessageSideEffectQueue>();
+        services.AddSingleton<IChatMessageSideEffectQueue>(sp => sp.GetRequiredService<ChatMessageSideEffectQueue>());
+        services.AddHostedService<ChatMessageSideEffectWorker>();
         services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
             var redisConfiguration = configuration.GetSection("RedisCacheSettings:Configuration").Value;

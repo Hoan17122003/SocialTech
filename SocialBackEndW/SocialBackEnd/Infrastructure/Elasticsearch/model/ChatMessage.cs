@@ -29,7 +29,7 @@ public class ChatMessageElasitcsearch
 
     // Nested object - ví dụ lưu thông tin file đính kèm
     [Nested(Name = "attachments")]
-    public List<Attachment>? Attachments { get; set; }
+    public List<AttachmentElasticsearch>? Attachments { get; set; }
 }
 
 // Class phụ cho attachment (nếu có)

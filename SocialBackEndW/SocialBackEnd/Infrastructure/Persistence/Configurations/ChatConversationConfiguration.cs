@@ -12,6 +12,9 @@ public sealed class ChatConversationConfiguration : IEntityTypeConfiguration<Cha
 
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.PublicId).IsRequired();
+        builder.HasIndex(x => x.PublicId).IsUnique();
+
         builder.Property(x => x.ConversationKey)
             .HasMaxLength(128)
             .IsRequired();

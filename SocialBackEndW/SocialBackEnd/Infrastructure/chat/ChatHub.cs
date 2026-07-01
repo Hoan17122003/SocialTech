@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using SocialBackEnd.Application.Ports.Inbound.Chat;
 using SocialBackEnd.Common.DTOs.chat;
+using SocialBackEnd.Common.DTOs;
 using SocialBackEnd.Common.Models.chat;
 
 namespace SocialBackEnd.Infrastructure.chat;
@@ -71,7 +72,7 @@ public sealed class ChatHub : Hub
     public Task<IReadOnlyList<ChatConversationSummaryDto>> GetInbox()
     {
         var userId = ParseCurrentUserId();
-        return _chatPort.GetInboxAsync(userId, Context.ConnectionAborted);
+        return _chatPort.GetInboxAsync(userId, new Paganation { Page = 1, Limit = 50 }, Context.ConnectionAborted);
     }
 
     /// <summary>
@@ -124,6 +125,13 @@ public sealed class ChatHub : Hub
             BuildConversationGroupName(result.ConversationKey),
             Context.ConnectionAborted);
             
+        return result;
+    }
+
+    public async Task<ChatSendResult> SendGroupMessage(SendGroupMessageRequest request)
+    {
+        var result = await _chatPort.SendGroupMessageAsync(ParseCurrentUserId(), request, Context.ConnectionAborted);
+        await Groups.AddToGroupAsync(Context.ConnectionId, BuildConversationGroupName(result.ConversationKey), Context.ConnectionAborted);
         return result;
     }
 

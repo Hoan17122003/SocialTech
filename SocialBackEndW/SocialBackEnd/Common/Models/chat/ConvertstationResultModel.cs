@@ -5,11 +5,12 @@ namespace SocialBackEnd.Common.Models.chat;
 
 public sealed record ConvertstationResultModel
 {
-    public string ConverstationKey { init; get; }
+    public string ConversationKey { init; get; } = string.Empty;
     public ChatConversationKind Kind { init; get; }
     public int? CommunityId { init; get; }
-    public string LastMessagePreview { get; init; }
+    public string? LastMessagePreview { get; init; }
     public int? TargetUserId { get; init; }
-    public string Title { get; set; }
-    public DateTime? LastMesssageAtUtc { get; init; }
+    public string? Title { get; init; }
+    public bool HasCustomTitle { get; init; }
+    public DateTime? LastMessageAtUtc { get; init; }
 }

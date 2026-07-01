@@ -15,6 +15,9 @@
 *.userosscache
 *.sln.docstates
 
+# ingnore codex 
+.codex-build/*
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

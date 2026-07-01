@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using SocialBackEnd.Application.Ports.Inbound.Chat;
 using SocialBackEnd.Application.Ports.Outbound.Chat;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
@@ -12,6 +11,8 @@ using SocialBackEnd.Domain.Entities;
 using SocialBackEnd.Domain.Enums;
 using SocialBackEnd.Infrastructure.chat;
 using SocialBackEnd.Common.DTOs;
+using SocialBackEnd.Application.Ports.Outbound.Search;
+using Microsoft.Extensions.Logging;
 
 namespace SocialBackEnd.Application.Services;
 
@@ -25,6 +26,10 @@ public sealed class ChatAdapter : IChatPort
     private readonly IChatConversationRepository _chatConversationRepository;
     private readonly IChatMessageStore _chatMessageStore;
     private readonly IMinioFileStoragePort _minioFileStorage;
+    private readonly IChatSearchIndex _chatSearchIndex;
+    private readonly IChatMessageSideEffectQueue _chatMessageSideEffectQueue;
+    private readonly IChatConversationSummaryBuilder _chatConversationSummaryBuilder;
+    private readonly ILogger<ChatAdapter> _logger;
 
     public ChatAdapter(
         IHubContext<ChatHub> hubContext,
@@ -34,7 +39,11 @@ public sealed class ChatAdapter : IChatPort
         ICommunityMembershipRepository communityMembershipRepository,
         IChatConversationRepository chatConversationRepository,
         IChatMessageStore chatMessageStore,
-        IMinioFileStoragePort minioFileStorage)
+        IMinioFileStoragePort minioFileStorage,
+        IChatSearchIndex chatSearchIndex,
+        IChatMessageSideEffectQueue chatMessageSideEffectQueue,
+        IChatConversationSummaryBuilder chatConversationSummaryBuilder,
+        ILogger<ChatAdapter> logger)
     {
         _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
         _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
@@ -44,6 +53,10 @@ public sealed class ChatAdapter : IChatPort
         _chatConversationRepository = chatConversationRepository ?? throw new ArgumentNullException(nameof(chatConversationRepository));
         _chatMessageStore = chatMessageStore ?? throw new ArgumentNullException(nameof(chatMessageStore));
         _minioFileStorage = minioFileStorage ?? throw new ArgumentNullException(nameof(minioFileStorage));
+        _chatSearchIndex = chatSearchIndex ?? throw new ArgumentNullException(nameof(chatSearchIndex));
+        _chatMessageSideEffectQueue = chatMessageSideEffectQueue ?? throw new ArgumentNullException(nameof(chatMessageSideEffectQueue));
+        _chatConversationSummaryBuilder = chatConversationSummaryBuilder ?? throw new ArgumentNullException(nameof(chatConversationSummaryBuilder));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<ChatSendResult> SendDirectMessageAsync(
@@ -112,17 +125,10 @@ public sealed class ChatAdapter : IChatPort
             request.ClientMessageId);
 
         await _chatMessageStore.AppendAsync(message, cancellationToken);
-        await PersistConversationAsync(conversation, message, conversationCreated, cancellationToken);
+        await QueueSideEffectsAsync(conversation, message, sender.DisplayName, conversationCreated, request.TargetUserId, cancellationToken);
 
         var dto = ToMessageDto(message, sender.DisplayName);
-        var summary = ToConversationSummary(conversation, senderUserId);
-        await PublishConversationEventsAsync(
-            dto,
-            summary,
-            conversation.ConversationKey,
-            senderUserId,
-            request.TargetUserId,
-            cancellationToken);
+        await PublishMessageCreatedAsync(dto, conversation.ConversationKey, cancellationToken);
 
         return new ChatSendResult
         {
@@ -189,16 +195,12 @@ public sealed class ChatAdapter : IChatPort
             request.ClientMessageId);
 
         await _chatMessageStore.AppendAsync(message, cancellationToken);
-        await PersistConversationAsync(conversation, message, conversationCreated, cancellationToken);
+        await QueueSideEffectsAsync(conversation, message, sender.DisplayName, conversationCreated, null, cancellationToken);
 
         var dto = ToMessageDto(message, sender.DisplayName);
-        var summary = ToConversationSummary(conversation, senderUserId);
         await _hubContext.Clients
             .Group(ChatHub.BuildConversationGroupName(conversation.ConversationKey))
             .SendAsync("chat.message.created", dto, cancellationToken);
-        await _hubContext.Clients
-            .Group(ChatHub.BuildConversationGroupName(conversation.ConversationKey))
-            .SendAsync("chat.conversation.updated", summary, cancellationToken);
 
         return new ChatSendResult
         {
@@ -214,9 +216,47 @@ public sealed class ChatAdapter : IChatPort
         CancellationToken cancellationToken = default)
     {
         var conversations = await _chatConversationRepository.GetInboxAsync(userId, paganation, cancellationToken);
-        return conversations
-            .Select(x => ToConversationSummary(x, userId))
-            .ToList();
+        var results = new List<ChatConversationSummaryDto>(conversations.Count);
+        foreach (var conversation in conversations)
+            results.Add(await _chatConversationSummaryBuilder.BuildAsync(conversation, userId, cancellationToken));
+        return results;
+    }
+
+    public async Task<ChatConversationSummaryDto> CreateGroupAsync(int creatorUserId, CreateGroupConversationRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var ids = request.ParticipantUserIds.Append(creatorUserId).Distinct().ToArray();
+        if (ids.Length < 3) throw new ValidationException("Group chat can it nhat 3 thanh vien.");
+        foreach (var id in ids) await RequireUserAsync(id, cancellationToken);
+
+        var conversation = ChatConversation.CreateGroup(ids, creatorUserId, request.Title);
+        await _chatConversationRepository.AddAsync(conversation, cancellationToken);
+        await _chatConversationRepository.SaveChangesAsync(cancellationToken);
+        return await _chatConversationSummaryBuilder.BuildAsync(new ConvertstationResultModel
+        {
+            ConversationKey = conversation.ConversationKey,
+            Kind = conversation.Kind,
+            Title = conversation.Title,
+            HasCustomTitle = conversation.HasCustomTitle
+        }, creatorUserId, cancellationToken);
+    }
+
+    public async Task<ChatSendResult> SendGroupMessageAsync(int senderUserId, SendGroupMessageRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (string.IsNullOrWhiteSpace(request.Content)) throw new ValidationException("Noi dung tin nhan la bat buoc.");
+        await EnsureConversationAccessAsync(senderUserId, request.ConversationKey, cancellationToken);
+        var conversation = await _chatConversationRepository.GetByConversationKeyAsync(request.ConversationKey, cancellationToken)
+            ?? throw new NotFoundException("Conversation khong ton tai.");
+        if (conversation.Kind != ChatConversationKind.Group) throw new ValidationException("Conversation khong phai group chat.");
+        var sender = await RequireUserAsync(senderUserId, cancellationToken);
+        var message = ChatMessage.Create(conversation.ConversationKey, senderUserId, request.Content, request.ClientMessageId);
+        await _chatMessageStore.AppendAsync(message, cancellationToken);
+        await QueueSideEffectsAsync(conversation, message, sender.DisplayName, false, null, cancellationToken);
+        var dto = ToMessageDto(message, sender.DisplayName);
+        await _hubContext.Clients.Group(ChatHub.BuildConversationGroupName(conversation.ConversationKey))
+            .SendAsync("chat.message.created", dto, cancellationToken);
+        return new ChatSendResult { ConversationKey = conversation.ConversationKey, Message = dto };
     }
 
     public async Task<IReadOnlyList<ChatMessageDto>> GetMessagesAsync(
@@ -252,6 +292,20 @@ public sealed class ChatAdapter : IChatPort
         return results;
     }
 
+    public async Task<IReadOnlyList<ChatMessageDto>> SearchMessagesAsync(
+        int userId, string conversationKey, string query, int take,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            throw new ValidationException("Tu khoa tim kiem la bat buoc.");
+        await EnsureConversationAccessAsync(userId, conversationKey, cancellationToken);
+        var messages = await _chatSearchIndex.SearchAsync(conversationKey, query.Trim(), take, cancellationToken);
+        var results = new List<ChatMessageDto>(messages.Count);
+        foreach (var message in messages)
+            results.Add(ToMessageDto(message, (await RequireUserAsync(message.SenderUserId, cancellationToken)).DisplayName));
+        return results;
+    }
+
     public async Task EnsureConversationAccessAsync(
         int userId,
         string conversationKey,
@@ -273,63 +327,14 @@ public sealed class ChatAdapter : IChatPort
         }
     }
 
-    private async Task PersistConversationAsync(
-        ChatConversation conversation,
-        ChatMessage message,
-        bool isNewConversation,
-        CancellationToken cancellationToken)
-    {
-        conversation.TouchLastMessage(message.Content, message.SenderUserId, message.SentAtUtc.UtcDateTime);
-
-        if (isNewConversation)
-        {
-            await _chatConversationRepository.AddAsync(conversation, cancellationToken);
-        }
-        else
-        {
-            _chatConversationRepository.Update(conversation);
-        }
-
-        try
-        {
-            await _chatConversationRepository.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException) when (isNewConversation)
-        {
-            var existing = await _chatConversationRepository.GetByConversationKeyAsync(
-                conversation.ConversationKey,
-                cancellationToken);
-
-            if (existing is null)
-            {
-                throw;
-            }
-
-            existing.TouchLastMessage(message.Content, message.SenderUserId, message.SentAtUtc.UtcDateTime);
-            _chatConversationRepository.Update(existing);
-            await _chatConversationRepository.SaveChangesAsync(cancellationToken);
-        }
-    }
-
-    private async Task PublishConversationEventsAsync(
+    private Task PublishMessageCreatedAsync(
         ChatMessageDto message,
-        ChatConversationSummaryDto summary,
         string conversationKey,
-        int senderUserId,
-        int targetUserId,
         CancellationToken cancellationToken)
     {
-        await _hubContext.Clients
+        return _hubContext.Clients
             .Group(ChatHub.BuildConversationGroupName(conversationKey))
             .SendAsync("chat.message.created", message, cancellationToken);
-
-        await _hubContext.Clients
-            .Group(ChatHub.BuildUserGroupName(senderUserId.ToString()))
-            .SendAsync("chat.conversation.updated", summary, cancellationToken);
-
-        await _hubContext.Clients
-            .Group(ChatHub.BuildUserGroupName(targetUserId.ToString()))
-            .SendAsync("chat.conversation.updated", summary, cancellationToken);
     }
 
     private async Task<User> RequireUserAsync(int userId, CancellationToken cancellationToken)
@@ -338,24 +343,33 @@ public sealed class ChatAdapter : IChatPort
             ?? throw new NotFoundException($"User {userId} khong ton tai.");
     }
 
-    private static ChatConversationSummaryDto ToConversationSummary(ChatConversation conversation, int currentUserId)
+    private async Task QueueSideEffectsAsync(
+        ChatConversation conversation,
+        ChatMessage message,
+        string senderName,
+        bool isNewConversation,
+        int? directTargetUserId,
+        CancellationToken cancellationToken)
     {
-        return new ChatConversationSummaryDto
+        try
         {
-            ConversationKey = conversation.ConversationKey,
-            ConversationType = conversation.Kind.ToString(),
-            OtherUserId = conversation.Kind == ChatConversationKind.Direct
-                ? (conversation.DirectUserLowId == currentUserId
-                    ? conversation.DirectUserHighId
-                    : conversation.DirectUserLowId)
-                : null,
-            CommunityId = conversation.CommunityId,
-            Title = conversation.Title,
-            LastMessagePreview = conversation.LastMessagePreview,
-            LastMessageAtUtc = conversation.LastMessageAtUtc.HasValue
-                ? new DateTimeOffset(DateTime.SpecifyKind(conversation.LastMessageAtUtc.Value, DateTimeKind.Utc))
-                : null
-        };
+            await _chatMessageSideEffectQueue.EnqueueAsync(
+                new ChatMessageSideEffectWorkItem(
+                    conversation,
+                    message,
+                    senderName,
+                    isNewConversation,
+                    directTargetUserId),
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Chat side effects could not be queued for conversation {ConversationKey} and message {MessageId}.",
+                message.ConversationKey,
+                message.MessageId);
+        }
     }
 
     private static ChatMessageDto ToMessageDto(ChatMessage message, string senderName)
