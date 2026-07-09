@@ -1,277 +1,194 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import { articlesApi } from '@/features/articles/articles-api';
 import type { BasicArticle } from '@/features/articles/contracts';
 import { formatDateTime } from '@/common/utils/format-date';
-import { ApiError } from '@/common/types/api';
 import { Card } from '@/shared/ui/card';
 import { SectionShell } from '@/shared/ui/section-shell';
-import Link from 'next/link';
 
-// Staggered Cyber fallback articles to render in case API is empty or offline
 const FALLBACK_ARTICLES: BasicArticle[] = [
     {
         id: 101,
         title: 'Gemini 1.5 Pro & Kỷ Nguyên Ngữ Cảnh 2 Triệu Tokens',
-        content: `Mô hình Gemini 1.5 Pro mới nhất từ Google DeepMind mang đến bước đột phá lịch sử với khả năng xử lý ngữ cảnh cực lớn. Nhà phát triển giờ đây có thể đưa toàn bộ mã nguồn dự án, hàng tá tài liệu PDF dày cộp, hoặc hàng giờ video chất lượng cao vào một prompt duy nhất.\n\n### Khả năng hiểu mã nguồn vượt trội\nVới khả năng này, việc tìm lỗi bảo mật, tối ưu hóa code và tái cấu trúc hệ thống lớn trở nên vô cùng đơn giản. Thử nghiệm thực tế cho thấy Gemini 1.5 Pro có thể định vị chính xác vị trí dòng code bị lỗi trong một repository chứa hàng trăm ngàn dòng lệnh.\n\n### Ứng dụng thực tiễn\n1. Phân tích tài liệu luật học.\n2. Tóm tắt các buổi họp video dài hàng giờ.\n3. Hỗ trợ onboarding lập trình viên mới bằng cách trả lời mọi câu hỏi về codebase hiện tại.`,
-        attachments: ['https://example.com/gemini-spec.pdf'],
+        content:
+            'Mô hình Gemini 1.5 Pro mới nhất từ Google DeepMind mang đến bước đột phá lịch sử với khả năng xử lý ngữ cảnh cực lớn. Nhà phát triển giờ đây có thể đưa toàn bộ mã nguồn dự án, hàng tá tài liệu PDF dày cộp, hoặc hàng giờ video chất lượng cao vào một prompt duy nhất.',
+        attachments: [
+            'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1200&q=80',
+            'https://example.com/gemini-spec.pdf',
+        ],
         isPermissionEdit: false,
         createDate: '2026-05-25T10:00:00.000Z',
         nameAuthor: 'Dr. Alexis Wright',
         publicIdAuthor: '10000000-0000-0000-0000-000000000001',
-        avatarAuthor: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb',
+        avatarAuthor: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=160&q=80',
     },
     {
         id: 102,
         title: 'Tailwind CSS v4.0: Kiến Trúc Mới Cho Hiệu Năng Tối Đa',
-        content: `Phiên bản Tailwind CSS v4.0 đã chính thức ra mắt phiên bản ổn định với trình biên dịch siêu tốc được viết lại hoàn toàn bằng Rust. Tốc độ build nhanh hơn gấp 10 lần, hỗ trợ CSS Variables gốc mà không cần cấu hình Tailwind.config.js phức tạp.\n\n### Các cải tiến nổi bật:\n- **Trình biên dịch Rust:** Biên dịch hàng ngàn class chỉ trong vài mili giây.\n- **Không cần config file:** Mọi cấu hình đều được khai báo trực tiếp qua chỉ thị \`@theme\` trong file CSS gốc.\n- **Hỗ trợ CSS lồng nhau (Nesting):** Được tích hợp sẵn mà không cần plugin bên thứ ba.\n\nSự thay đổi này giúp đơn giản hóa luồng công việc của lập trình viên frontend và mang lại trải nghiệm phát triển mượt mà hơn bao giờ hết.`,
-        attachments: [],
+        content:
+            'Phiên bản Tailwind CSS v4.0 đã chính thức ra mắt với trình biên dịch siêu tốc, hỗ trợ CSS Variables gốc và workflow gọn hơn cho đội frontend.',
+        attachments: ['https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=80'],
         isPermissionEdit: false,
         createDate: '2026-05-25T08:30:00.000Z',
         nameAuthor: 'Tech lead Minh Trần',
         publicIdAuthor: '10000000-0000-0000-0000-000000000001',
-        avatarAuthor: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d',
+        avatarAuthor: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=160&q=80',
     },
     {
         id: 103,
         title: 'Bảo Mật API Hệ Thống: Cơ Chế Token Refresh An Toàn Nhất',
-        content: `Trong thế giới ứng dụng web hiện đại, việc quản lý session của người dùng qua Access Token và Refresh Token đóng vai trò then chốt trong việc bảo mật dữ liệu.\n\n### Chiến lược lưu trữ an toàn\n- **Access Token:** Nên có thời gian sống ngắn (ví dụ: 15 phút) và lưu trữ trong bộ nhớ RAM của ứng dụng (React state) thay vì localStorage để tránh tấn công XSS.\n- **Refresh Token:** Cần được lưu trữ dưới dạng Cookie HttpOnly với các cờ Secure, SameSite=Strict để chống lại các cuộc tấn công CSRF và XSS.\n\n### Quy trình xoay vòng token (Token Rotation)\nMỗi lần sử dụng Refresh Token để lấy Access Token mới, hệ thống sẽ cấp một Refresh Token mới đồng thời vô hiệu hóa token cũ, giúp phát hiện ngay lập tức nếu kẻ gian đánh cắp token của bạn.`,
-        attachments: ['https://example.com/api-security-guide.pdf'],
+        content:
+            'Trong ứng dụng web hiện đại, việc quản lý session qua Access Token và Refresh Token đóng vai trò then chốt trong việc bảo vệ dữ liệu người dùng.',
+        attachments: [
+            'https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?auto=format&fit=crop&w=1200&q=80',
+            'https://example.com/api-security-guide.pdf',
+        ],
         isPermissionEdit: false,
         createDate: '2026-05-24T15:45:00.000Z',
         nameAuthor: 'CyberSec Specialist Nam Nguyễn',
         publicIdAuthor: '10000000-0000-0000-0000-000000000001',
-        avatarAuthor: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e',
+        avatarAuthor: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=160&q=80',
     },
     {
         id: 104,
-        title: 'Xây Dựng Web App Mượt Mà Với CSS View Transitions API',
-        content: `View Transitions API cung cấp một cách thức đơn giản để tạo ra các hiệu ứng chuyển trang mượt mà giữa các trạng thái khác nhau của DOM.\n\n### Tại sao nên dùng View Transitions?\nTrước đây, để làm hoạt ảnh chuyển trang (như trượt trang từ trái sang phải, làm mờ dần), chúng ta phải sử dụng các thư viện nặng nề như Framer Motion hay TransitionGroup. Giờ đây, chỉ với vài dòng CSS và lệnh \`document.startViewTransition()\`, trình duyệt sẽ tự động chụp ảnh màn hình trạng thái cũ và mới rồi thực hiện chuyển đổi chéo.\n\nĐây là một công cụ thay đổi hoàn toàn cách chúng ta tiếp cận trải nghiệm người dùng trên web.`,
+        title: 'Một cập nhật ngắn từ cộng đồng Social Tech',
+        content: '',
         attachments: [],
-        isPermissionEdit: false,
+        isPermissionEdit: true,
         createDate: '2026-05-23T11:20:00.000Z',
-        nameAuthor: 'UX/UI Designer Sarah Jenkins',
+        nameAuthor: 'Bạn',
         publicIdAuthor: '10000000-0000-0000-0000-000000000001',
-        avatarAuthor: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330',
+        avatarAuthor: '',
     },
 ];
 
-// Interactive Network Connection Particles Background
-function CyberCanvas() {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+const REACTIONS = ['👍', '❤️', '😂', '😮'] as const;
 
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        let animationFrameId: number;
-        let width = (canvas.width = window.innerWidth);
-        let height = (canvas.height = window.innerHeight);
-
-        const particles: Array<{
-            x: number;
-            y: number;
-            vx: number;
-            vy: number;
-            radius: number;
-        }> = [];
-
-        const particleCount = Math.min(80, Math.floor((width * height) / 22000));
-
-        for (let i = 0; i < particleCount; i++) {
-            particles.push({
-                x: Math.random() * width,
-                y: Math.random() * height,
-                vx: (Math.random() - 0.5) * 0.45,
-                vy: (Math.random() - 0.5) * 0.45,
-                radius: Math.random() * 2 + 0.8,
-            });
-        }
-
-        let mouse = { x: -1000, y: -1000 };
-
-        const handleMouseMove = (e: MouseEvent) => {
-            mouse.x = e.clientX;
-            mouse.y = e.clientY;
-        };
-
-        const handleMouseLeave = () => {
-            mouse.x = -1000;
-            mouse.y = -1000;
-        };
-
-        const handleResize = () => {
-            if (!canvas) return;
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        };
-
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseleave', handleMouseLeave);
-        window.addEventListener('resize', handleResize);
-
-        const draw = () => {
-            ctx.clearRect(0, 0, width, height);
-
-            // Draw cybernetic grid
-            ctx.strokeStyle = 'rgba(99, 102, 241, 0.015)';
-            ctx.lineWidth = 0.8;
-            const gridSize = 64;
-            for (let x = 0; x < width; x += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, height);
-                ctx.stroke();
-            }
-            for (let y = 0; y < height; y += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(width, y);
-                ctx.stroke();
-            }
-
-            // Update & Draw particles
-            particles.forEach((p, idx) => {
-                // Interactive attraction forces
-                if (mouse.x > -500) {
-                    const dx = mouse.x - p.x;
-                    const dy = mouse.y - p.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < 200) {
-                        const force = (200 - dist) / 200;
-                        p.vx += (dx / dist) * force * 0.025;
-                        p.vy += (dy / dist) * force * 0.025;
-                    }
-                }
-
-                // Speed limit
-                const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-                const limit = 1.0;
-                if (speed > limit) {
-                    p.vx = (p.vx / speed) * limit;
-                    p.vy = (p.vy / speed) * limit;
-                }
-
-                p.x += p.vx;
-                p.y += p.vy;
-
-                // Drift damping
-                p.vx *= 0.985;
-                p.vy *= 0.985;
-
-                // Border wraps
-                if (p.x < 0) p.x = width;
-                if (p.x > width) p.x = 0;
-                if (p.y < 0) p.y = height;
-                if (p.y > height) p.y = 0;
-
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(99, 102, 241, 0.22)';
-                ctx.fill();
-
-                // Connect nodes close to each other
-                for (let j = idx + 1; j < particles.length; j++) {
-                    const p2 = particles[j];
-                    const dx = p.x - p2.x;
-                    const dy = p.y - p2.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist < 120) {
-                        const alpha = ((120 - dist) / 120) * 0.1;
-                        ctx.beginPath();
-                        ctx.moveTo(p.x, p.y);
-                        ctx.lineTo(p2.x, p2.y);
-                        ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`;
-                        ctx.lineWidth = 0.7;
-                        ctx.stroke();
-                    }
-                }
-            });
-
-            animationFrameId = requestAnimationFrame(draw);
-        };
-
-        draw();
-
-        return () => {
-            cancelAnimationFrame(animationFrameId);
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseleave', handleMouseLeave);
-            window.removeEventListener('resize', handleResize);
-        };
-    }, []);
-
-    return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none -z-20" />;
-}
-
-// Categorizer helper
 function getArticleCategory(article: BasicArticle): string {
-    const text = (article.title + ' ' + (article.content || '')).toLowerCase();
-    if (
-        text.includes('ai') ||
-        text.includes('gemini') ||
-        text.includes('gpt') ||
-        text.includes('machine learning') ||
-        text.includes('trí tuệ')
-    ) {
+    const text = `${article.title} ${article.content || ''}`.toLowerCase();
+    if (['ai', 'gemini', 'gpt', 'machine learning', 'trí tuệ'].some((keyword) => text.includes(keyword))) {
         return 'AI & Machine Learning';
     }
-    if (
-        text.includes('security') ||
-        text.includes('token') ||
-        text.includes('refresh') ||
-        text.includes('jwt') ||
-        text.includes('bảo mật') ||
-        text.includes('auth')
-    ) {
+    if (['security', 'token', 'refresh', 'jwt', 'bảo mật', 'auth'].some((keyword) => text.includes(keyword))) {
         return 'Cybersecurity';
     }
-    if (
-        text.includes('css') ||
-        text.includes('next.js') ||
-        text.includes('tailwind') ||
-        text.includes('react') ||
-        text.includes('frontend') ||
-        text.includes('giao diện')
-    ) {
+    if (['css', 'next.js', 'tailwind', 'react', 'frontend', 'giao diện'].some((keyword) => text.includes(keyword))) {
         return 'Frontend Dev';
     }
     return 'General Tech';
 }
 
+function getAuthorInitials(name?: string) {
+    return name
+        ? name
+              .split(' ')
+              .filter(Boolean)
+              .map((part) => part[0])
+              .slice(0, 2)
+              .join('')
+              .toUpperCase()
+        : 'ST';
+}
+
+function getPlainText(content?: string) {
+    return (content || '')
+        .replace(/```[\s\S]*?```/g, '')
+        .replace(/[#>*_`~\-[\]()]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function isImageUrl(url: string) {
+    return /\.(png|jpe?g|gif|webp|avif|svg)(\?.*)?$/i.test(url) || url.includes('images.unsplash.com');
+}
+
+function getImageAttachments(article: BasicArticle) {
+    return (article.attachments || []).filter(isImageUrl);
+}
+
+function getFileAttachments(article: BasicArticle) {
+    return (article.attachments || []).filter((attachment) => !isImageUrl(attachment));
+}
+
+function getStableMetric(articleId: number, base: number, range: number) {
+    return base + Math.abs(articleId * 37) % range;
+}
+
+function ArticleMedia({ article }: { article: BasicArticle }) {
+    const images = getImageAttachments(article);
+
+    if (!images.length) {
+        return (
+            <div className="flex min-h-40 items-center justify-center rounded-3xl border border-dashed border-[var(--line)] bg-[linear-gradient(135deg,rgba(99,102,241,0.12),rgba(6,182,212,0.08))] px-5 py-8 text-center">
+                <div>
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-2xl">
+                        📰
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--muted)]">Text post</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">Bài này chưa có hình ảnh đính kèm.</p>
+                </div>
+            </div>
+        );
+    }
+
+    const visibleImages = images.slice(0, 4);
+
+    return (
+        <div
+            className={`grid overflow-hidden rounded-3xl border border-[var(--line)] bg-[var(--background-soft)] ${
+                visibleImages.length === 1 ? '' : 'grid-cols-2'
+            }`}
+        >
+            {visibleImages.map((image, index) => (
+                <a
+                    key={image}
+                    href={image}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={`group relative block overflow-hidden ${
+                        visibleImages.length === 1 ? 'aspect-[16/9]' : 'aspect-square'
+                    }`}
+                >
+                    <img
+                        src={image}
+                        alt={`${article.title} - hình ${index + 1}`}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                        onError={(event) => {
+                            event.currentTarget.style.display = 'none';
+                        }}
+                    />
+                    {index === 3 && images.length > 4 && (
+                        <span className="absolute inset-0 flex items-center justify-center bg-black/55 text-lg font-black text-white">
+                            +{images.length - 4}
+                        </span>
+                    )}
+                </a>
+            ))}
+        </div>
+    );
+}
+
 export function NewComposer() {
     const [articles, setArticles] = useState<BasicArticle[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeArticle, setActiveArticle] = useState<BasicArticle | null>(null);
     const [isDemoMode, setIsDemoMode] = useState(false);
-
-    // Live monitor metrics
-    // const [ping, setPing] = useState(15);
-    // const [onlineReaders, setOnlineReaders] = useState(1284);
-
-    // useEffect(() => {
-    //     const pingInterval = setInterval(() => {
-    //         setPing(p => Math.max(10, Math.min(45, p + Math.floor(Math.random() * 9) - 4)));
-    //     }, 3000);
-
-    //     const readersInterval = setInterval(() => {
-    //         setOnlineReaders(r => r + Math.floor(Math.random() * 5) - 2);
-    //     }, 5000);
-
-    //     return () => {
-    //         clearInterval(pingInterval);
-    //         clearInterval(readersInterval);
-    //     };
-    // }, []);
+    const [openMenuArticleId, setOpenMenuArticleId] = useState<number | null>(null);
+    const [savedArticleIds, setSavedArticleIds] = useState<number[]>([]);
+    const [hiddenArticleIds, setHiddenArticleIds] = useState<number[]>([]);
+    const [reactionByArticleId, setReactionByArticleId] = useState<Record<number, string>>({});
+    const [commentArticleId, setCommentArticleId] = useState<number | null>(null);
+    const [commentDraftByArticleId, setCommentDraftByArticleId] = useState<Record<number, string>>({});
+    const [commentingArticleId, setCommentingArticleId] = useState<number | null>(null);
+    const [deletingArticleId, setDeletingArticleId] = useState<number | null>(null);
+    const [openReactionArticleId, setOpenReactionArticleId] = useState<number | null>(null);
+    const [notice, setNotice] = useState<string | null>(null);
+    const noticeTimerRef = useRef<number | null>(null);
+    const reactionCloseTimerRef = useRef<number | null>(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -280,28 +197,22 @@ export function NewComposer() {
             try {
                 setLoading(true);
                 const response = await articlesApi.news({ page: 1, limit: 20 });
-                if (isMounted) {
-                    if (response && response.success && response.data && response.data.length > 0) {
-                        setArticles(response.data);
-                        setIsDemoMode(false);
-                    } else {
-                        // Success call but no data -> Fallback to gorgeous mocked workspace articles
-                        setArticles(FALLBACK_ARTICLES);
-                        setIsDemoMode(true);
-                    }
-                    setError(null);
-                }
-            } catch (err) {
-                if (isMounted) {
-                    console.error('API Error, switching to mock database:', err);
+                if (!isMounted) return;
+
+                if (response?.success && response.data?.length) {
+                    setArticles(response.data);
+                    setIsDemoMode(false);
+                } else {
                     setArticles(FALLBACK_ARTICLES);
                     setIsDemoMode(true);
-                    setError(null); // Silent failover so user is always wowed
                 }
+            } catch (err) {
+                if (!isMounted) return;
+                console.error('API Error, switching to mock database:', err);
+                setArticles(FALLBACK_ARTICLES);
+                setIsDemoMode(true);
             } finally {
-                if (isMounted) {
-                    setLoading(false);
-                }
+                if (isMounted) setLoading(false);
             }
         }
 
@@ -312,61 +223,164 @@ export function NewComposer() {
         };
     }, []);
 
-    // Filter categories
+    useEffect(() => {
+        if (!openMenuArticleId) return;
+
+        const closeMenu = (event: PointerEvent) => {
+            if (!(event.target instanceof Element) || !event.target.closest('[data-news-actions]')) {
+                setOpenMenuArticleId(null);
+            }
+        };
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setOpenMenuArticleId(null);
+        };
+
+        document.addEventListener('pointerdown', closeMenu);
+        document.addEventListener('keydown', closeOnEscape);
+        return () => {
+            document.removeEventListener('pointerdown', closeMenu);
+            document.removeEventListener('keydown', closeOnEscape);
+        };
+    }, [openMenuArticleId]);
+
+    useEffect(() => {
+        return () => {
+            if (reactionCloseTimerRef.current) {
+                window.clearTimeout(reactionCloseTimerRef.current);
+            }
+        };
+    }, []);
+
+    const openReactionPicker = (articleId: number) => {
+        /*
+            Hover reaction UX:
+            - Mở bằng hover/focus, không mở bằng click.
+            - Clear timeout cũ để khi rê chuột từ nút lên list, picker không bị đóng giữa chừng.
+        */
+        if (reactionCloseTimerRef.current) {
+            window.clearTimeout(reactionCloseTimerRef.current);
+        }
+        setOpenReactionArticleId(articleId);
+    };
+
+    const scheduleCloseReactionPicker = () => {
+        /*
+            Delay đóng tạo cảm giác mượt và tha thứ cho đường rê chuột.
+            Nếu user lỡ đi qua khoảng nhỏ giữa nút và list, popover vẫn còn sống thêm 260ms.
+        */
+        if (reactionCloseTimerRef.current) {
+            window.clearTimeout(reactionCloseTimerRef.current);
+        }
+        reactionCloseTimerRef.current = window.setTimeout(() => {
+            setOpenReactionArticleId(null);
+        }, 260);
+    };
+
+    const clearArticleReaction = (articleId: number) => {
+        /*
+            Click nút chính không dùng để mở list nữa.
+            Nó chỉ reset reaction của bài về trạng thái Like mặc định/inactive đúng theo yêu cầu.
+        */
+        setReactionByArticleId((current) => {
+            const next = { ...current };
+            delete next[articleId];
+            return next;
+        });
+    };
+
+    const showNotice = (message: string) => {
+        setNotice(message);
+        if (noticeTimerRef.current) window.clearTimeout(noticeTimerRef.current);
+        noticeTimerRef.current = window.setTimeout(() => setNotice(null), 2600);
+    };
+
     const categories = ['All', 'AI & Machine Learning', 'Frontend Dev', 'Cybersecurity', 'General Tech'];
 
-    const filteredArticles = articles.filter((article) => {
-        const categoryMatch = activeTab === 'All' || getArticleCategory(article) === activeTab;
-        const searchMatch =
-            article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (article.content || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-            article.nameAuthor.toLowerCase().includes(searchQuery.toLowerCase());
-        return categoryMatch && searchMatch;
-    });
+    const filteredArticles = useMemo(() => {
+        const normalizedSearch = searchQuery.trim().toLowerCase();
 
-    /* eyebrow="WORKSPACE CORE / INTEL NEWS" */
+        return articles.filter((article) => {
+            if (hiddenArticleIds.includes(article.id)) return false;
+
+            const categoryMatch = activeTab === 'All' || getArticleCategory(article) === activeTab;
+            const searchMatch =
+                !normalizedSearch ||
+                article.title.toLowerCase().includes(normalizedSearch) ||
+                (article.content || '').toLowerCase().includes(normalizedSearch) ||
+                article.nameAuthor.toLowerCase().includes(normalizedSearch);
+
+            return categoryMatch && searchMatch;
+        });
+    }, [activeTab, articles, hiddenArticleIds, searchQuery]);
+
+    const toggleSaveArticle = (articleId: number) => {
+        setSavedArticleIds((current) =>
+            current.includes(articleId) ? current.filter((id) => id !== articleId) : [...current, articleId],
+        );
+        setOpenMenuArticleId(null);
+        showNotice(savedArticleIds.includes(articleId) ? 'Đã bỏ lưu bài viết.' : 'Đã lưu bài viết vào danh sách.');
+    };
+
+    const hideSimilarArticle = (article: BasicArticle) => {
+        setHiddenArticleIds((current) => [...current, article.id]);
+        setOpenMenuArticleId(null);
+        showNotice(`Đã ẩn bớt bài tương tự "${getArticleCategory(article)}".`);
+    };
+
+    const deleteArticle = async (article: BasicArticle) => {
+        setOpenMenuArticleId(null);
+        if (!article.isPermissionEdit) return;
+        if (!window.confirm('Bạn có chắc muốn xóa bài viết này?')) return;
+
+        setDeletingArticleId(article.id);
+        try {
+            if (!isDemoMode) {
+                await articlesApi.remove(article.id);
+            }
+            setArticles((current) => current.filter((item) => item.id !== article.id));
+            showNotice('Đã xóa bài viết.');
+        } catch (err) {
+            console.error('Failed to delete article:', err);
+            showNotice('Không thể xóa bài viết. Vui lòng thử lại.');
+        } finally {
+            setDeletingArticleId(null);
+        }
+    };
+
+    const submitComment = async (event: FormEvent<HTMLFormElement>, article: BasicArticle) => {
+        event.preventDefault();
+        const draft = (commentDraftByArticleId[article.id] || '').trim();
+        if (!draft || commentingArticleId) return;
+
+        setCommentingArticleId(article.id);
+        try {
+            if (!isDemoMode) {
+                await articlesApi.comment(article.id, draft);
+            }
+            setCommentDraftByArticleId((current) => ({ ...current, [article.id]: '' }));
+            showNotice('Đã gửi bình luận.');
+        } catch (err) {
+            console.error('Failed to comment article:', err);
+            showNotice('Không thể gửi bình luận. Vui lòng thử lại.');
+        } finally {
+            setCommentingArticleId(null);
+        }
+    };
+
     return (
-        <div className="relative min-h-screen text-[var(--foreground)] py-6 z-10">
-            {/* Cyber Canvas Background */}
-            <CyberCanvas />
+        <div className="relative min-h-screen py-6 text-[var(--foreground)]">
+            {notice && (
+                <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full border border-[var(--line)] bg-[var(--surface-strong)] px-4 py-2 text-xs font-semibold text-[var(--foreground)] shadow-xl">
+                    {notice}
+                </div>
+            )}
 
             <SectionShell
                 eyebrow=""
                 title="News"
-                description="Tổng hợp những đột phá kỹ thuật mới nhất, tối ưu hóa hệ thống và kiến thức kỹ nghệ hàng đầu."
+                description="Luồng bài viết cộng đồng: xem nhanh, tương tác nhanh, chỉ mở chi tiết khi bài có nội dung đầy đủ."
             >
-                {/* Dashboard Tech Header widgets */}
-                <div className="grid gap-4 grid-cols-2 md:grid-cols-4 mt-6">
-                    {/* <div className="glass-panel border border-[var(--line)] rounded-2xl px-5 py-3.5 flex flex-col justify-between shadow-[var(--shadow)] relative overflow-hidden group">
-                        <div className="absolute right-0 top-0 h-10 w-10 bg-indigo-500/5 blur-xl pointer-events-none rounded-full" />
-                        <span className="text-[10px] uppercase font-mono tracking-wider text-[var(--muted)]">API Server Status</span>
-                        <div className="flex items-center gap-2 mt-1.5">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
-                            <span className="h-2 w-2 rounded-full bg-emerald-500 absolute" />
-                            <span className="text-sm font-bold tracking-wide font-mono text-emerald-500">ONLINE</span>
-                        </div>
-                    </div> */}
-                    {/* <div className="glass-panel border border-[var(--line)] rounded-2xl px-5 py-3.5 flex flex-col justify-between shadow-[var(--shadow)] relative overflow-hidden">
-                        <span className="text-[10px] uppercase font-mono tracking-wider text-[var(--muted)]">Network Latency (Ping)</span>
-                        <span className="text-sm font-bold font-mono text-cyan-500 mt-1.5">{ping} ms</span>
-                    </div>
-                    <div className="glass-panel border border-[var(--line)] rounded-2xl px-5 py-3.5 flex flex-col justify-between shadow-[var(--shadow)] relative overflow-hidden">
-                        <span className="text-[10px] uppercase font-mono tracking-wider text-[var(--muted)]">Active Tech Observers</span>
-                        <span className="text-sm font-bold font-mono text-purple-500 mt-1.5">{onlineReaders.toLocaleString()}</span>
-                    </div> */}
-                    <div className="glass-panel border border-[var(--line)] rounded-2xl px-5 py-3.5 flex flex-col justify-between shadow-[var(--shadow)] relative overflow-hidden">
-                        <span className="text-[10px] uppercase font-mono tracking-wider text-[var(--muted)]">
-                            Data Feed Stream
-                        </span>
-                        <span className="text-sm font-bold font-mono text-[var(--accent)] mt-1.5">
-                            {isDemoMode ? 'SIMULATOR DEMO' : 'LIVE API BROADCAST'}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Filters, search, category tabs */}
-                <div className="mt-8 flex flex-row md:flex-row gap-4 justify-between items-stretch md:items-center">
-                    {/* Category tabs */}
+                <div className="mt-6 grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
                     <div className="flex flex-wrap gap-2.5">
                         {categories.map((tab) => {
                             const isActive = activeTab === tab;
@@ -375,11 +389,11 @@ export function NewComposer() {
                                     key={tab}
                                     type="button"
                                     onClick={() => setActiveTab(tab)}
-                                    className={`rounded-full px-4 py-2 text-xs font-bold font-sans transition-all duration-300 ${
+                                    className={`rounded-full px-4 py-2 text-xs font-bold transition-all ${
                                         isActive
-                                            ? 'bg-gradient-to-r from-indigo-500 to-cyan-500 text-white shadow-[0_0_12px_rgba(99,102,241,0.3)] scale-105'
+                                            ? 'bg-gradient-to-r from-indigo-500 to-cyan-500 text-white shadow-[0_0_12px_rgba(99,102,241,0.3)]'
                                             : 'border border-[var(--line)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--bg-hover)]'
-                                    } cursor-pointer`}
+                                    }`}
                                 >
                                     {tab === 'All' ? 'Tất cả' : tab}
                                 </button>
@@ -387,384 +401,329 @@ export function NewComposer() {
                         })}
                     </div>
 
-                    {/* Cyber styled search input */}
-                    <div className="relative max-w-sm w-full">
-                        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                            <svg
-                                className="h-4 w-4 text-[var(--muted)]"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth="2.5"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                                />
-                            </svg>
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Truy vấn dữ liệu bài viết..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 rounded-full border border-[var(--line)] bg-[var(--surface)] text-xs text-[var(--foreground)] placeholder-[var(--muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all font-sans shadow-sm"
-                        />
-                        {searchQuery && (
-                            <button
-                                type="button"
-                                onClick={() => setSearchQuery('')}
-                                className="absolute inset-y-0 right-4 flex items-center text-[var(--muted)] hover:text-[var(--accent)]"
-                            >
-                                <svg
-                                    className="h-3.5 w-3.5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth="2.5"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        )}
-                    </div>
-                </div>
-
-                {/* News articles Grid */}
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center min-h-[400px] mt-8 gap-4">
-                        <div className="relative h-12 w-12">
-                            <div className="absolute inset-0 rounded-full border-4 border-[var(--line)]" />
-                            <div className="absolute inset-0 rounded-full border-4 border-t-[var(--accent)] animate-spin" />
-                        </div>
-                        <p className="text-xs font-mono text-[var(--muted)] tracking-wider uppercase animate-pulse">
-                            Connecting database stream...
-                        </p>
-                    </div>
-                ) : filteredArticles.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center min-h-[350px] mt-8 rounded-3xl border border-dashed border-[var(--line)] bg-[var(--surface)] p-8 text-center shadow-inner">
+                    <div className="relative w-full md:w-80">
                         <svg
-                            className="h-12 w-12 text-[var(--muted)] opacity-40 mb-4"
+                            className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--muted)]"
                             fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
-                            strokeWidth="1.5"
+                            strokeWidth="2.5"
                         >
                             <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                d="M2.25 13.5h3.86a2.25 2.25 0 012.008 1.24l.885 1.77a2.25 2.25 0 002.007 1.24h1.98a2.25 2.25 0 002.007-1.24l.885-1.77a2.25 2.25 0 012.007-1.24h3.86m-18 0h18"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                             />
                         </svg>
-                        <h4 className="text-sm font-bold text-[var(--foreground)]">Không có bản tin tương thích</h4>
-                        <p className="text-xs text-[var(--muted)] mt-1.5 max-w-sm leading-relaxed">
-                            Không tìm thấy bài viết nào tương thích với bộ lọc danh mục và từ khóa tìm kiếm của bạn.
+                        <input
+                            type="text"
+                            placeholder="Tìm bài viết..."
+                            value={searchQuery}
+                            onChange={(event) => setSearchQuery(event.target.value)}
+                            className="w-full rounded-full border border-[var(--line)] bg-[var(--surface)] py-2.5 pl-10 pr-4 text-xs text-[var(--foreground)] shadow-sm outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]"
+                        />
+                    </div>
+                </div>
+
+                <div className="mt-4 flex items-center gap-2 text-[11px] text-[var(--muted)]">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                    {isDemoMode ? 'Đang hiển thị dữ liệu demo vì API chưa có bài phù hợp.' : 'Đang lấy dữ liệu từ API.'}
+                </div>
+
+                {loading ? (
+                    <div className="mt-8 flex min-h-[360px] flex-col items-center justify-center gap-4">
+                        <div className="relative h-12 w-12">
+                            <div className="absolute inset-0 rounded-full border-4 border-[var(--line)]" />
+                            <div className="absolute inset-0 animate-spin rounded-full border-4 border-t-[var(--accent)]" />
+                        </div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+                            Đang tải bảng tin...
+                        </p>
+                    </div>
+                ) : filteredArticles.length === 0 ? (
+                    <div className="mt-8 flex min-h-[320px] flex-col items-center justify-center rounded-3xl border border-dashed border-[var(--line)] bg-[var(--surface)] p-8 text-center">
+                        <div className="mb-3 text-4xl">🗂️</div>
+                        <h4 className="text-sm font-bold text-[var(--foreground)]">Không có bài viết phù hợp</h4>
+                        <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-[var(--muted)]">
+                            Thử đổi bộ lọc, xóa từ khóa tìm kiếm hoặc tải lại bảng tin nhé.
                         </p>
                     </div>
                 ) : (
-                    <div className="mt-8 flex flex-col gap-6">
+                    <div className="mx-auto mt-8 flex max-w-3xl flex-col gap-6">
                         {filteredArticles.map((article, index) => {
-                            const authorInitials = article.nameAuthor
-                                ? article.nameAuthor
-                                      .split(' ')
-                                      .map((n) => n[0])
-                                      .slice(0, 2)
-                                      .join('')
-                                      .toUpperCase()
-                                : 'T';
-
                             const cat = getArticleCategory(article);
-                            let catStyle = 'border-indigo-500/20 bg-indigo-500/5 text-indigo-400';
-                            if (cat === 'Cybersecurity') catStyle = 'border-amber-500/20 bg-amber-500/5 text-amber-400';
-                            else if (cat === 'Frontend Dev')
-                                catStyle = 'border-cyan-500/20 bg-cyan-500/5 text-cyan-400';
-                            else if (cat === 'General Tech')
-                                catStyle = 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400';
+                            const authorInitials = getAuthorInitials(article.nameAuthor);
+                            const preview = getPlainText(article.content);
+                            const hasDetail = Boolean(article.id && preview);
+                            const fileAttachments = getFileAttachments(article);
+                            const selectedReaction = reactionByArticleId[article.id];
+                            const isReactionPickerOpen = openReactionArticleId === article.id;
+                            const isSaved = savedArticleIds.includes(article.id);
+                            const commentsCount = getStableMetric(article.id, 2, 18);
+                            const reactionsCount = getStableMetric(article.id, 8, 74) + (selectedReaction ? 1 : 0);
 
-                            // Animated fade-in styling with staggered transition delay
                             return (
                                 <Card
                                     key={article.id}
-                                    style={{ animationDelay: `${index * 80}ms` }}
-                                    className="group relative rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-6 shadow-[var(--shadow)] hover:border-indigo-500/40 hover:-translate-y-1 transition-all duration-300 opacity-0 animate-fade-in-up [animation-fill-mode:forwards] overflow-hidden flex flex-col justify-between"
+                                    style={{ animationDelay: `${index * 70}ms` }}
+                                    className="relative overflow-visible rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[var(--shadow)] opacity-0 animate-fade-in-up [animation-fill-mode:forwards] sm:p-5"
                                 >
-                                    {/* Tech corner accents */}
-                                    <div className="absolute top-0 right-0 h-16 w-16 bg-gradient-to-br from-indigo-500/5 to-cyan-500/0 rounded-bl-full pointer-events-none group-hover:scale-125 transition-transform duration-500" />
-
-                                    <div>
-                                        <div className="flex items-center justify-between mb-4">
-                                            <span className="text-[10px] text-[var(--muted)] font-mono opacity-80">
-                                                {formatDateTime(article.createDate)}
-                                            </span>
-                                            <span
-                                                className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full border ${catStyle}`}
-                                            >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    width="20"
-                                                    height="20"
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    stroke="#ffff"
-                                                    stroke-width="2"
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                >
-                                                    <circle cx="12" cy="12" r="3"></circle>
-                                                    <path
-                                                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 
-           1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 
-           1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 
-           1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09c.7 0 
-           1.31-.4 1.51-1a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 
-           2.83-2.83l.06.06c.51.51 1.25.66 1.82.33.46-.26.74-.76.74-1.29V3a2 
-           2 0 1 1 4 0v.09c0 .53.28 1.03.74 1.29.57.33 1.31.18 1.82-.33l.06-.06a2 
-           2 0 1 1 2.83 2.83l-.06.06c-.36.36-.51.88-.33 1.82.2.6.81 1 1.51 
-           1H21a2 2 0 1 1 0 4h-.09c-.7 0-1.31.4-1.51 1z"
-                                                    ></path>
-                                                </svg>
-                                            </span>
-                                        </div>
-
-                                        {/* Title */}
-                                        <h3 className="text-base font-extrabold text-[var(--foreground)] tracking-tight leading-snug group-hover:text-indigo-400 transition-colors duration-300 mb-3 truncate-2-lines">
-                                            {article.title}
-                                        </h3>
-
-                                        {/* Brief content snippet */}
-                                        <p className="text-[11px] text-[var(--muted)] font-medium leading-relaxed mb-5 opacity-90 truncate-3-lines">
-                                            {article.content
-                                                ? article.content.replace(/#+\s/g, '').replace(/\*+/g, '')
-                                                : 'Không có nội dung mô tả...'}
-                                        </p>
-                                    </div>
-
-                                    {/* Card Footer author & actions */}
-                                    <div className="flex items-center justify-between border-t border-[var(--line)] pt-4 mt-auto">
+                                    <div className="flex items-start justify-between gap-3">
                                         <Link
                                             href={`/profile/${article.publicIdAuthor}`}
-                                            className="flex items-center gap-2.5"
+                                            className="flex min-w-0 items-center gap-3"
                                         >
-                                            <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 p-0.5 shadow-sm shrink-0">
-                                                <div className="h-full w-full rounded-full bg-[var(--surface-strong)] flex items-center justify-center overflow-hidden">
+                                            <div className="h-11 w-11 shrink-0 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 p-0.5">
+                                                <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[var(--surface-strong)]">
                                                     {article.avatarAuthor ? (
                                                         <img
                                                             src={article.avatarAuthor}
                                                             alt={article.nameAuthor}
+                                                            loading="lazy"
                                                             className="h-full w-full object-cover"
                                                         />
                                                     ) : (
-                                                        <span className="text-[10px] font-bold text-indigo-400">
+                                                        <span className="text-xs font-black text-indigo-400">
                                                             {authorInitials}
                                                         </span>
                                                     )}
                                                 </div>
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-xs font-bold text-[var(--foreground)] truncate leading-none">
+                                                <p className="truncate text-sm font-black text-[var(--foreground)]">
                                                     {article.nameAuthor}
                                                 </p>
-                                                <p className="text-[9px] text-[var(--muted)] mt-1 font-mono">
-                                                    Contributor
+                                                <p className="mt-0.5 text-[11px] text-[var(--muted)]">
+                                                    {formatDateTime(article.createDate)} · {cat}
                                                 </p>
                                             </div>
                                         </Link>
 
-                                        <div className="flex items-center gap-2">
-                                            {article.attachments && article.attachments.length > 0 && (
-                                                <div
-                                                    className="flex items-center justify-center h-7 w-7 rounded-full bg-[var(--line)] text-[var(--muted)]"
-                                                    title={`${article.attachments.length} tệp đính kèm`}
-                                                >
-                                                    <svg
-                                                        className="h-3.5 w-3.5"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2.5"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                                                        />
-                                                    </svg>
-                                                </div>
-                                            )}
-
+                                        <div className="relative" data-news-actions>
                                             <button
                                                 type="button"
-                                                onClick={() => setActiveArticle(article)}
-                                                className="rounded-full bg-gradient-to-r from-indigo-500/10 to-cyan-500/10 hover:from-indigo-500 hover:hover:to-cyan-500 hover:text-white px-3.5 py-1.5 text-[10px] font-extrabold tracking-wider text-indigo-400 group-hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-1 cursor-pointer"
+                                                aria-label="Tùy chọn bài viết"
+                                                aria-haspopup="menu"
+                                                aria-expanded={openMenuArticleId === article.id}
+                                                onClick={() =>
+                                                    setOpenMenuArticleId((current) =>
+                                                        current === article.id ? null : article.id,
+                                                    )
+                                                }
+                                                className="flex h-9 w-9 items-center justify-center rounded-full text-[var(--muted)] transition hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)]"
                                             >
-                                                ĐỌC TIẾP
-                                                <svg
-                                                    className="h-3 w-3 shrink-0"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                    strokeWidth="3"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        d="M9 5l7 7-7 7"
-                                                    />
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                                    <circle cx="5" cy="12" r="2" />
+                                                    <circle cx="12" cy="12" r="2" />
+                                                    <circle cx="19" cy="12" r="2" />
                                                 </svg>
                                             </button>
+
+                                            {openMenuArticleId === article.id && (
+                                                <div
+                                                    role="menu"
+                                                    className="absolute right-0 top-11 z-30 w-56 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-strong)] p-1.5 text-xs text-[var(--foreground)] shadow-2xl"
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        role="menuitem"
+                                                        onClick={() => toggleSaveArticle(article.id)}
+                                                        className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left hover:bg-[var(--bg-hover)]"
+                                                    >
+                                                        <span>{isSaved ? 'Bỏ lưu bài viết' : 'Lưu bài viết'}</span>
+                                                        <span>{isSaved ? '✓' : '🔖'}</span>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        role="menuitem"
+                                                        onClick={() => hideSimilarArticle(article)}
+                                                        className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left hover:bg-[var(--bg-hover)]"
+                                                    >
+                                                        <span>Tắt bớt bài tương tự</span>
+                                                        <span>🙈</span>
+                                                    </button>
+                                                    {article.isPermissionEdit && (
+                                                        <button
+                                                            type="button"
+                                                            role="menuitem"
+                                                            disabled={deletingArticleId === article.id}
+                                                            onClick={() => void deleteArticle(article)}
+                                                            className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-rose-500 hover:bg-rose-500/10 disabled:opacity-50"
+                                                        >
+                                                            <span>Xóa bài viết</span>
+                                                            <span>🗑️</span>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
+
+                                    <div className="mt-4 space-y-3">
+                                        <h3 className="text-lg font-black leading-snug tracking-tight text-[var(--foreground)]">
+                                            {article.title}
+                                        </h3>
+                                        <p className="text-sm leading-6 text-[var(--foreground)]/85">
+                                            {preview || 'Bài viết dạng cập nhật nhanh, chưa có phần nội dung chi tiết.'}
+                                        </p>
+                                    </div>
+
+                                    <div className="mt-4">
+                                        <ArticleMedia article={article} />
+                                    </div>
+
+                                    {fileAttachments.length > 0 && (
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                            {fileAttachments.map((attachment) => {
+                                                const filename = attachment.split(/[/\\]/).pop() || attachment;
+                                                return (
+                                                    <a
+                                                        key={attachment}
+                                                        href={attachment}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="rounded-full border border-[var(--line)] bg-[var(--background-soft)] px-3 py-1.5 text-[11px] font-semibold text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                                                    >
+                                                        📎 {filename}
+                                                    </a>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    <div className="mt-4 flex items-center justify-between border-t border-[var(--line)] pt-3 text-xs text-[var(--muted)]">
+                                        <span>
+                                            {selectedReaction || '👍'} {reactionsCount} cảm xúc
+                                        </span>
+                                        <span>{commentsCount} bình luận</span>
+                                    </div>
+
+                                    <div className="mt-3 grid grid-cols-3 gap-2 border-t border-[var(--line)] pt-3 text-xs font-bold">
+                                        <div
+                                            className="relative"
+                                            onMouseEnter={() => openReactionPicker(article.id)}
+                                            onMouseLeave={scheduleCloseReactionPicker}
+                                            onFocus={() => openReactionPicker(article.id)}
+                                            onBlur={(event) => {
+                                                if (!event.currentTarget.contains(event.relatedTarget)) {
+                                                    scheduleCloseReactionPicker();
+                                                }
+                                            }}
+                                        >
+                                            {/*
+                                                Hover reaction picker:
+                                                - Không dùng <details> hoặc click-to-open nữa vì user muốn hover là thấy list.
+                                                - Vùng active gồm nút chính + bridge vô hình + list cảm xúc.
+                                                - Timer đóng 260ms giúp popover biến mất từ từ và không tắt khi rê chuột hơi lệch.
+                                                - Click nút chính chỉ clear reaction, đưa bài về trạng thái Like inactive/default.
+                                                - State vẫn lưu theo article.id để mỗi bài nhớ reaction đã chọn riêng.
+                                            */}
+                                            <button
+                                                type="button"
+                                                onClick={() => clearArticleReaction(article.id)}
+                                                aria-pressed={Boolean(selectedReaction)}
+                                                className={`flex w-full items-center justify-center gap-1.5 rounded-2xl px-3 py-2 transition ${
+                                                    selectedReaction
+                                                        ? 'bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/15'
+                                                        : 'text-[var(--muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)]'
+                                                }`}
+                                            >
+                                                {selectedReaction || '👍'} {selectedReaction ? 'Đã react' : 'Like'}
+                                            </button>
+                                            {isReactionPickerOpen && (
+                                                <>
+                                                    <span
+                                                        aria-hidden="true"
+                                                        className="absolute bottom-8 left-0 z-10 h-5 w-full pointer-events-auto"
+                                                    />
+                                                    <div className="absolute bottom-12 left-0 z-20 flex translate-y-0 gap-1 rounded-full border border-[var(--line)] bg-[var(--surface-strong)] p-1.5 opacity-100 shadow-xl transition-all duration-300 ease-out">
+                                                        {/*
+                                                            Chỉ render picker của article đang active.
+                                                            Nếu hover bài A thì openReactionArticleId = A.id, các bài khác không có popover trong DOM,
+                                                            tránh tình trạng nhiều list cảm xúc cùng xuất hiện hoặc bắt pointer event nhầm.
+                                                        */}
+                                                        {REACTIONS.map((reaction) => (
+                                                            <button
+                                                                key={reaction}
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setReactionByArticleId((current) => ({
+                                                                        ...current,
+                                                                        [article.id]: reaction,
+                                                                    }));
+                                                                    setOpenReactionArticleId(null);
+                                                                }}
+                                                                className="flex h-9 w-9 items-center justify-center rounded-full text-lg transition hover:bg-[var(--bg-hover)] hover:scale-110"
+                                                            >
+                                                                {reaction}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setCommentArticleId((current) =>
+                                                    current === article.id ? null : article.id,
+                                                )
+                                            }
+                                            className="rounded-2xl px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)]"
+                                        >
+                                            💬 Bình luận
+                                        </button>
+
+                                        {hasDetail ? (
+                                            <Link
+                                                href={`/articles/${article.id}`}
+                                                className="rounded-2xl bg-gradient-to-r from-indigo-500/10 to-cyan-500/10 px-3 py-2 text-center text-indigo-400 transition hover:from-indigo-500 hover:to-cyan-500 hover:text-white"
+                                            >
+                                                Xem chi tiết
+                                            </Link>
+                                        ) : (
+                                            <span className="rounded-2xl px-3 py-2 text-center text-[var(--muted)]/60">
+                                                Không có detail
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {commentArticleId === article.id && (
+                                        <form
+                                            onSubmit={(event) => void submitComment(event, article)}
+                                            className="mt-3 flex gap-2 rounded-2xl border border-[var(--line)] bg-[var(--background-soft)] p-2"
+                                        >
+                                            <input
+                                                type="text"
+                                                value={commentDraftByArticleId[article.id] || ''}
+                                                onChange={(event) =>
+                                                    setCommentDraftByArticleId((current) => ({
+                                                        ...current,
+                                                        [article.id]: event.target.value,
+                                                    }))
+                                                }
+                                                placeholder="Viết bình luận..."
+                                                className="min-w-0 flex-1 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-sm outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
+                                            />
+                                            <button
+                                                type="submit"
+                                                disabled={
+                                                    !(commentDraftByArticleId[article.id] || '').trim() ||
+                                                    commentingArticleId === article.id
+                                                }
+                                                className="rounded-full bg-[var(--accent)] px-4 py-2 text-xs font-bold text-white disabled:opacity-40"
+                                            >
+                                                Gửi
+                                            </button>
+                                        </form>
+                                    )}
                                 </Card>
                             );
                         })}
                     </div>
                 )}
             </SectionShell>
-
-            {/* Futuristic Tech Article Scanner Detail Overlay Modal */}
-            {activeArticle && (
-                <div className="fixed inset-0 bg-black/65 backdrop-blur-md flex items-center justify-center z-50 p-4 md:p-6 transition-all duration-300 animate-fade-in-up">
-                    {/* Glowing outer box */}
-                    <div className="relative max-w-3xl w-full rounded-[2rem] border border-indigo-500/40 bg-[var(--surface-strong)] shadow-[0_0_50px_rgba(99,102,241,0.15)] overflow-hidden max-h-[85vh] flex flex-col justify-between origin-center">
-                        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-400 animate-pulse" />
-
-                        {/* Interactive digital scanline overlay effect */}
-                        <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.12)_50%),linear-gradient(90deg,rgba(255,0,0,0.02),rgba(0,255,0,0.01),rgba(0,0,255,0.02))] bg-[length:100%_4px,6px_100%] opacity-20" />
-
-                        {/* Modal Header */}
-                        <div className="px-6 md:px-8 py-5 border-b border-[var(--line)] flex justify-between items-center relative z-10">
-                            <div className="flex items-center gap-3">
-                                <span className="font-mono text-[9px] text-cyan-400 bg-cyan-400/10 px-2.5 py-0.5 rounded-full border border-cyan-400/25 font-bold uppercase tracking-widest animate-pulse">
-                                    Digital Scanner
-                                </span>
-                                <span className="text-[10px] text-[var(--muted)] font-mono">
-                                    ID: #{activeArticle.id}
-                                </span>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => setActiveArticle(null)}
-                                className="rounded-full border border-[var(--line)] bg-[var(--surface)] hover:bg-rose-500/15 hover:border-rose-500 hover:text-rose-500 p-2 text-[var(--foreground)] transition-all hover:rotate-90 duration-300 flex items-center justify-center cursor-pointer"
-                                aria-label="Close modal"
-                            >
-                                <svg
-                                    className="h-4.5 w-4.5"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth="2.5"
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        {/* Modal Content Scroll */}
-                        <div className="px-6 md:px-8 py-6 overflow-y-auto flex-1 scrollbar-thin relative z-10">
-                            {/* Meta */}
-                            <div className="mb-6 space-y-3">
-                                <h2 className="text-xl md:text-2xl font-extrabold text-[var(--foreground)] tracking-tight leading-tight">
-                                    {activeArticle.title}
-                                </h2>
-
-                                <div className="flex flex-wrap items-center gap-4 text-xs text-[var(--muted)] pt-1 border-b border-[var(--line)] pb-4">
-                                    <div className="flex items-center gap-2">
-                                        <div className="h-6 w-6 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 p-0.5 shadow-sm shrink-0">
-                                            <div className="h-full w-full rounded-full bg-[var(--surface-strong)] flex items-center justify-center overflow-hidden">
-                                                <span className="text-[8px] font-bold text-indigo-400">
-                                                    {activeArticle.nameAuthor
-                                                        .split(' ')
-                                                        .map((n) => n[0])
-                                                        .slice(0, 2)
-                                                        .join('')
-                                                        .toUpperCase()}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <span className="font-bold text-[var(--foreground)] opacity-95">
-                                            {activeArticle.nameAuthor}
-                                        </span>
-                                    </div>
-                                    <span>•</span>
-                                    <span className="font-mono text-[10px]">
-                                        Xuất bản {formatDateTime(activeArticle.createDate)}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Markdown Render Body */}
-                            <div className="article-markdown-preview prose prose-indigo max-w-none text-xs md:text-sm leading-relaxed text-[var(--foreground)]/90 space-y-4">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{activeArticle.content}</ReactMarkdown>
-                            </div>
-
-                            {/* Attachments Section */}
-                            {activeArticle.attachments && activeArticle.attachments.length > 0 && (
-                                <div className="mt-8 pt-6 border-t border-[var(--line)]">
-                                    <h4 className="text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--muted)] flex items-center gap-1.5 mb-3">
-                                        <svg
-                                            className="h-4 w-4"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                            strokeWidth="2.5"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                                            />
-                                        </svg>
-                                        Tệp đính kèm học liệu ({activeArticle.attachments.length})
-                                    </h4>
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        {activeArticle.attachments.map((att) => {
-                                            const filename = att.split(/[/\\]/).pop() || att;
-                                            return (
-                                                <a
-                                                    key={att}
-                                                    href={att}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    className="group flex items-center justify-between gap-3 rounded-xl border border-[var(--line)] bg-[var(--background-soft)] px-4 py-2.5 text-xs font-semibold hover:border-indigo-500/40 hover:bg-[var(--surface)] transition-all duration-300 shadow-sm cursor-pointer"
-                                                >
-                                                    <span className="truncate group-hover:text-indigo-400 transition-colors">
-                                                        {filename}
-                                                    </span>
-                                                    <svg
-                                                        className="h-3.5 w-3.5 text-[var(--muted)] group-hover:text-indigo-400 transition-colors shrink-0"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="currentColor"
-                                                        strokeWidth="2.5"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                                        />
-                                                    </svg>
-                                                </a>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Modal Footer */}
-                        <div className="px-6 md:px-8 py-4.5 border-t border-[var(--line)] bg-[var(--surface)]/50 backdrop-blur-md flex justify-end relative z-10">
-                            <button
-                                type="button"
-                                onClick={() => setActiveArticle(null)}
-                                className="rounded-full bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white font-bold px-6 py-2 text-xs shadow-md shadow-indigo-500/10 hover:shadow-indigo-500/20 active:scale-95 transition-all duration-300 cursor-pointer"
-                            >
-                                ĐÓNG TRÌNH ĐỌC
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

@@ -41,6 +41,12 @@ export type SendCommunityMessageRequest = {
     clientMessageId?: string;
 };
 
+export type EditChatMessageRequest = {
+    conversationKey: string;
+    messageId: string;
+    newContent: string;
+};
+
 export type ChatInboxResponse = ApiResponse<ChatConversationSummary[]>;
 export type ChatMessagesResponse = ApiResponse<ChatMessage[]>;
 export type ChatSendResponse = ApiResponse<ChatSendResult>;

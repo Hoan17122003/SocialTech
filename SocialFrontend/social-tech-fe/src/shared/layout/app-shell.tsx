@@ -108,11 +108,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                     onMouseEnter={() => setIsOpen(true)}
                     onMouseLeave={() => setIsOpen(false)}
                 >
-                    {/* Cascading actions */}
+                    {/* 
+                        Cascading actions:
+                        - FAB đang nằm bên trái màn hình, nên tooltip phải bung sang phải để không bị tràn ra ngoài viewport.
+                        - CSS .fab-container trong globals.css chịu trách nhiệm mở/đóng speed-dial bằng hover hoặc class is-open.
+                        - group-hover ở từng item giúp chỉ hiện đúng label của nút con đang được hover, không bật tất cả label cùng lúc.
+                    */}
                     {items.map((item) => (
                         <div key={item.href} className="fab-item group relative flex items-center gap-2">
-                            {/* Tooltip Label */}
-                            <span className="pointer-events-none absolute right-14 scale-90 opacity-0 transition-all duration-200 group-hover:scale-100 group-hover:opacity-100 rounded-xl bg-gray-900/90 dark:bg-white/95 px-3 py-1.5 text-xs font-semibold text-white dark:text-gray-900 shadow-md whitespace-nowrap">
+                            {/* Tooltip Label: left-14 đặt label ở phía bên phải nút tròn vì FAB đặt ở góc trái. */}
+                            <span className="pointer-events-none absolute left-14 scale-90 opacity-0 transition-all duration-200 group-hover:scale-100 group-hover:opacity-100 rounded-xl bg-gray-900/90 dark:bg-white/95 px-3 py-1.5 text-xs font-semibold text-white dark:text-gray-900 shadow-md whitespace-nowrap">
                                 {item.label}
                             </span>
 

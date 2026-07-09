@@ -37,6 +37,8 @@ type ChatContextType = {
     loadMessages: (conversationKey: string) => Promise<void>;
     refreshInbox: () => Promise<void>;
     searchCandidates: (query: string) => Promise<DetailUserFollow[]>;
+    editMessage: (conversationKey: string, messageId: string, newContent: string) => Promise<void>;
+    deleteMessage: (conversationKey: string, messageId: string) => Promise<void>;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -203,7 +205,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 setMessages((curr) => ({
                     ...curr,
                     [conversationKey]: nextMessages.sort(
-                        (a, b) => new Date(a.sentAtUtc).getTime() - new Date(b.sentAtUtc).getTime()
+                        (a, b) => new Date(a.sentAtUtc).getTime() - new Date(b.sentAtUtc).getTime(),
                     ),
                 }));
                 return;
@@ -215,7 +217,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 setMessages((curr) => ({
                     ...curr,
                     [conversationKey]: [...msgData].sort(
-                        (a, b) => new Date(a.sentAtUtc).getTime() - new Date(b.sentAtUtc).getTime()
+                        (a, b) => new Date(a.sentAtUtc).getTime() - new Date(b.sentAtUtc).getTime(),
                     ),
                 }));
             }
@@ -247,9 +249,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     const openDirectChatWithUser = async (targetUserId: number, displayName: string, avatarUrl: string) => {
         // Check if there is already an existing direct conversation with this user
-        const existing = inbox.find(
-            (c) => c.conversationType === 'Direct' && c.otherUserId === targetUserId
-        );
+        const existing = inbox.find((c) => c.conversationType === 'Direct' && c.otherUserId === targetUserId);
 
         if (existing) {
             await openChat(existing.conversationKey);
@@ -411,6 +411,29 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const editMessage = async (conversationKey: string, messageId: string, newContent: string) => {
+        const trimmed = newContent.trim();
+        if (!trimmed) return;
+
+        await chatApi.editMessage({ conversationKey, messageId, newContent: trimmed });
+        setMessages((current) => ({
+            ...current,
+            [conversationKey]: (current[conversationKey] ?? []).map((message) =>
+                message.messageId === messageId ? { ...message, content: trimmed, isEdited: true } : message,
+            ),
+        }));
+    };
+
+    const deleteMessage = async (conversationKey: string, messageId: string) => {
+        await chatApi.deleteMessage(messageId);
+        setMessages((current) => ({
+            ...current,
+            [conversationKey]: (current[conversationKey] ?? []).map((message) =>
+                message.messageId === messageId ? { ...message, content: '', isDeleted: true } : message,
+            ),
+        }));
+    };
+
     const searchCandidates = async (query: string): Promise<DetailUserFollow[]> => {
         try {
             const response = await chatApi.searchCandidates(query);
@@ -438,6 +461,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             loadMessages,
             refreshInbox,
             searchCandidates,
+            editMessage,
+            deleteMessage,
         }),
         [
             isConnected,
@@ -448,7 +473,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             openChatBoxes,
             draftConversations,
             activeChatBoxKey,
-        ]
+        ],
     );
 
     return <ChatContext.Provider value={contextValue}>{children}</ChatContext.Provider>;

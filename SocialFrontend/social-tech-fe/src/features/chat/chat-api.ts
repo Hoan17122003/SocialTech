@@ -6,6 +6,7 @@ import type {
     SendCommunityMessageRequest,
     SendDirectMessageRequest,
     ChatCandidatesResponse,
+    EditChatMessageRequest,
 } from '@/features/chat/contracts';
 
 export const chatApi = {
@@ -45,6 +46,18 @@ export const chatApi = {
     searchCandidates(query: string) {
         const qs = query ? `?query=${encodeURIComponent(query)}` : '';
         return httpClient.get<ChatCandidatesResponse>(`/api/Chat/candidates${qs}`, {
+            auth: true,
+            showGlobalLoading: false,
+        });
+    },
+    editMessage(payload: EditChatMessageRequest) {
+        return httpClient.put<void>('/api/Chat/message/edit', payload, {
+            auth: true,
+            showGlobalLoading: false,
+        });
+    },
+    deleteMessage(messageId: string) {
+        return httpClient.delete<void>(`/api/Chat/message/delete/${encodeURIComponent(messageId)}`, {
             auth: true,
             showGlobalLoading: false,
         });
