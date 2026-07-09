@@ -18,6 +18,10 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function normalizeRole(role: string) {
+    return role.trim().toLowerCase();
+}
+
 function useHydrated() {
     return useSyncExternalStore(
         () => () => {},
@@ -39,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             isHydrated,
             roles,
             hasRole(role: string) {
-                return roles.includes(role);
+                return roles.map(normalizeRole).includes(normalizeRole(role));
             },
             async login(email: string, password: string) {
                 const response = await authApi.login({ email, password });

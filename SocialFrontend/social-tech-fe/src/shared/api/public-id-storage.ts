@@ -1,30 +1,14 @@
 import { appConfig } from '@/common/config/env';
-
-function isBrowser() {
-    return typeof window !== 'undefined';
-}
+import { browserStorage } from '@/common/utils/browser-storage';
 
 export const publicIdStorage = {
     get() {
-        if (!isBrowser()) {
-            return null;
-        }
-
-        return window.localStorage.getItem(appConfig.publicIdStorageKey);
+        return browserStorage.get(appConfig.publicIdStorageKey);
     },
     set(publicId: string) {
-        if (!isBrowser()) {
-            return;
-        }
-
-        window.localStorage.setItem(appConfig.publicIdStorageKey, publicId);
+        browserStorage.set(appConfig.publicIdStorageKey, publicId);
     },
     clear() {
-        if (!isBrowser()) {
-            return;
-        }
-
-        window.localStorage.removeItem(appConfig.publicIdStorageKey);
+        browserStorage.remove(appConfig.publicIdStorageKey);
     },
 };
-

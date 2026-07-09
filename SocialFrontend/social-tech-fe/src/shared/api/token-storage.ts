@@ -1,29 +1,14 @@
 import { appConfig } from '@/common/config/env';
-
-function isBrowser() {
-    return typeof window !== 'undefined';
-}
+import { browserStorage } from '@/common/utils/browser-storage';
 
 export const tokenStorage = {
     get() {
-        if (!isBrowser()) {
-            return null;
-        }
-
-        return window.localStorage.getItem(appConfig.accessTokenStorageKey);
+        return browserStorage.get(appConfig.accessTokenStorageKey);
     },
     set(token: string) {
-        if (!isBrowser()) {
-            return;
-        }
-
-        window.localStorage.setItem(appConfig.accessTokenStorageKey, token);
+        browserStorage.set(appConfig.accessTokenStorageKey, token);
     },
     clear() {
-        if (!isBrowser()) {
-            return;
-        }
-
-        window.localStorage.removeItem(appConfig.accessTokenStorageKey);
+        browserStorage.remove(appConfig.accessTokenStorageKey);
     },
 };

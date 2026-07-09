@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200" role="img" aria-labelledby="title desc">
+  <title id="title">Feature hand fallback image 2</title>
+  <desc id="desc">Temporary local test image for the feature hand gallery.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#0f766e"/>
+      <stop offset="0.48" stop-color="#06b6d4"/>
+      <stop offset="1" stop-color="#facc15"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="1200" fill="url(#bg)"/>
+  <circle cx="450" cy="510" r="250" fill="#ecfeff" opacity="0.82"/>
+  <circle cx="450" cy="510" r="178" fill="#0891b2" opacity="0.55"/>
+  <circle cx="450" cy="510" r="86" fill="#fef3c7" opacity="0.95"/>
+  <path d="M103 212c96-72 192-72 288 0s192 72 288 0 96-72 118 0" fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round" opacity="0.65"/>
+  <path d="M103 890c96 72 192 72 288 0s192-72 288 0 96 72 118 0" fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round" opacity="0.65"/>
+  <text x="120" y="1050" fill="#052e2b" font-family="Arial, sans-serif" font-size="54" font-weight="700">LOCAL TEST 02</text>
+</svg>

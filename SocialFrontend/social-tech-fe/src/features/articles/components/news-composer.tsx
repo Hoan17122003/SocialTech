@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { articlesApi } from '@/features/articles/articles-api';
 import type { BasicArticle } from '@/features/articles/contracts';
 import { formatDateTime } from '@/common/utils/format-date';
 import { Card } from '@/shared/ui/card';
 import { SectionShell } from '@/shared/ui/section-shell';
+import { AvatarImage } from '@/shared/ui/avatar-image';
 
 const FALLBACK_ARTICLES: BasicArticle[] = [
     {
@@ -151,10 +153,12 @@ function ArticleMedia({ article }: { article: BasicArticle }) {
                         visibleImages.length === 1 ? 'aspect-[16/9]' : 'aspect-square'
                     }`}
                 >
-                    <img
+                    <Image
                         src={image}
                         alt={`${article.title} - hình ${index + 1}`}
-                        loading="lazy"
+                        fill
+                        sizes={visibleImages.length === 1 ? '(max-width: 768px) 100vw, 720px' : '(max-width: 768px) 50vw, 360px'}
+                        unoptimized
                         className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                         onError={(event) => {
                             event.currentTarget.style.display = 'none';
@@ -474,20 +478,14 @@ export function NewComposer() {
                                             className="flex min-w-0 items-center gap-3"
                                         >
                                             <div className="h-11 w-11 shrink-0 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 p-0.5">
-                                                <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-[var(--surface-strong)]">
-                                                    {article.avatarAuthor ? (
-                                                        <img
-                                                            src={article.avatarAuthor}
-                                                            alt={article.nameAuthor}
-                                                            loading="lazy"
-                                                            className="h-full w-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <span className="text-xs font-black text-indigo-400">
-                                                            {authorInitials}
-                                                        </span>
-                                                    )}
-                                                </div>
+                                                <AvatarImage
+                                                    src={article.avatarAuthor}
+                                                    alt={article.nameAuthor}
+                                                    fallback={authorInitials}
+                                                    sizes="44px"
+                                                    className="rounded-full bg-[var(--surface-strong)]"
+                                                    fallbackClassName="text-xs font-black text-indigo-400"
+                                                />
                                             </div>
                                             <div className="min-w-0">
                                                 <p className="truncate text-sm font-black text-[var(--foreground)]">

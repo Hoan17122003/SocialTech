@@ -7,9 +7,7 @@ export const authApi = {
         return httpClient.post<LoginResponse>('/api/Auth/login', payload);
     },
     logout() {
-        return httpClient.post<{ message: string }>('/api/Auth/logout', undefined, {
-            auth: true,
-        });
+        return httpClient.post<{ message: string }>('/api/Auth/logout');
     },
     register(payload: RegisterRequest) {
         return httpClient.post<ApiResponse<boolean>>('/api/User/create', payload);

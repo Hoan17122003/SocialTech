@@ -130,6 +130,7 @@ public class ArticleAdapterPort : IArticlePort
 
         return result.Select(x => new ArticleDetailModelView
         {
+            Id = x.Id,
             Title = x.Title,
             Content = x.Body ?? "",
             Attachments = x.Attachments.Select(attachment => _entityMediaStorageService.GetAbsolutePathImageEcomsystem(attachment.FilePath)).ToList(),

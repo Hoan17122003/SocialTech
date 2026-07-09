@@ -1,3 +1,4 @@
+import { browserStorage } from '@/common/utils/browser-storage';
 import type { NotificationItem, SignalRNotificationPayload } from '@/shared/navigation/notifications/notification-center.types';
 
 const NOTIFICATION_STORAGE_KEY = 'social-tech.notifications';
@@ -83,27 +84,9 @@ export function toNotificationItem(payload: SignalRNotificationPayload): Notific
 }
 
 export function readStoredNotifications() {
-    if (typeof window === 'undefined') {
-        return [] as NotificationItem[];
-    }
-
-    const stored = localStorage.getItem(NOTIFICATION_STORAGE_KEY);
-
-    if (!stored) {
-        return [] as NotificationItem[];
-    }
-
-    try {
-        return JSON.parse(stored) as NotificationItem[];
-    } catch {
-        return [];
-    }
+    return browserStorage.getJson<NotificationItem[]>(NOTIFICATION_STORAGE_KEY, []);
 }
 
 export function writeStoredNotifications(items: NotificationItem[]) {
-    if (typeof window === 'undefined') {
-        return;
-    }
-
-    localStorage.setItem(NOTIFICATION_STORAGE_KEY, JSON.stringify(items));
+    browserStorage.setJson(NOTIFICATION_STORAGE_KEY, items);
 }

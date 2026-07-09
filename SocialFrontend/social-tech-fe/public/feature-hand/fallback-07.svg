@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200" role="img" aria-labelledby="title desc">
+  <title id="title">Feature hand fallback image 7</title>
+  <desc id="desc">Temporary local test image for the feature hand gallery.</desc>
+  <defs>
+    <linearGradient id="bg" x1="1" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#f59e0b"/>
+      <stop offset="0.56" stop-color="#84cc16"/>
+      <stop offset="1" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="1200" fill="url(#bg)"/>
+  <path d="M154 758c126-272 270-408 432-408 73 0 129 20 168 60-113 332-278 498-495 498-47 0-82-8-105-24 0-39 0-81 0-126z" fill="#ffffff" opacity="0.82"/>
+  <path d="M242 794c115-156 262-264 442-326" fill="none" stroke="#14532d" stroke-width="20" stroke-linecap="round" opacity="0.58"/>
+  <path d="M372 652c-38 88-52 166-42 234M500 568c-22 70-24 140-6 210" fill="none" stroke="#14532d" stroke-width="14" stroke-linecap="round" opacity="0.45"/>
+  <circle cx="202" cy="210" r="94" fill="#ffffff" opacity="0.28"/>
+  <text x="142" y="1050" fill="#ffffff" font-family="Arial, sans-serif" font-size="54" font-weight="700">LOCAL TEST 07</text>
+</svg>

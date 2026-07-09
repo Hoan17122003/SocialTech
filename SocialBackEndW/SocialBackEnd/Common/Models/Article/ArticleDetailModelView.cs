@@ -2,6 +2,7 @@ namespace SocialBackEnd.Common.Models.Article;
 
 public record ArticleDetailModelView
 {
+    public int Id { get; init; }
     public string Title { get; init; }
     public string Content { get; init; }
     public List<string> Attachments { get; init; } = new List<string>();

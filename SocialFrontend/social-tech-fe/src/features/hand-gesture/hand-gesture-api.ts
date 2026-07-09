@@ -4,6 +4,7 @@ import type { LoverMediaItem, LoverMediaType } from './contracts';
 
 type RawLoverMedia = Record<string, unknown>;
 
+const LOVER_FEATURES_HAND_PATH = '/api/lover/features-hand';
 const MEDIA_PATH_FIELDS = ['url', 'path', 'filePath', 'fileUrl', 'mediaUrl', 'src', 'attachmentUrl'] as const;
 const MEDIA_TYPE_FIELDS = ['type', 'fileType', 'mimeType', 'mediaType'] as const;
 const MEDIA_TITLE_FIELDS = ['title', 'name', 'fileName', 'originalName'] as const;
@@ -117,12 +118,16 @@ function normalizeLoverMedia(item: RawLoverMedia, index: number): LoverMediaItem
 
 export const handGestureApi = {
     async listLoverMedia() {
-        const payload = await httpClient.get<unknown>('/api/lover', {
-            auth: true,
-        });
+        const payload = await httpClient.get<unknown>(LOVER_FEATURES_HAND_PATH);
 
         return unwrapCollection(payload)
             .map((item, index) => normalizeLoverMedia(item, index))
             .filter((item): item is LoverMediaItem => item !== null);
+    },
+    async uploadLoverMedia(file: File) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        return httpClient.post<unknown>(LOVER_FEATURES_HAND_PATH, formData);
     },
 };

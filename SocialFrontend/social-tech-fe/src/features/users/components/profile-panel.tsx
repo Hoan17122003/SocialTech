@@ -11,6 +11,7 @@ import { EmptyState } from '@/shared/ui/empty-state';
 import { Input, Textarea } from '@/shared/ui/field';
 import { FormMessage } from '@/shared/ui/form-message';
 import { SectionShell } from '@/shared/ui/section-shell';
+import { AvatarImage } from '@/shared/ui/avatar-image';
 import { useTheme } from '@/providers/theme-provider';
 
 export function ProfilePanel({ userId }: { userId?: string }) {
@@ -187,19 +188,14 @@ export function ProfilePanel({ userId }: { userId?: string }) {
 
                         {/* Avatar container */}
                         <div className="relative h-24 w-24 rounded-full p-1 bg-gradient-to-tr from-[var(--accent)] to-[#4facfe] shadow-lg flex-shrink-0 animate-pulse-slow">
-                            <div className="h-full w-full rounded-full bg-[var(--surface)] flex items-center justify-center overflow-hidden">
-                                {profile.profileImageUrl ? (
-                                    <img
-                                        src={profile.profileImageUrl}
-                                        alt={profile.displayName}
-                                        className="h-full w-full object-cover"
-                                    />
-                                ) : (
-                                    <span className="text-2xl font-extrabold bg-gradient-to-r from-[var(--accent)] to-[#4facfe] bg-clip-text text-transparent">
-                                        {initials}
-                                    </span>
-                                )}
-                            </div>
+                            <AvatarImage
+                                src={profile.profileImageUrl}
+                                alt={profile.displayName}
+                                fallback={initials}
+                                sizes="96px"
+                                className="rounded-full bg-[var(--surface)]"
+                                fallbackClassName="text-2xl font-extrabold bg-gradient-to-r from-[var(--accent)] to-[#4facfe] bg-clip-text text-transparent"
+                            />
                         </div>
 
                         {/* Details */}

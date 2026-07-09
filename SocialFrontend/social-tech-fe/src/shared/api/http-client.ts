@@ -1,9 +1,12 @@
 import { appConfig } from '@/common/config/env';
 import { ApiError, type ApiErrorPayload } from '@/common/types/api';
 import { tokenStorage } from '@/shared/api/token-storage';
+import { resolveApiAuthentication } from '@/shared/security/security-resolver';
 import { globalLoadingStore } from '@/shared/ui/global-loading-store';
 
 type RequestOptions = RequestInit & {
+    // Leave `auth` undefined for the central API security config to decide.
+    // Pass true/false only when a call intentionally overrides the shared rule.
     auth?: boolean;
     retryOnUnauthorized?: boolean;
     showGlobalLoading?: boolean;
@@ -52,9 +55,7 @@ async function refreshAccessToken(accessToken?: string | null) {
     };
 
     const nextToken =
-        typeof payload.data === 'string' ? payload.data : payload.data?.accessToken ?? payload.accessToken ?? null;
-
-    console.log(`nextToken : ${nextToken}`);
+        typeof payload.data === 'string' ? payload.data : (payload.data?.accessToken ?? payload.accessToken ?? null);
 
     if (nextToken) {
         tokenStorage.set(nextToken);
@@ -64,7 +65,9 @@ async function refreshAccessToken(accessToken?: string | null) {
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const { auth = false, retryOnUnauthorized = true, showGlobalLoading = true, headers, ...rest } = options;
+    const { auth, retryOnUnauthorized = true, showGlobalLoading = true, headers, ...rest } = options;
+    const apiPolicy = resolveApiAuthentication(path);
+    const shouldAttachAuth = auth ?? apiPolicy.auth;
     const nextHeaders = new Headers(headers);
     const isFormData = rest.body instanceof FormData;
 
@@ -72,7 +75,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
         nextHeaders.set('Content-Type', 'application/json');
     }
 
-    if (auth) {
+    if (shouldAttachAuth) {
         const token = tokenStorage.get();
 
         if (token) {
@@ -92,7 +95,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
             cache: 'no-store',
         });
 
-        if (response.status === 401 && auth && retryOnUnauthorized) {
+        if (response.status === 401 && shouldAttachAuth && retryOnUnauthorized) {
             const accessToken = tokenStorage.get();
             const nextToken = await refreshAccessToken(accessToken);
 

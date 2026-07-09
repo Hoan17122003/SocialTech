@@ -1,11 +1,13 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import React, { PropsWithChildren, useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Components } from 'react-markdown';
 import { ApiError } from '@/common/types/api';
+import { toRenderableImageSrc } from '@/common/utils/image-source';
 import { articlesApi } from '@/features/articles/articles-api';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
@@ -589,25 +591,37 @@ export function ArticleComposer({ titlePage }: PropsWithChildren<{ mode: string;
     const attachmentMap = new Map(attachmentPreviews.map((preview) => [preview.id, preview]));
     const markdownComponents: Components = {
         img({ src, alt }) {
-            if (typeof src === 'string') {
+            const imageSrc = toRenderableImageSrc(src);
+
+            if (imageSrc) {
                 // Neu gap anh inline dang dung `upload://...` thi doi sang blob URL tu state local.
-                const uploadPreviewId = extractUploadPreviewId(src);
+                const uploadPreviewId = extractUploadPreviewId(imageSrc);
                 const preview = uploadPreviewId ? attachmentMap.get(uploadPreviewId) : null;
                 if (preview) {
                     return (
-                        <img
+                        <Image
                             src={preview.url}
                             alt={alt ?? preview.file.name}
+                            width={1200}
+                            height={700}
+                            unoptimized
                             className="my-4 max-h-96 w-full rounded-2xl border border-[var(--line)] object-cover"
                         />
                     );
                 }
             }
 
+            if (!imageSrc) {
+                return null;
+            }
+
             return (
-                <img
-                    src={src ?? ''}
+                <Image
+                    src={imageSrc}
                     alt={alt ?? ''}
+                    width={1200}
+                    height={700}
+                    unoptimized
                     className="my-4 max-h-96 w-full rounded-2xl border border-[var(--line)] object-cover"
                 />
             );

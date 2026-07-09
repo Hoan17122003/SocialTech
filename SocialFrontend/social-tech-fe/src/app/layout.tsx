@@ -3,6 +3,7 @@ import { IBM_Plex_Mono, Manrope } from 'next/font/google';
 import { AppProvider } from '@/providers/app-provider';
 import { AppHeader } from '@/shared/navigation/app-header';
 import { FloatingChatContainer } from '@/features/chat/components/floating-chat-container';
+import { RouteSecurityGuard } from '@/shared/security/route-security-guard';
 import './globals.css';
 import '@uiw/react-md-editor/markdown-editor.css';
 
@@ -27,7 +28,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="vi" className={`${manrope.variable} ${ibmPlexMono.variable} h-full antialiased`} suppressHydrationWarning>
+        <html
+            lang="vi"
+            className={`${manrope.variable} ${ibmPlexMono.variable} h-full antialiased`}
+            suppressHydrationWarning
+        >
             <head>
                 <script
                     dangerouslySetInnerHTML={{
@@ -49,7 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <body className="min-h-full font-sans bg-background text-foreground">
                 <AppProvider>
                     <AppHeader />
-                    {children}
+                    <RouteSecurityGuard>{children}</RouteSecurityGuard>
                     <FloatingChatContainer />
                 </AppProvider>
             </body>

@@ -1,26 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { ProfilePanel } from '@/features/users/components/profile-panel';
 import { publicIdStorage } from '@/shared/api/public-id-storage';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function ProfilePage() {
-    const router = useRouter();
     const { isHydrated } = useAuth();
 
+    // RouteSecurityGuard owns auth redirects; this page only resolves the current user's public id.
     const publicId = isHydrated ? publicIdStorage.get() : null;
-
-    useEffect(() => {
-        if (!isHydrated) {
-            return;
-        }
-
-        if (!publicId) {
-            router.replace('/login');
-        }
-    }, [isHydrated, publicId, router]);
 
     if (!isHydrated || !publicId) {
         return null;

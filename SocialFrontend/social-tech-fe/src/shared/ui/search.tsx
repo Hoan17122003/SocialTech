@@ -25,9 +25,12 @@ type SearchProps = {
     onResults?: (items: SearchItem[]) => void;
 };
 
-async function defaultSearch(endpoint: string, query: string, auth: boolean) {
+async function defaultSearch(endpoint: string, query: string, auth?: boolean) {
     const qs = toQueryString({ q: query });
-    return httpClient.get<SearchItem[]>(`${endpoint}${qs}`, { auth, showGlobalLoading: false });
+    return httpClient.get<SearchItem[]>(`${endpoint}${qs}`, {
+        ...(typeof auth === 'boolean' ? { auth } : {}),
+        showGlobalLoading: false,
+    });
 }
 
 export function Search({
@@ -35,7 +38,7 @@ export function Search({
     placeholder = 'Search…',
     minLength = 2,
     debounceMs = 300,
-    auth = true,
+    auth,
     searchFn,
     endpoint,
     onResults,
@@ -63,9 +66,7 @@ export function Search({
             setIsPending(true);
             setError(null);
             try {
-                const result = searchFn
-                    ? await searchFn(q)
-                    : await defaultSearch(endpoint as string, q, auth);
+                const result = searchFn ? await searchFn(q) : await defaultSearch(endpoint as string, q, auth);
                 if (!active || currentRequestId !== requestIdRef.current) return;
                 setItems(Array.isArray(result) ? result : []);
                 onResults?.(Array.isArray(result) ? result : []);

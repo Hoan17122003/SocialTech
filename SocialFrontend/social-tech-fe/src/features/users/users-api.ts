@@ -12,14 +12,10 @@ import { ApiResponse } from '@/common/types/api';
 
 export const usersApi = {
     getProfile(publicId?: string) {
-        return httpClient.post<UserProfileResponse>(`/api/User/profile/${publicId}`, undefined, {
-            auth: true,
-        });
+        return httpClient.post<UserProfileResponse>(`/api/User/profile/${publicId}`);
     },
     updateProfile(payload: UpdateUserRequest) {
-        return httpClient.post('/api/User/profile/update', objectToFormData(payload), {
-            auth: true,
-        });
+        return httpClient.post('/api/User/profile/update', objectToFormData(payload));
     },
     forgotPassword(payload: ForgotPasswordRequest) {
         return httpClient.post<ApiResponse<boolean>>('/api/User/request-forget_password', payload);
@@ -28,14 +24,10 @@ export const usersApi = {
         return httpClient.post<ApiResponse<boolean>>('/api/User/reset_password', payload);
     },
     follow(userIdTarget: number) {
-        return httpClient.post('/api/User/follow', userIdTarget, {
-            auth: true,
-        });
+        return httpClient.post('/api/User/follow', userIdTarget);
     },
     unfollow(userIdTarget: number) {
-        return httpClient.post('/api/User/unfollow', userIdTarget, {
-            auth: true,
-        });
+        return httpClient.post('/api/User/unfollow', userIdTarget);
     },
     getFollowers(userTargetId?: number, page = 1, limit = 10) {
         const query = toQueryString({
@@ -44,8 +36,6 @@ export const usersApi = {
             'paganation.limit': limit,
         });
 
-        return httpClient.get<FollowersResponse>(`/api/User/followers${query}`, {
-            auth: true,
-        });
+        return httpClient.get<FollowersResponse>(`/api/User/followers${query}`);
     },
 };

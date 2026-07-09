@@ -3,28 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useChat } from '@/providers/chat-provider';
 import type { ChatConversationSummary, DetailUserFollow } from '@/features/chat/contracts';
+import { formatChatListTime } from '@/common/utils/format-date';
 import { useDebouncedValue } from '@/shared/hooks/use-debounced-value';
+import { AvatarImage } from '@/shared/ui/avatar-image';
 
 type InboxPopoverProps = {
     onClose: () => void;
 };
-
-function formatTime(value?: string | null) {
-    if (!value) return '';
-    const date = new Date(value);
-    const now = new Date();
-    
-    // If today, show hh:mm
-    if (date.toDateString() === now.toDateString()) {
-        return new Intl.DateTimeFormat('vi-VN', { hour: '2-digit', minute: '2-digit' }).format(date);
-    }
-    // If this year, show day/month
-    if (date.getFullYear() === now.getFullYear()) {
-        return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit' }).format(date);
-    }
-    // Otherwise show day/month/year
-    return new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(date);
-}
 
 export function InboxPopover({ onClose }: InboxPopoverProps) {
     const {
@@ -45,14 +30,12 @@ export function InboxPopover({ onClose }: InboxPopoverProps) {
     // Refresh inbox on popover open
     useEffect(() => {
         void refreshInbox();
-    }, []);
+    }, [refreshInbox]);
 
     // Perform candidate search when debouncedQuery changes
     useEffect(() => {
         const q = debouncedQuery.trim();
         if (!q) {
-            setCandidates([]);
-            setIsSearching(false);
             return;
         }
 
@@ -76,7 +59,7 @@ export function InboxPopover({ onClose }: InboxPopoverProps) {
         return () => {
             active = false;
         };
-    }, [debouncedQuery]);
+    }, [debouncedQuery, searchCandidates]);
 
     // Handle outside clicks to close the popover
     useEffect(() => {
@@ -136,7 +119,15 @@ export function InboxPopover({ onClose }: InboxPopoverProps) {
                 <input
                     type="text"
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={(event) => {
+                        const nextQuery = event.target.value;
+                        setQuery(nextQuery);
+
+                        if (!nextQuery.trim()) {
+                            setCandidates([]);
+                            setIsSearching(false);
+                        }
+                    }}
                     placeholder="Tìm kiếm bạn bè..."
                     className="w-full rounded-full border border-[var(--line)] bg-[var(--surface)] px-4 py-2.5 pl-10 text-sm text-[var(--foreground)] outline-none ring-0 placeholder:text-[var(--muted)] focus:border-[rgba(204,95,61,0.35)] transition-all"
                 />
@@ -181,19 +172,14 @@ export function InboxPopover({ onClose }: InboxPopoverProps) {
                                     onClick={() => void handleSelectCandidate(user)}
                                     className="flex w-full items-center gap-3 rounded-2xl p-2.5 hover:bg-[var(--bg-hover)] text-left transition-all duration-200"
                                 >
-                                    <div className="relative h-11 w-11 flex-shrink-0 overflow-hidden rounded-full bg-[var(--surface-strong)] border border-[var(--line)]">
-                                        {user.avatar ? (
-                                            <img
-                                                src={user.avatar}
-                                                alt={user.displayName}
-                                                className="h-full w-full object-cover"
-                                            />
-                                        ) : (
-                                            <div className="flex h-full w-full items-center justify-center font-bold text-[var(--muted)] bg-gradient-to-tr from-orange-100 to-indigo-100 dark:from-slate-800 dark:to-slate-700">
-                                                {user.displayName.charAt(0).toUpperCase()}
-                                            </div>
-                                        )}
-                                    </div>
+                                    <AvatarImage
+                                        src={user.avatar}
+                                        alt={user.displayName}
+                                        fallback={user.displayName.charAt(0).toUpperCase()}
+                                        sizes="44px"
+                                        className="h-11 w-11 flex-shrink-0 rounded-full border border-[var(--line)] bg-[var(--surface-strong)]"
+                                        fallbackClassName="font-bold text-[var(--muted)] bg-gradient-to-tr from-orange-100 to-indigo-100 dark:from-slate-800 dark:to-slate-700"
+                                    />
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-semibold text-[var(--foreground)] truncate">
                                             {user.displayName}
@@ -261,7 +247,7 @@ export function InboxPopover({ onClose }: InboxPopoverProps) {
                                                     {title}
                                                 </p>
                                                 <span className="text-xs text-[var(--muted)] flex-shrink-0">
-                                                    {formatTime(conversation.lastMessageAtUtc)}
+                                                    {formatChatListTime(conversation.lastMessageAtUtc)}
                                                 </span>
                                             </div>
                                             <p className="mt-1 text-xs text-[var(--muted)] truncate">

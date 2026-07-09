@@ -1,10 +1,11 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { HubConnection } from '@microsoft/signalr';
 import { createChatHubConnection } from '@/shared/api/realtime-client';
 import { useAuth } from '@/providers/auth-provider';
+import { getDateTimestamp } from '@/common/utils/format-date';
 import { chatApi } from '@/features/chat/chat-api';
 import type {
     ChatConversationSummary,
@@ -45,8 +46,8 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 function sortInbox(items: ChatConversationSummary[]) {
     return [...items].sort((left, right) => {
-        const leftTime = left.lastMessageAtUtc ? new Date(left.lastMessageAtUtc).getTime() : 0;
-        const rightTime = right.lastMessageAtUtc ? new Date(right.lastMessageAtUtc).getTime() : 0;
+        const leftTime = getDateTimestamp(left.lastMessageAtUtc);
+        const rightTime = getDateTimestamp(right.lastMessageAtUtc);
         return rightTime - leftTime;
     });
 }
@@ -58,7 +59,7 @@ function upsertConversation(items: ChatConversationSummary[], nextItem: ChatConv
 
 function appendUniqueMessage(items: ChatMessage[], nextItem: ChatMessage) {
     const nextItems = [...items.filter((item) => item.messageId !== nextItem.messageId), nextItem];
-    return nextItems.sort((left, right) => new Date(left.sentAtUtc).getTime() - new Date(right.sentAtUtc).getTime());
+    return nextItems.sort((left, right) => getDateTimestamp(left.sentAtUtc) - getDateTimestamp(right.sentAtUtc));
 }
 
 export function ChatProvider({ children }: { children: ReactNode }) {
@@ -76,7 +77,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     // 1. Tự động thiết lập kết nối SignalR Hub khi người dùng đã đăng nhập (accessToken khả dụng)
     useEffect(() => {
         if (!isHydrated || !accessToken) {
-            setIsConnected(false);
             connectionRef.current = null;
             return;
         }
@@ -144,7 +144,6 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     // Load inbox on mount or when token changes
     useEffect(() => {
         if (!isHydrated || !accessToken) {
-            setInbox([]);
             return;
         }
 
@@ -170,10 +169,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
         return () => {
             isDisposed = true;
+            setInbox([]);
         };
     }, [accessToken, isHydrated]);
 
-    const refreshInbox = async () => {
+    const refreshInbox = useCallback(async () => {
         setIsLoadingInbox(true);
         try {
             const response = await chatApi.getInbox();
@@ -185,9 +185,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsLoadingInbox(false);
         }
-    };
+    }, []);
 
-    const loadMessages = async (conversationKey: string) => {
+    const loadMessages = useCallback(async (conversationKey: string) => {
         if (isLoadingMessages[conversationKey]) return;
 
         setIsLoadingMessages((curr) => ({ ...curr, [conversationKey]: true }));
@@ -205,7 +205,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 setMessages((curr) => ({
                     ...curr,
                     [conversationKey]: nextMessages.sort(
-                        (a, b) => new Date(a.sentAtUtc).getTime() - new Date(b.sentAtUtc).getTime(),
+                        (a, b) => getDateTimestamp(a.sentAtUtc) - getDateTimestamp(b.sentAtUtc),
                     ),
                 }));
                 return;
@@ -217,7 +217,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 setMessages((curr) => ({
                     ...curr,
                     [conversationKey]: [...msgData].sort(
-                        (a, b) => new Date(a.sentAtUtc).getTime() - new Date(b.sentAtUtc).getTime(),
+                        (a, b) => getDateTimestamp(a.sentAtUtc) - getDateTimestamp(b.sentAtUtc),
                     ),
                 }));
             }
@@ -226,9 +226,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsLoadingMessages((curr) => ({ ...curr, [conversationKey]: false }));
         }
-    };
+    }, [isConnected, isLoadingMessages]);
 
-    const openChat = async (conversationKey: string) => {
+    const openChat = useCallback(async (conversationKey: string) => {
         setOpenChatBoxes((prev) => {
             if (prev.includes(conversationKey)) return prev;
             // Limit to max 3 floating chatboxes
@@ -245,9 +245,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         if (!messages[conversationKey]) {
             await loadMessages(conversationKey);
         }
-    };
+    }, [loadMessages, messages]);
 
-    const openDirectChatWithUser = async (targetUserId: number, displayName: string, avatarUrl: string) => {
+    const openDirectChatWithUser = useCallback(async (targetUserId: number, displayName: string, avatarUrl: string) => {
         // Check if there is already an existing direct conversation with this user
         const existing = inbox.find((c) => c.conversationType === 'Direct' && c.otherUserId === targetUserId);
 
@@ -273,9 +273,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         });
         setActiveChatBoxKey(draftKey);
         setMessages((curr) => ({ ...curr, [draftKey]: [] }));
-    };
+    }, [inbox, openChat]);
 
-    const closeChat = (conversationKey: string) => {
+    const closeChat = useCallback((conversationKey: string) => {
         setOpenChatBoxes((prev) => prev.filter((k) => k !== conversationKey));
         if (activeChatBoxKey === conversationKey) {
             setActiveChatBoxKey(null);
@@ -285,10 +285,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         if (connection && isConnected && connection.state === 'Connected' && !conversationKey.startsWith('draft:')) {
             void connection.invoke('LeaveConversation', conversationKey).catch(() => undefined);
         }
-    };
+    }, [activeChatBoxKey, isConnected]);
 
     // 2. Gửi tin nhắn đi. Hỗ trợ gửi qua kênh SignalR trực tiếp hoặc fallback qua REST API nếu kết nối mất
-    const sendMessage = async (key: string, content: string) => {
+    const sendMessage = useCallback(async (key: string, content: string) => {
         const trimmed = content.trim();
         if (!trimmed) return;
 
@@ -409,9 +409,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             console.error('Failed to send message:', err);
             throw err;
         }
-    };
+    }, [activeChatBoxKey, draftConversations, inbox, isConnected]);
 
-    const editMessage = async (conversationKey: string, messageId: string, newContent: string) => {
+    const editMessage = useCallback(async (conversationKey: string, messageId: string, newContent: string) => {
         const trimmed = newContent.trim();
         if (!trimmed) return;
 
@@ -422,9 +422,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 message.messageId === messageId ? { ...message, content: trimmed, isEdited: true } : message,
             ),
         }));
-    };
+    }, []);
 
-    const deleteMessage = async (conversationKey: string, messageId: string) => {
+    const deleteMessage = useCallback(async (conversationKey: string, messageId: string) => {
         await chatApi.deleteMessage(messageId);
         setMessages((current) => ({
             ...current,
@@ -432,9 +432,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 message.messageId === messageId ? { ...message, content: '', isDeleted: true } : message,
             ),
         }));
-    };
+    }, []);
 
-    const searchCandidates = async (query: string): Promise<DetailUserFollow[]> => {
+    const searchCandidates = useCallback(async (query: string): Promise<DetailUserFollow[]> => {
         try {
             const response = await chatApi.searchCandidates(query);
             return response.data ?? [];
@@ -442,7 +442,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             console.error('Failed to search candidates:', err);
             return [];
         }
-    };
+    }, []);
 
     const contextValue = useMemo(
         () => ({
@@ -473,6 +473,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             openChatBoxes,
             draftConversations,
             activeChatBoxKey,
+            openChat,
+            openDirectChatWithUser,
+            closeChat,
+            sendMessage,
+            loadMessages,
+            refreshInbox,
+            searchCandidates,
+            editMessage,
+            deleteMessage,
         ],
     );
 

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { useChat } from '@/providers/chat-provider';
 import { useAuth } from '@/providers/auth-provider';
 import type { ChatMessage } from '@/features/chat/contracts';
+import { formatChatMessageTime } from '@/common/utils/format-date';
 
 type FloatingChatBoxProps = {
     conversationKey: string;
@@ -26,15 +27,6 @@ function getUserIdFromToken(token: string | null) {
         console.error('Error decoding JWT token:', err);
         return null;
     }
-}
-
-function formatChatTime(value?: string | null) {
-    if (!value) return '';
-    const date = new Date(value);
-    return new Intl.DateTimeFormat('vi-VN', {
-        hour: '2-digit',
-        minute: '2-digit',
-    }).format(date);
 }
 
 export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
@@ -421,7 +413,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                                                         ? 'max-w-[calc(100%-2.25rem)] bg-[var(--accent)] text-white rounded-tr-none'
                                                         : 'max-w-full bg-[var(--background-soft)] text-[var(--foreground)] rounded-tl-none border border-[var(--line)]'
                                                 } ${msg.isDeleted ? 'italic opacity-70' : ''}`}
-                                                title={formatChatTime(msg.sentAtUtc)}
+                                                title={formatChatMessageTime(msg.sentAtUtc)}
                                             >
                                                 {editingMessageId === msg.messageId ? (
                                                     <div className="min-w-48 space-y-2">
