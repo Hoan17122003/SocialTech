@@ -193,6 +193,7 @@ export function ProfilePanel({ userId }: { userId?: string }) {
                                 alt={profile.displayName}
                                 fallback={initials}
                                 sizes="96px"
+                                loading="eager"
                                 className="rounded-full bg-[var(--surface)]"
                                 fallbackClassName="text-2xl font-extrabold bg-gradient-to-r from-[var(--accent)] to-[#4facfe] bg-clip-text text-transparent"
                             />

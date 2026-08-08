@@ -58,7 +58,6 @@ function getNotificationAppearance(type: NotificationItem['type']) {
 
 export function NotificationListItem({ item, onClick, onToggleRead }: NotificationListItemProps) {
     const { icon, iconBg } = getNotificationAppearance(item.type);
-
     return (
         <div
             onClick={() => onClick(item)}
@@ -86,7 +85,7 @@ export function NotificationListItem({ item, onClick, onToggleRead }: Notificati
                         }}
                         className="shrink-0 cursor-pointer text-[10px] font-semibold text-[var(--muted)] hover:text-[var(--accent)]"
                     >
-                        {item.isRead ? 'Chua doc' : 'Doc'}
+                        {item.isRead ? 'Chưa đọc' : 'Đã đọc'}
                     </button>
                 </div>
                 <p className="truncate-2-lines mt-1 text-[11px] font-medium leading-relaxed text-[var(--muted)]">

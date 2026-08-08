@@ -10,6 +10,7 @@ type AvatarImageProps = {
     alt: string;
     fallback: ReactNode;
     sizes?: string;
+    loading?: 'eager' | 'lazy';
     className?: string;
     imageClassName?: string;
     fallbackClassName?: string;
@@ -20,6 +21,7 @@ export function AvatarImage({
     alt,
     fallback,
     sizes = '48px',
+    loading = 'lazy',
     className,
     imageClassName,
     fallbackClassName,
@@ -34,6 +36,7 @@ export function AvatarImage({
                     alt={alt}
                     fill
                     sizes={sizes}
+                    loading={loading}
                     unoptimized
                     className={cn('object-cover', imageClassName)}
                 />

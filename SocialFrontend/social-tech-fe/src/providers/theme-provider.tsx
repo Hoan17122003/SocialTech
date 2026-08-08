@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { browserStorage } from '@/common/utils/browser-storage';
 
 type Theme = 'light' | 'dark';
@@ -38,7 +38,15 @@ function applyTheme(theme: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-    const [theme, setTheme] = useState<Theme>(readInitialTheme);
+    const [theme, setTheme] = useState<Theme>('light');
+
+    useEffect(() => {
+        const frameId = window.requestAnimationFrame(() => {
+            setTheme(readInitialTheme());
+        });
+
+        return () => window.cancelAnimationFrame(frameId);
+    }, []);
 
     const toggleTheme = useCallback(() => {
         const nextTheme = theme === 'light' ? 'dark' : 'light';
