@@ -12,6 +12,7 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<SystemStatus> SystemStatuses => Set<SystemStatus>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserFollow> UserFollows => Set<UserFollow>();
     public DbSet<Community> Communities => Set<Community>();
     public DbSet<CommunityMembership> CommunityMemberships => Set<CommunityMembership>();
     public DbSet<CommunityRule> CommunityRules => Set<CommunityRule>();
@@ -26,6 +27,8 @@ public sealed class AppDbContext : DbContext
     public DbSet<IPLogin> IPLogins => Set<IPLogin>();
     public DbSet<Attachments> Attachments => Set<Attachments>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<ChatConversation> ChatConversations => Set<ChatConversation>();
+    public DbSet<ChatConversationParticipant> ChatConversationParticipants => Set<ChatConversationParticipant>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

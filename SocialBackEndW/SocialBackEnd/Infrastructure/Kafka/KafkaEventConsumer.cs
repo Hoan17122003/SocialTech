@@ -175,6 +175,22 @@ public sealed class KafkaEventConsumer : BackgroundService
         using var scope = _serviceScopeFactory.CreateScope();
 
         // Dispatch theo EventType trong envelope để gọi handler tương ứng.
+        /*
+         * =================================================================================
+         * GIẢI THÍCH VỀ CƠ CHẾ IDEMPOTENCY (TÍNH ĐỒNG NHẤT / TRÁNH LẶP TIN TRONG NOTIFICATION)
+         * =================================================================================
+         * - Tại sao cần: Kafka đảm bảo phân phối message theo dạng "at-least-once" (ít nhất một lần).
+         *   Nếu consumer xử lý gửi email/notification thành công nhưng app crash hoặc mất kết nối 
+         *   với Kafka trước khi kịp commit offset, Kafka sẽ phân phối lại message này sau khi restart.
+         * - Thực trạng dự án: Hiện tại hệ thống tiêu thụ (Consumer) gửi email và in-app notification ở đây 
+         *   CHƯA có idempotency guard. Nếu nhận tin trùng lặp, user sẽ nhận duplicate email/notification.
+         * - Hướng giải quyết (Roadmap đề xuất):
+         *   1. Sử dụng một bảng lưu trữ sự kiện đã xử lý (ví dụ: `ProcessedEvents` trong MySQL hoặc Redis).
+         *   2. Khi nhận message, kiểm tra Event ID (hoặc Correlation ID) trong Store:
+         *      - Nếu đã có: Bỏ qua không xử lý (Idempotent success).
+         *      - Nếu chưa có: Thực hiện gửi Mail/Notification, sau đó đánh dấu Event ID đã xử lý.
+         * =================================================================================
+         */
         switch (envelope.EventType)
         {
             case nameof(WelcomeEmailRequestedIntegrationEvent):

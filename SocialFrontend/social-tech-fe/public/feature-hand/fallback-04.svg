@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1200" role="img" aria-labelledby="title desc">
+  <title id="title">Feature hand fallback image 4</title>
+  <desc id="desc">Temporary local test image for the feature hand gallery.</desc>
+  <defs>
+    <linearGradient id="bg" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ef4444"/>
+      <stop offset="0.44" stop-color="#fb7185"/>
+      <stop offset="1" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="1200" fill="url(#bg)"/>
+  <path d="M148 682c68-192 190-292 366-298 126-5 215 44 267 146-82 106-200 161-354 164-111 2-204-2-279-12z" fill="#ffffff" opacity="0.24"/>
+  <path d="M214 524c86-84 181-126 286-126s199 42 286 126c-87 84-181 126-286 126s-200-42-286-126z" fill="#ffffff" opacity="0.78"/>
+  <circle cx="500" cy="524" r="96" fill="#0f172a" opacity="0.84"/>
+  <circle cx="532" cy="490" r="28" fill="#ffffff" opacity="0.9"/>
+  <path d="M152 192h596" stroke="#ffffff" stroke-width="16" stroke-linecap="round" opacity="0.42"/>
+  <path d="M152 1000h596" stroke="#ffffff" stroke-width="16" stroke-linecap="round" opacity="0.42"/>
+  <text x="142" y="1080" fill="#ffffff" font-family="Arial, sans-serif" font-size="54" font-weight="700">LOCAL TEST 04</text>
+</svg>

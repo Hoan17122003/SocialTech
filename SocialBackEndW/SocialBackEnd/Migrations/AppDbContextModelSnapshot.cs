@@ -49,7 +49,7 @@ namespace SocialBackEnd.Migrations
                     b.Property<long>("FileSize")
                         .HasColumnType("bigint");
 
-                    b.Property<int>("PostId")
+                    b.Property<int?>("PostId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
@@ -65,6 +65,111 @@ namespace SocialBackEnd.Migrations
                         {
                             t.HasCheckConstraint("CK_Attachments_FileExtension", "LOWER(FileExtension) IN ('mp4', 'png', 'jpg', 'jpeg')");
                         });
+                });
+
+            modelBuilder.Entity("SocialBackEnd.Domain.Entities.ChatConversation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CommunityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ConversationKey")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DirectUserHighId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DirectUserLowId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("HasCustomTitle")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LastMessageAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("LastMessagePreview")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<int?>("LastMessageSenderUserId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("PublicId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommunityId");
+
+                    b.HasIndex("ConversationKey")
+                        .IsUnique();
+
+                    b.HasIndex("PublicId")
+                        .IsUnique();
+
+                    b.HasIndex("DirectUserLowId", "DirectUserHighId");
+
+                    b.ToTable("ChatConversations", (string)null);
+                });
+
+            modelBuilder.Entity("SocialBackEnd.Domain.Entities.ChatConversationParticipant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("ConversationId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsMuted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("JoinedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("LastReadAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("LeftAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ConversationId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("ChatConversationParticipants", (string)null);
                 });
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Comment", b =>
@@ -576,7 +681,7 @@ namespace SocialBackEnd.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAtUtc = new DateTime(2026, 6, 4, 2, 48, 2, 523, DateTimeKind.Utc).AddTicks(8097),
+                            CreatedAtUtc = new DateTime(2026, 7, 1, 9, 53, 17, 610, DateTimeKind.Utc).AddTicks(3454),
                             Environment = "Seed",
                             Name = "SocialBackEnd",
                             UtcTime = new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -758,12 +863,22 @@ namespace SocialBackEnd.Migrations
                     b.HasOne("SocialBackEnd.Domain.Entities.Post", "Post")
                         .WithMany("Attachments")
                         .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Comment");
 
                     b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("SocialBackEnd.Domain.Entities.ChatConversationParticipant", b =>
+                {
+                    b.HasOne("SocialBackEnd.Domain.Entities.ChatConversation", "Conversation")
+                        .WithMany("Participants")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
                 });
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Comment", b =>
@@ -1017,6 +1132,11 @@ namespace SocialBackEnd.Migrations
                     b.Navigation("Post");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SocialBackEnd.Domain.Entities.ChatConversation", b =>
+                {
+                    b.Navigation("Participants");
                 });
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Comment", b =>

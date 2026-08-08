@@ -280,13 +280,18 @@
 
 /* Floating Action Button (FAB) Speed-dial Menu */
 .fab-container {
+    /* 
+        FAB được neo ở bottom-left để không che nội dung chính.
+        flex-direction: column giúp các nút con bung theo trục dọc phía trên nút chính,
+        còn tooltip của từng item được đặt trong component bằng left-14 để bung sang phải.
+    */
     position: fixed;
     bottom: 24px;
-    right: 24px;
+    left: 24px;
     z-index: 50;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: flex-start;
     gap: 12px;
 }
 

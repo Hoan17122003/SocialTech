@@ -1,4 +1,4 @@
-import { NewComposer } from '@/features/articles/components/news-composer';
+import { NewComposer } from '@/features/articles/components/news/news-composer';
 
 function NewsPage() {
     return <NewComposer />;

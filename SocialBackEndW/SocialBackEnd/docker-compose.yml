@@ -1,19 +1,4 @@
 services:
-  # social-backend:
-  #   build: .
-  #   ports:
-  #     - "5000:80"
-  #   environment:
-  #     - ASPNETCORE_ENVIRONMENT=Development
-  #     - ASPNETCORE_URLS=http://+:80
-  #     - Kafka__BootstrapServers=kafka:9092
-  #   depends_on:
-  #     - mysqlhost
-  #     - redis
-  #     - kafka
-  #   networks:
-  #     - SocialNetwork
-
   mysqlhost:
     image: mysql:8.0.45
     restart: on-failure
@@ -59,8 +44,8 @@ services:
     image: minio/minio
     container_name: minio
     ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # Web console
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web console
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
@@ -70,8 +55,74 @@ services:
     env_file:
       - .env.prod
 
+  ChatNodeVNArea:
+    image: cassandra:latest
+    container_name: cassandra1
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=ChatVNCluster
+      # - CASSANDRA_SEEDS=cassandra1,cassandra2
+    networks:
+      - cassandra-net
+
+  es01:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    environment:
+      - node.name=es01
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es02,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
+    ports:
+      - ${ES_PORT}:9200
+    volumes:
+      - es01-data:/usr/share/elasticsearch/data
+    networks:
+      - SocialNetwork
+  es02:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    environment:
+      - node.name=es02
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01,es03
+      - cluster.initial_master_nodes=es01,es02,es03
+      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
+    volumes:
+      - es02-data:/usr/share/elasticsearch/data
+    networks:
+      - SocialNetwork
+  es03:
+    image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    environment:
+      - node.name=es03
+      - cluster.name=es-docker-cluster
+      - discovery.seed_hosts=es01,es02
+      - cluster.initial_master_nodes=es01,es02,es03
+      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
+    volumes:
+      - es03-data:/usr/share/elasticsearch/data
+    networks:
+      - SocialNetwork
+  kibana:
+    image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
+    environment:
+      - ELASTICSEARCH_HOSTS=http://es01:9200
+      - ELASTICSEARCH_USERNAME=elastic
+      - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      - KIBANA_PASSWORD=${KIBANA_PASSWORD}
+    ports:
+      - 5601:5601
+    networks:
+      - SocialNetwork
+
 volumes:
   mysql-data:
+  es01-data:
+  es02-data:
+  es03-data:
 networks:
   SocialNetwork:
+    driver: bridge
+  cassandra-net:
     driver: bridge

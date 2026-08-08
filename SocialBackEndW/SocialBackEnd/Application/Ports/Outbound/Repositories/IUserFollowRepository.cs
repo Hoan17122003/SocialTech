@@ -10,5 +10,5 @@ public interface IUserFollowRepository : IRepository<UserFollow>
     Task<bool> IsFollowingAsync(int followerId, int followingId, CancellationToken cancellationToken = default);
     Task<List<User>> GetFollowersAsync(int userId, CancellationToken cancellationToken = default);
     Task<List<User>> GetFollowingsAsync(int userId, CancellationToken cancellationToken = default);
-
+    Task<List<User>> SearchTwoWayFollowersAsync(int userId, string query, CancellationToken cancellationToken = default);
 }

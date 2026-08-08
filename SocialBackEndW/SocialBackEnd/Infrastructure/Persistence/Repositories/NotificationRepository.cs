@@ -29,13 +29,9 @@ public sealed class NotificationRepository : RepositoryBase<Notification>, INoti
 
     public Task<List<Notification>> GetByIdsForRecipientAsync(int userId, IReadOnlyCollection<int> notificationIds, CancellationToken cancellationToken = default)
     {
-        if (notificationIds.Count == 0)
-        {
-            return Task.FromResult(new List<Notification>());
-        }
-
         return DbContext.Notifications
-            .Where(notification => notification.RecipientUserId == userId && notificationIds.Contains(notification.Id))
+            .Where(notification => notification.RecipientUserId == userId &&
+                    notificationIds.Contains(notification.Id))
             .ToListAsync(cancellationToken);
     }
 }

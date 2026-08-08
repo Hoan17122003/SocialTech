@@ -4,8 +4,8 @@ import * as signalR from '@microsoft/signalr';
 import { appConfig } from '@/common/config/env';
 import { tokenStorage } from '@/shared/api/token-storage';
 
-export function createNotificationHubConnection() {
-    const hubUrl = new URL('/notificationHub', appConfig.apiBaseUrl).toString();
+function createHubConnection(path: string) {
+    const hubUrl = new URL(path, appConfig.apiBaseUrl).toString();
 
     return new signalR.HubConnectionBuilder()
         .withUrl(hubUrl, {
@@ -14,4 +14,12 @@ export function createNotificationHubConnection() {
         })
         .withAutomaticReconnect()
         .build();
+}
+
+export function createNotificationHubConnection() {
+    return createHubConnection('/notificationHub');
+}
+
+export function createChatHubConnection() {
+    return createHubConnection('/chatHub');
 }
