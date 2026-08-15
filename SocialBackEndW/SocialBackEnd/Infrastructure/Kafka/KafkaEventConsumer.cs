@@ -2,10 +2,14 @@ using System.Text.Json;
 using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using Microsoft.Extensions.Options;
+using SocialBackend.Common.Events;
 using SocialBackEnd.Application.Notifications;
 using SocialBackEnd.Application.Ports.Inbound.notification;
+using SocialBackEnd.Application.Ports.Outbound.Repositories;
+using SocialBackEnd.Common.Constants;
 using SocialBackEnd.Common.DTOs.Mail;
 using SocialBackEnd.Common.Events;
+using SocialBackEnd.Domain.Entities;
 
 namespace SocialBackEnd.Infrastructure.Kafka;
 
@@ -39,7 +43,6 @@ public sealed class KafkaEventConsumer : BackgroundService
 
     private async Task EnsureTopicsExistAsync(CancellationToken cancellationToken)
     {
-        // AdminClient dùng cho thao tác quản trị Kafka như tạo topic.
         var config = new AdminClientConfig
         {
             BootstrapServers = _options.BootstrapServers
@@ -47,42 +50,74 @@ public sealed class KafkaEventConsumer : BackgroundService
 
         using var adminClient = new AdminClientBuilder(config).Build();
 
+        var topicSpecs = new[]
+        {
+            new TopicSpecification
+            {
+                Name = _options.Topics.Notification,
+                NumPartitions = 1,
+                ReplicationFactor = 1
+            },
+            new TopicSpecification
+            {
+                Name = _options.Topics.DomainEvents,
+                NumPartitions = 3,
+                ReplicationFactor = 1
+            },
+            new TopicSpecification
+            {
+                Name = _options.Topics.CommentCreate,
+                NumPartitions = 3,
+                ReplicationFactor = 1
+            }
+        };
+
         try
         {
-            // Tạo các topic nếu chưa tồn tại.
-            // Notification đang có 1 partition vì luồng gửi email thường chỉ cần xử lý tuần tự.
-            // DomainEvents có 3 partition để có thể scale consumer theo partition.
-            await adminClient.CreateTopicsAsync(new[]
+            var metadata = adminClient.GetMetadata(TimeSpan.FromSeconds(10));
+            var existingTopics = metadata.Topics.Select(t => t.Topic).ToHashSet(StringComparer.Ordinal);
+            var missingTopics = topicSpecs
+                .Where(t => !existingTopics.Contains(t.Name))
+                .ToArray();
+
+            if (missingTopics.Length == 0)
             {
-                new TopicSpecification
-                {
-                    Name = _options.Topics.Notification,
-                    NumPartitions = 1,
-                    ReplicationFactor = 1
-                },
-                new TopicSpecification
-                {
-                    Name = _options.Topics.DomainEvents,
-                    NumPartitions = 3,
-                    ReplicationFactor = 1
-                },
+                _logger.LogInformation("Kafka topics already exist: {Topics}", string.Join(", ", topicSpecs.Select(t => t.Name)));
+                return;
+            }
 
-            });
+            await adminClient.CreateTopicsAsync(missingTopics);
 
-            // Nếu tạo topic thành công, ghi log tên topic để dễ kiểm tra khi app start.
             _logger.LogInformation(
-                "Kafka topics ensured: {NotificationTopic}, {DomainEventsTopic}",
+                "Kafka topics ensured: {NotificationTopic}, {DomainEventsTopic}, {CommentCreateTopic}",
                 _options.Topics.Notification,
-                _options.Topics.DomainEvents);
+                _options.Topics.DomainEvents,
+                _options.Topics.CommentCreate);
         }
-        catch (CreateTopicsException ex) when (ex.Results.All(r => r.Error.Code == ErrorCode.TopicAlreadyExists))
+        catch (CreateTopicsException ex)
         {
-            // Kafka trả lỗi TopicAlreadyExists khi topic đã có sẵn; trường hợp này không phải lỗi runtime.
-            _logger.LogInformation("Kafka topics already exist.");
+            var alreadyExistsTopics = ex.Results
+                .Where(r => r.Error.Code == ErrorCode.TopicAlreadyExists)
+                .Select(r => r.Topic)
+                .ToList();
+
+            var unexpectedErrors = ex.Results
+                .Where(r => r.Error.Code != ErrorCode.TopicAlreadyExists)
+                .ToList();
+
+            if (unexpectedErrors.Count == 0)
+            {
+                _logger.LogInformation(
+                    "Kafka topics already exist: {Topics}",
+                    string.Join(", ", alreadyExistsTopics));
+                return;
+            }
+
+            _logger.LogError(ex, "Kafka topic creation failed for unexpected reasons.");
+            throw;
         }
         catch (KafkaException ex) when (ex.Error.Code is ErrorCode.Local_TimedOut or ErrorCode.BrokerNotAvailable)
         {
-            // Khi app start trước Kafka broker, chờ một chút rồi thử tạo topic lại.
             _logger.LogWarning(ex, "Kafka broker is not ready to create topics yet.");
             await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
             await EnsureTopicsExistAsync(cancellationToken);
@@ -116,7 +151,8 @@ public sealed class KafkaEventConsumer : BackgroundService
         consumer.Subscribe(new[]
         {
             _options.Topics.Notification,
-            _options.Topics.DomainEvents
+            _options.Topics.DomainEvents,
+            _options.Topics.CommentCreate
         });
 
         // Vòng lặp chính: liên tục đọc message cho tới khi app shutdown.
@@ -248,6 +284,65 @@ public sealed class KafkaEventConsumer : BackgroundService
                         payload.ArticleId,
                         payload.AuthorId,
                         payload.FollowerUserIds.Count);
+                    break;
+                }
+            case nameof(CommentCreatedIntegrationEvent):
+                {
+                    var payload = DeserializePayload<CommentCreatedIntegrationEvent>(envelope);
+                    var inAppNotificationService = scope.ServiceProvider.GetRequiredService<INotification>();
+                    var notificationRepository = scope.ServiceProvider.GetRequiredService<INotificationRepository>();
+
+                    var notificationMessageOfArticle = string.Format(
+                        Constant.ResponseSetencesComment.MessageOfArticle,
+                        payload.CommentAuthorDisplayName,
+                        payload.CommentBody);
+
+                    var notificationMessage = string.Empty;
+                    if (payload.ParentCommentId.HasValue)
+                    {
+                        notificationMessage = string.Format(
+                            Constant.ResponseSetencesComment.MessageOfComment,
+                            payload.CommentAuthorDisplayName,
+                            payload.CommentBody);
+                    }
+
+                    if (payload.ParentCommentId.HasValue && payload.ParentCommentAuthorId.HasValue)
+                    {
+                        if (payload.ParentCommentAuthorId.Value != payload.CommentAuthorId)
+                        {
+                            await inAppNotificationService.SendNotificationAsync(
+                                payload.ParentCommentAuthorId.Value.ToString(),
+                                notificationMessage,
+                                cancellationToken);
+                        }
+                    }
+
+                    await inAppNotificationService.SendNotificationAsync(
+                        payload.ArticleAuthorId.ToString(),
+                        notificationMessageOfArticle,
+                        cancellationToken);
+
+                    await inAppNotificationService.SendCommentRealtimeUpdateAsync(
+                        payload.ArticleId,
+                        new
+                        {
+                            id = payload.CommentId,
+                            postId = payload.ArticleId,
+                            authorId = payload.CommentAuthorId,
+                            authorDisplayName = payload.CommentAuthorDisplayName,
+                            authorAvatarUrl = payload.CommentAuthorAvatarUrl,
+                            body = payload.CommentBody,
+                            attachments = Array.Empty<string>(),
+                            createdAtUtc = payload.CreateDate,
+                            isPermissionEdit = true
+                        },
+                        cancellationToken);
+
+                    _logger.LogInformation(
+                        "Handled comment-created event for comment {CommentId} on article {ArticleId} by author {AuthorId}",
+                        payload.CommentId,
+                        payload.ArticleId,
+                        payload.CommentAuthorId);
                     break;
                 }
             default:

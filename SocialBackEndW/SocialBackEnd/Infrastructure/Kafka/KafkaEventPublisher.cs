@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Confluent.Kafka;
 using Microsoft.Extensions.Options;
+using SocialBackend.Common.Events;
 using SocialBackEnd.Application.Ports.Outbound.Events;
 using SocialBackEnd.Common.Events;
 using SocialBackEnd.Domain.Entities;
@@ -15,7 +16,10 @@ public sealed class KafkaEventPublisher : IApplicationEventPublisher, IDisposabl
     private readonly IProducer<string, string> _producer;
     private readonly KafkaOptions _options;
     private readonly ILogger<KafkaEventPublisher> _logger;
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles
+    };
 
     public KafkaEventPublisher(IOptions<KafkaOptions> options, ILogger<KafkaEventPublisher> logger)
     {
@@ -67,6 +71,17 @@ public sealed class KafkaEventPublisher : IApplicationEventPublisher, IDisposabl
         ArgumentNullException.ThrowIfNull(payload);
 
         return PublishAsync(_options.Topics.DomainEvents, payload, payload.ArticleId.ToString(), cancellationToken);
+    }
+
+    public Task PublishCommentCreatedAsync(CommentCreatedIntegrationEvent payload, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(payload);
+
+        return PublishAsync(_options.Topics.CommentCreate,
+            payload,
+            payload.CommentId.ToString(),
+            cancellationToken
+        );
     }
 
     private async Task PublishAsync<TPayload>(string topic, TPayload payload, string? key, CancellationToken cancellationToken)

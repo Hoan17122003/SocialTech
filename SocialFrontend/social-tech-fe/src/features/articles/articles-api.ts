@@ -5,9 +5,13 @@ import {
     type ArticleDetailResponse,
     type CreateArticleRequest,
     type UpdateArticleRequest,
+    type RequestWriteComment,
+    type CommentsOfArticleResponse,
+    type CommentView,
 } from './contracts';
 import { toQueryString } from '@/common/utils/query-string';
 import { PaganationRequest } from '@/common/contract/CommonContract';
+import type { ApiResponse } from '@/common/types/api';
 
 export const articlesApi = {
     create(payload: CreateArticleRequest) {
@@ -36,9 +40,24 @@ export const articlesApi = {
             'paganation.limit': paganation.limit,
         });
 
-        return httpClient.get(`/api/Article/comments${articleId}${query}`);
+        return httpClient.get<CommentsOfArticleResponse>(`/api/Article/comment/${articleId}${query}`);
     },
-    comment(articleId: number, content: string) {
-        return httpClient.post(`/api/Article/comment/${articleId}`, { content });
+    comment(articleId: number, payload: RequestWriteComment) {
+        const depth = payload.depth ?? (payload.parentCommentId ? 1 : 0);
+        const data: Record<string, any> = {
+            Body: payload.body,
+            status: payload.status ?? 1,
+            Depth: depth,
+        };
+
+        if (payload.parentCommentId !== undefined && payload.parentCommentId !== null) {
+            data.ParentCommentId = payload.parentCommentId;
+        }
+
+        if (payload.attachments && payload.attachments.length > 0) {
+            data.Attachments = payload.attachments;
+        }
+
+        return httpClient.post<ApiResponse<CommentView>>(`/api/Article/comment/${articleId}`, objectToFormData(data));
     },
 };

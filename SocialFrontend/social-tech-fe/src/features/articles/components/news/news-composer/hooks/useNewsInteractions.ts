@@ -114,7 +114,14 @@ export function useNewsInteractions({ isDemoMode, setArticles }: Options) {
         if (!draft || commentingArticleId) return;
         setCommentingArticleId(article.id);
         try {
-            if (!isDemoMode) await articlesApi.comment(article.id, draft);
+            if (!isDemoMode) {
+                await articlesApi.comment(article.id, {
+                    body: draft,
+                    status: 1,
+                    depth: 0,
+                    attachments: [],
+                });
+            }
             setCommentDraftByArticleId((current) => ({ ...current, [article.id]: '' }));
             showNotice('Đã gửi bình luận.');
         } catch (err) {

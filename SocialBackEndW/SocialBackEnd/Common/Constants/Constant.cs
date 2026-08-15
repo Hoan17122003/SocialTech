@@ -89,4 +89,13 @@ public static class Constant
         public const int ConfflictParamOfAccount = 2;
 
     }
+    public static class ResponseSetencesComment
+    {
+        public const string MessageOfComment = """
+                    title : Bình luận của bạn vừa có phản hồi mới".
+                    body : <b>{0}</b> đã phản hồi bình luận của bạn - nội dung phản hồi : {1}
+        """;
+        public const string MessageOfArticle = " {0} đã bình luận vào bài viết của bạn: {1}";
+        public const int ConfflictParamOfComment = 2;
+    }
 }

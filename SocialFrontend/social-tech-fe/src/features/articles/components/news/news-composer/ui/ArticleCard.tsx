@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Link from 'next/link';
 import { formatDateTime } from '@/common/utils/format-date';
 import { Card } from '@/shared/ui/card';
@@ -12,6 +13,7 @@ import {
     getStableMetric,
 } from '../utils/article.utils';
 import { ArticleMedia } from './ArticleMedia';
+import { ArticleCommentsThread } from '@/features/articles/components/comment-article/article-comments-thread';
 
 export function ArticleCard({
     article,
@@ -20,10 +22,8 @@ export function ArticleCard({
     savedArticleIds,
     reactionByArticleId,
     commentArticleId,
-    commentDraftByArticleId,
-    commentingArticleId,
-    deletingArticleId,
     openReactionArticleId,
+    deletingArticleId,
     onToggleMenu,
     onToggleSave,
     onHideSimilar,
@@ -33,8 +33,6 @@ export function ArticleCard({
     onClearReaction,
     onSelectReaction,
     onToggleComments,
-    onCommentDraftChange,
-    onSubmitComment,
 }: ArticleCardProps) {
     const cat = getArticleCategory(article);
     const preview = getPlainText(article.content);
@@ -43,8 +41,11 @@ export function ArticleCard({
     const selectedReaction = reactionByArticleId[article.id];
     const isReactionPickerOpen = openReactionArticleId === article.id;
     const isSaved = savedArticleIds.includes(article.id);
-    const commentsCount = getStableMetric(article.id, 2, 18);
+    const [realtimeCommentsCount, setRealtimeCommentsCount] = useState<number | null>(null);
+    const baseCommentsCount = getStableMetric(article.id, 2, 18);
+    const commentsCount = realtimeCommentsCount !== null ? realtimeCommentsCount : baseCommentsCount;
     const reactionsCount = getStableMetric(article.id, 8, 74) + (selectedReaction ? 1 : 0);
+
     return (
         <Card
             key={article.id}
@@ -166,14 +167,6 @@ export function ArticleCard({
                         if (!event.currentTarget.contains(event.relatedTarget)) onScheduleCloseReactionPicker();
                     }}
                 >
-                    {/*
-                Hover reaction picker:
-                - Không dùng <details> hoặc click-to-open nữa vì user muốn hover là thấy list.
-                - Vùng active gồm nút chính + bridge vô hình + list cảm xúc.
-                - Timer đóng 260ms giúp popover biến mất từ từ và không tắt khi rê chuột hơi lệch.
-                - Click nút chính chỉ clear reaction, đưa bài về trạng thái Like inactive/default.
-                - State vẫn lưu theo article.id để mỗi bài nhớ reaction đã chọn riêng.
-            */}
                     <button
                         type="button"
                         onClick={() => onClearReaction(article.id)}
@@ -189,7 +182,6 @@ export function ArticleCard({
                                 className="pointer-events-auto absolute bottom-8 left-0 z-10 h-5 w-full"
                             />
                             <div className="absolute bottom-12 left-0 z-20 flex translate-y-0 gap-1 rounded-full border border-[var(--line)] bg-[var(--surface-strong)] p-1.5 opacity-100 shadow-xl transition-all duration-300 ease-out">
-                                {/* Chỉ render picker của article đang active. Nếu hover bài A thì openReactionArticleId = A.id, các bài khác không có popover trong DOM, tránh tình trạng nhiều list cảm xúc cùng xuất hiện hoặc bắt pointer event nhầm. */}
                                 {REACTIONS.map((reaction) => (
                                     <button
                                         key={reaction}
@@ -207,7 +199,7 @@ export function ArticleCard({
                 <button
                     type="button"
                     onClick={() => onToggleComments(article.id)}
-                    className="rounded-2xl px-3 py-2 text-[var(--muted)] transition hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)]"
+                    className={`rounded-2xl px-3 py-2 transition hover:bg-[var(--bg-hover)] ${commentArticleId === article.id ? 'bg-[var(--accent)]/10 text-[var(--accent)] font-extrabold' : 'text-[var(--muted)] hover:text-[var(--foreground)]'}`}
                 >
                     💬 Bình luận
                 </button>
@@ -222,28 +214,13 @@ export function ArticleCard({
                     <span className="rounded-2xl px-3 py-2 text-center text-[var(--muted)]/60">Không có detail</span>
                 )}
             </div>
+
+            {/* Realtime and Persistent Comment Thread */}
             {commentArticleId === article.id && (
-                <form
-                    onSubmit={(event) => onSubmitComment(event, article)}
-                    className="mt-3 flex gap-2 rounded-2xl border border-[var(--line)] bg-[var(--background-soft)] p-2"
-                >
-                    <input
-                        type="text"
-                        value={commentDraftByArticleId[article.id] || ''}
-                        onChange={(event) => onCommentDraftChange(article.id, event.target.value)}
-                        placeholder="Viết bình luận..."
-                        className="min-w-0 flex-1 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-sm outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
-                    />
-                    <button
-                        type="submit"
-                        disabled={
-                            !(commentDraftByArticleId[article.id] || '').trim() || commentingArticleId === article.id
-                        }
-                        className="rounded-full bg-[var(--accent)] px-4 py-2 text-xs font-bold text-white disabled:opacity-40"
-                    >
-                        Gửi
-                    </button>
-                </form>
+                <ArticleCommentsThread
+                    articleId={article.id}
+                    onCommentCountChange={(count) => setRealtimeCommentsCount(count)}
+                />
             )}
         </Card>
     );

@@ -45,6 +45,13 @@ public sealed class InAppNotificationService : INotification
             .SendAsync("notificationReceived", payload, cancellationToken);
     }
 
+    public async Task SendCommentRealtimeUpdateAsync(int postId, object payload, CancellationToken cancellationToken = default)
+    {
+        await _hubContext.Clients
+            .Group(NotificationHub.GetPostGroupName(postId))
+            .SendAsync("commentCreated", payload, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<NotificationDto>> GetNotificationsAsync(string userId, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);

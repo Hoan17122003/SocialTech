@@ -6,6 +6,7 @@ using SocialBackEnd.Application.Ports.Outbound.Events;
 using SocialBackEnd.Application.Ports.Outbound.LLM;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Common.Constants;
+using Microsoft.AspNetCore.SignalR;
 using SocialBackEnd.Common.DTOs;
 using SocialBackEnd.Common.DTOs.Article;
 using SocialBackEnd.Common.DTOs.Comment;
@@ -15,6 +16,7 @@ using SocialBackEnd.Common.Models.Article;
 using SocialBackEnd.Common.Models.Storage;
 using SocialBackEnd.Domain.Entities;
 using SocialBackEnd.Domain.Enums;
+using SocialBackend.Common.Events;
 
 namespace SocialBackEnd.Application.Services;
 
@@ -25,6 +27,7 @@ public class ArticleAdapterPort : IArticlePort
     private readonly IEntityMediaStorageService _entityMediaStorageService;
     private readonly IAttachmentRepository _attachmentRepository;
     private readonly IApplicationEventPublisher _applicationEventPublisher;
+
     private readonly ILogger _logger;
     private readonly IGeminiArticlePort _geminiArticlePort;
 
@@ -35,7 +38,8 @@ public class ArticleAdapterPort : IArticlePort
         IAttachmentRepository attachmentRepository,
         IApplicationEventPublisher applicationEventPublisher,
         ILogger<ArticleAdapterPort> logger,
-        IGeminiArticlePort geminiArticlePort)
+        IGeminiArticlePort geminiArticlePort
+    )
     {
         _repository = repository ?? throw new ArgumentException(nameof(repository));
         _commentRepository = commentRepository ?? throw new ArgumentException(nameof(commentRepository));
@@ -149,6 +153,19 @@ public class ArticleAdapterPort : IArticlePort
         {
             throw new NotFoundException("Bài viết không tồn tại.");
         }
+        if (requestCreateComment.Depth > 0 && requestCreateComment.ParentCommentId is null)
+        {
+            throw new ValidationException("Depth lớn hơn 0 nhưng ParentCommentId là null.");
+        }
+        else if (requestCreateComment.Depth == 0 && requestCreateComment.ParentCommentId is not null)
+        {
+            throw new ValidationException("Depth bằng 0 nhưng ParentCommentId không phải là null.");
+        }
+
+        var parrentComment = requestCreateComment.ParentCommentId is not null && requestCreateComment.Depth > 0
+            ? await _commentRepository.GetByIdAsync(requestCreateComment.ParentCommentId.Value)
+            : null;
+
         var validateContentOfComment = await _geminiArticlePort.ValidateComment(requestCreateComment.Body);
 
         if (!validateContentOfComment)
@@ -162,8 +179,9 @@ public class ArticleAdapterPort : IArticlePort
             PostId = articleId,
             Body = requestCreateComment.Body,
             AuthorId = userId,
-            ParentCommentId = requestCreateComment.ParentCommentId == int.MinValue ? null : requestCreateComment.ParentCommentId,
-            Status = requestCreateComment.status
+            ParentCommentId = requestCreateComment.ParentCommentId,
+            Status = requestCreateComment.status,
+            Depth = requestCreateComment.Depth
         };
 
         var commentSaved = await _commentRepository.CreateCommentOfArticleAsync(comment);
@@ -186,6 +204,22 @@ public class ArticleAdapterPort : IArticlePort
                 throw new ConflicException("Lưu tệp đính kèm thất bại, số lượng tệp đính kèm lưu không khớp với số lượng tệp đính kèm đã tải lên.");
             }
         }
+        await _applicationEventPublisher.PublishCommentCreatedAsync(new CommentCreatedIntegrationEvent
+        {
+            CommentId = commentSaved.Id,
+            CommentAuthorId = commentSaved.AuthorId,
+            CommentAuthorDisplayName = commentSaved.Author.DisplayName,
+            CommentAuthorAvatarUrl = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(commentSaved.Author.ProfileImageUrl) ?? string.Empty,
+            CommentBody = commentSaved.Body,
+            ParentCommentId = parrentComment?.Id,
+            ParentCommentAuthorId = parrentComment?.AuthorId,
+            ParentCommentAuthorDisplayName = parrentComment?.Author?.DisplayName,
+            ArticleId = existingArticle.Id,
+            ArticleAuthorId = existingArticle.AuthorId,
+            ArticleAuthorDisplayName = existingArticle.Author?.DisplayName ?? string.Empty,
+            CreateDate = DateTime.UtcNow
+        });
+
         return new CommentView
         {
             Id = commentSaved.Id,
@@ -227,7 +261,7 @@ public class ArticleAdapterPort : IArticlePort
 
         existingComment.Body = requestUpdateComment.Body ?? existingComment.Body;
         existingComment.UpdatedAtUtc = DateTime.UtcNow;
-        existingComment.Status = requestUpdateComment.status ?? existingComment.Status;
+        existingComment.Status = requestUpdateComment.Status ?? existingComment.Status;
 
         var updatedComment = await _commentRepository.UpdateCommentOfArticleAsync(existingComment);
         return new CommentView
