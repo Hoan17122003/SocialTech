@@ -28,6 +28,8 @@ using SocialBackEnd.Application.Ports.Inbound.notification;
 using SocialBackEnd.Application.Ports.Inbound.Chat;
 using SocialBackEnd.Application.Ports.Outbound.Chat;
 using SocialBackEnd.Infrastructure.chat;
+using SocialBackEnd.Application.Ports.Outbound.UoW;
+using SocialBackEnd.Infrastructure.Persistence.Repositories;
 
 namespace SocialBackEnd.DependencyInjection;
 
@@ -70,6 +72,7 @@ public static class ServiceDependencyInjection
         services.AddScoped<ICacheInternal, CacheAdapter>();
         services.AddSingleton<ICassandraSessionProvider, CassandraSessionProvider>();
         services.AddScoped<IChatMessageStore, CassandraChatMessageStore>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<ChatMessageSideEffectQueue>();
         services.AddSingleton<IChatMessageSideEffectQueue>(sp => sp.GetRequiredService<ChatMessageSideEffectQueue>());
         services.AddHostedService<ChatMessageSideEffectWorker>();
