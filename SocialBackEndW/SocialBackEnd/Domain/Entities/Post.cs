@@ -1,3 +1,4 @@
+using SocialBackend.Domain.Entities;
 using SocialBackEnd.Domain.Enums;
 
 namespace SocialBackEnd.Domain.Entities;
@@ -24,5 +25,6 @@ public class Post : EntityBase
     public ICollection<PostMediaAsset> MediaAssets { get; set; } = new List<PostMediaAsset>();
     public ICollection<ContentReport> Reports { get; set; } = new List<ContentReport>();
     public ICollection<UserSavedPost> SavedByUsers { get; set; } = new List<UserSavedPost>();
+    public ICollection<Reactions> Reactions { get; set; } = new List<Reactions>();
 
 }

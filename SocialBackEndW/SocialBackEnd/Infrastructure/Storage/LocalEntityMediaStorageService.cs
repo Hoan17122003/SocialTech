@@ -2,13 +2,14 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using SocialBackEnd.Application.Ports.Outbound;
+using SocialBackEnd.Common.Constants;
 using SocialBackEnd.Common.Models.Storage;
 
 namespace SocialBackEnd.Infrastructure.Storage;
 
 // Service nay luu va quan ly media tren local disk, cu the la thu muc wwwroot cua ASP.NET Core.
 // Gia tri luu xuong DB nen la public path dang /uploads/..., khong phai absolute filesystem path.
-public sealed class LocalEntityMediaStorageService : IEntityMediaStorageService
+public sealed class LocalEntityMediaStorageService : IEntityMediaLocalStorageService
 {
     // Chi cho phep cac dinh dang anh an toan/pho bien cho avatar nguoi dung.
     private static readonly HashSet<string> AllowedUserImageExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -82,7 +83,7 @@ public sealed class LocalEntityMediaStorageService : IEntityMediaStorageService
         var storedFiles = new List<StoredMediaFile>();
 
         // Tat ca file dinh kem cua mot bai viet duoc luu trong folder rieng theo post id.
-        var relativeDirectory = Path.Combine("uploads", "posts", postId.ToString());
+        var relativeDirectory = Path.Combine("posts", postId.ToString());
 
         // Bo qua file null hoac file rong de tranh ghi file khong hop le.
         foreach (var file in files.Where(x => x is not null && x.Length > 0))
@@ -245,6 +246,41 @@ public sealed class LocalEntityMediaStorageService : IEntityMediaStorageService
 
         // Ghep base URL voi public path de tao URL day du cho email/client.
         return $"{publicBaseUrl.TrimEnd('/')}/{publicPath.TrimStart('/')}";
+    }
+
+    public string GetAbsolutePathImageEcomsystemServer(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return string.Empty;
+        }
+
+        var webRootPath = _environment.WebRootPath;
+
+        if (string.IsNullOrWhiteSpace(webRootPath))
+        {
+            return string.Empty;
+        }
+
+        var relativePath = path.TrimStart('/', '\\');
+
+        var absolutePath = Path.GetFullPath(
+            Path.Combine(webRootPath, relativePath));
+
+        var normalizedWebRoot = Path.GetFullPath(webRootPath)
+            .TrimEnd(Path.DirectorySeparatorChar)
+            + Path.DirectorySeparatorChar;
+
+        // Không cho phép ../ thoát khỏi wwwroot
+        if (!absolutePath.StartsWith(
+                normalizedWebRoot,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "The specified path is outside wwwroot.");
+        }
+
+        return absolutePath;
     }
 
     private string GetPublicBaseUrl()

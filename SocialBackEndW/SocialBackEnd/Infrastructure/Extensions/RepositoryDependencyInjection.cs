@@ -34,6 +34,7 @@ public static class RepositoryDependencyInjection
         services.AddScoped<IUserLoginRepository, IpLoginRepository>();
         services.AddScoped<IAttachmentRepository, AttachmentRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<IOutBoxRepository, OutBoxRepository>();
 
         return services;
     }

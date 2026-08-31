@@ -15,6 +15,10 @@ public interface IEntityMediaStorageService
         int postId,
         IEnumerable<IFormFile> files,
         CancellationToken cancellationToken = default);
+    Task SyncAttachmentData(
+       int postId,
+       IEnumerable<IFormFile> files,
+       CancellationToken cancellationToken = default);  
 
     Task DeleteFilesAsync(
         IEnumerable<string> filePaths,

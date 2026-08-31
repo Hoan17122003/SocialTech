@@ -149,6 +149,7 @@ public sealed class PostRepository : RepositoryBase<Post>, IPostRepository
             .AsNoTracking()
             .Include(x => x.Author)
             .Include(x => x.Attachments)
+            .Include(x => x.Comments)
             .OrderByDescending(x => x.CreatedAtUtc)
             .Skip((page - 1) * limit)
             .Take(limit)
