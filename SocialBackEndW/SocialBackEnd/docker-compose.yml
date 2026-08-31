@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   mysqlhost:
     image: mysql:8.0.45
@@ -7,12 +9,20 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
     ports:
       - "3306:3306"
+    command:
+      - --server-id=1
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --binlog-row-image=FULL
+      - --gtid-mode=ON
+      - --enforce-gtid-consistency=ON
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
       - SocialNetwork
     env_file:
       - .env.prod
+
   redis:
     image: redis:7.0.11
     restart: on-failure
@@ -20,32 +30,80 @@ services:
       - "6379:6379"
     networks:
       - SocialNetwork
+
   kafka:
-    image: apache/kafka:3.9.0
-    container_name: socialtech-kafka
+      image: apache/kafka:3.9.0
+      container_name: socialtech-kafka
+      ports:
+        - "9092:9092"
+        - "9094:9094"
+      environment:
+        KAFKA_NODE_ID: 1
+        KAFKA_PROCESS_ROLES: broker,controller
+        KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+        KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+        KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+        KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+        KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+        KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+        KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+        KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+        KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      networks:
+        - SocialNetwork
+
+  debezium:
+    image: debezium/connect:2.4
+    container_name: debezium_connect
     ports:
-      - "9092:9092"
-      - "9094:9094"
+      - "8083:8083"
+    depends_on:
+      - kafka
+      - mysqlhost
     environment:
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: ${CONFIG_STORAGE_TOPIC}
+      OFFSET_STORAGE_TOPIC: ${OFFSET_STORAGE_TOPIC}
+      STATUS_STORAGE_TOPIC: ${STATUS_STORAGE_TOPIC}
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+    env_file:
+      - .env.prod
     networks:
       - SocialNetwork
+
+  debezium-ui:
+    image: debezium/debezium-ui:2.4
+    container_name: debezium_ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CONNECT_URIS: http://debezium:8083
+    depends_on:
+      - debezium
+    networks:
+      - SocialNetwork
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:4.0.0
+    container_name: kafdrop
+    ports:
+      - "9004:9000"
+    environment:
+      KAFKA_BROKERCONNECT: kafka:9092
+    depends_on:
+      - kafka
+    networks:
+      - SocialNetwork
+
   minio:
     image: minio/minio
     container_name: minio
     ports:
-      - "9000:9000" # S3 API
-      - "9001:9001" # Web console
+      - "9000:9000"
+      - "9001:9001"
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY}
       MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
@@ -54,6 +112,8 @@ services:
     command: server /data --console-address ":9001"
     env_file:
       - .env.prod
+    networks:
+      - SocialNetwork
 
   ChatNodeVNArea:
     image: cassandra:latest
@@ -62,7 +122,6 @@ services:
       - "9042:9042"
     environment:
       - CASSANDRA_CLUSTER_NAME=ChatVNCluster
-      # - CASSANDRA_SEEDS=cassandra1,cassandra2
     networks:
       - cassandra-net
 
@@ -80,6 +139,7 @@ services:
       - es01-data:/usr/share/elasticsearch/data
     networks:
       - SocialNetwork
+
   es02:
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
     environment:
@@ -92,6 +152,7 @@ services:
       - es02-data:/usr/share/elasticsearch/data
     networks:
       - SocialNetwork
+
   es03:
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
     environment:
@@ -104,6 +165,7 @@ services:
       - es03-data:/usr/share/elasticsearch/data
     networks:
       - SocialNetwork
+
   kibana:
     image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
     environment:
@@ -112,7 +174,7 @@ services:
       - ELASTICSEARCH_PASSWORD=${ELASTICSEARCH_PASSWORD}
       - KIBANA_PASSWORD=${KIBANA_PASSWORD}
     ports:
-      - 5601:5601
+      - "5601:5601"
     networks:
       - SocialNetwork
 
@@ -121,6 +183,7 @@ volumes:
   es01-data:
   es02-data:
   es03-data:
+
 networks:
   SocialNetwork:
     driver: bridge

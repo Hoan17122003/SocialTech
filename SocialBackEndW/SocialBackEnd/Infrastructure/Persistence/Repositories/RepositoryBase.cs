@@ -33,6 +33,12 @@ public abstract class RepositoryBase<TEntity> : IRepository<TEntity> where TEnti
         await DbSet.AddAsync(entity, cancellationToken);
     }
 
+    public virtual async Task AddRangeAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(entities);
+        await DbSet.AddRangeAsync(entities, cancellationToken);
+    }
+
     public virtual void Update(TEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);

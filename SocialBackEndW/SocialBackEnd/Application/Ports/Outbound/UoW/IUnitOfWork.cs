@@ -19,6 +19,9 @@ public interface IUnitOfWork : IDisposable
     ITagRepository Tag { get; }
     IUserFollowRepository UserFollows { get; }
     IUserLoginRepository UserLogin { get; }
+
+    IOutBoxRepository OutBoxMessages { get; }
+
     Task BeginTransactionAsync();
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     Task RollbackAsync();

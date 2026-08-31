@@ -25,6 +25,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public ITagRepository? Tag { get; }
     public IUserFollowRepository? UserFollows { get; }
     public IUserLoginRepository? UserLogin { get; }
+    public IOutBoxRepository? OutBoxMessages { get; }
 
     public UnitOfWork(AppDbContext context)
     {
@@ -43,6 +44,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         Tag = new TagRepository(_context);
         UserFollows = new UserFollowRepository(_context);
         UserLogin = new IpLoginRepository(_context);
+        OutBoxMessages = new OutBoxRepository(_context);
     }
 
     public async Task BeginTransactionAsync()

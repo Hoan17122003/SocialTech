@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SocialBackEnd.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using SocialBackEnd.Infrastructure.Persistence;
 namespace SocialBackEnd.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260830104900_AddOutBoxTable")]
+    partial class AddOutBoxTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -689,29 +692,6 @@ namespace SocialBackEnd.Migrations
                     b.ToTable("PostVotes", (string)null);
                 });
 
-            modelBuilder.Entity("SocialBackEnd.Domain.Entities.ReactType", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("Type")
-                        .HasMaxLength(100)
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Type");
-
-                    b.ToTable("ReactTypes", (string)null);
-                });
-
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.SystemStatus", b =>
                 {
                     b.Property<int>("Id")
@@ -750,7 +730,7 @@ namespace SocialBackEnd.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAtUtc = new DateTime(2026, 8, 31, 15, 7, 54, 779, DateTimeKind.Utc).AddTicks(8037),
+                            CreatedAtUtc = new DateTime(2026, 8, 30, 10, 48, 59, 183, DateTimeKind.Utc).AddTicks(9526),
                             Environment = "Seed",
                             Name = "SocialBackEnd",
                             UtcTime = new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -921,44 +901,6 @@ namespace SocialBackEnd.Migrations
                         .IsUnique();
 
                     b.ToTable("UserSavedPost", (string)null);
-                });
-
-            modelBuilder.Entity("SocialBackend.Domain.Entities.Reactions", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("PostId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ReactEnums")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ReactTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PostId");
-
-                    b.HasIndex("ReactTypeId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Reactions", null, t =>
-                        {
-                            t.HasCheckConstraint("CK_Reactions_User_Post_ReactType", "`UserId` IS NOT NULL AND `PostId` IS NOT NULL AND `ReactTypeId` IS NOT NULL");
-                        });
                 });
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Attachments", b =>
@@ -1241,33 +1183,6 @@ namespace SocialBackEnd.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SocialBackend.Domain.Entities.Reactions", b =>
-                {
-                    b.HasOne("SocialBackEnd.Domain.Entities.Post", "Post")
-                        .WithMany("Reactions")
-                        .HasForeignKey("PostId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SocialBackEnd.Domain.Entities.ReactType", "React")
-                        .WithMany("Reactions")
-                        .HasForeignKey("ReactTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("SocialBackEnd.Domain.Entities.User", "User")
-                        .WithMany("Reactions")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Post");
-
-                    b.Navigation("React");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.ChatConversation", b =>
                 {
                     b.Navigation("Participants");
@@ -1305,18 +1220,11 @@ namespace SocialBackEnd.Migrations
 
                     b.Navigation("PostTags");
 
-                    b.Navigation("Reactions");
-
                     b.Navigation("Reports");
 
                     b.Navigation("SavedByUsers");
 
                     b.Navigation("Votes");
-                });
-
-            modelBuilder.Entity("SocialBackEnd.Domain.Entities.ReactType", b =>
-                {
-                    b.Navigation("Reactions");
                 });
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Tag", b =>
@@ -1345,8 +1253,6 @@ namespace SocialBackEnd.Migrations
                     b.Navigation("OwnedCommunities");
 
                     b.Navigation("PostVotes");
-
-                    b.Navigation("Reactions");
 
                     b.Navigation("SavedPosts");
 

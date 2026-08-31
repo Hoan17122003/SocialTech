@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SocialBackend.Domain.Entities;
 using SocialBackEnd.Domain.Entities;
 
 namespace SocialBackEnd.Infrastructure.Persistence;
@@ -29,6 +30,9 @@ public sealed class AppDbContext : DbContext
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ChatConversation> ChatConversations => Set<ChatConversation>();
     public DbSet<ChatConversationParticipant> ChatConversationParticipants => Set<ChatConversationParticipant>();
+    public DbSet<OutBoxMessage> OutBoxMessages => Set<OutBoxMessage>();
+    public DbSet<Reactions> Reactions => Set<Reactions>();
+    public DbSet<ReactType> ReactTypes => Set<ReactType>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

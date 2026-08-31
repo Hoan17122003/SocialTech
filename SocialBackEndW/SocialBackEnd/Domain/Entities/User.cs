@@ -1,3 +1,5 @@
+using SocialBackend.Domain.Entities;
+
 namespace SocialBackEnd.Domain.Entities;
 
 public class User : EntityBase
@@ -26,5 +28,6 @@ public class User : EntityBase
     public ICollection<ContentReport> AssignedReports { get; set; } = new List<ContentReport>();
     public ICollection<IPLogin> IPLogins { set; get; } = new List<IPLogin>();
     public ICollection<UserSavedPost> SavedPosts { get; set; } = new List<UserSavedPost>();
+    public ICollection<Reactions> Reactions { get; set; } = new List<Reactions>();
 
 }

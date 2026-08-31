@@ -98,4 +98,13 @@ public static class Constant
         public const string MessageOfArticle = " {0} đã bình luận vào bài viết của bạn: {1}";
         public const int ConfflictParamOfComment = 2;
     }
+
+
+    public static class SQLTriggerComment
+    {
+        public const string OutBoxMessage = """
+            Message active OutBoxParttern
+        """;
+    }
+
 }
