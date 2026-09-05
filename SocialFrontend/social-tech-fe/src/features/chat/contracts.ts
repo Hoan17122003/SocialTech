@@ -8,8 +8,15 @@ export type ChatConversationSummary = {
     otherUserId?: number | null;
     communityId?: number | null;
     title?: string | null;
+    nickName?: string | null;
     lastMessagePreview?: string | null;
     lastMessageAtUtc?: string | null;
+};
+
+export type RequestSetNickName = {
+    conversationKey: string;
+    nickName: string;
+    userIdTarget?: number | null;
 };
 
 export type ChatMessage = {

@@ -60,6 +60,7 @@ public sealed class ChatConversationRepository
     {
         var page = paganation.Page <= 0 ? 1 : paganation.Page;
         var limit = paganation.Limit <= 0 ? 10 : paganation.Limit;
+
         var participantIds = DbContext.ChatConversationParticipants
             .Where(x => x.UserId == userId && x.LeftAtUtc == null)
             .Select(x => x.ConversationId);
@@ -67,7 +68,7 @@ public sealed class ChatConversationRepository
         var joinedCommunityIds = DbContext.CommunityMemberships
             .Where(x => x.UserId == userId && x.Status == CommunityMemberStatus.Active)
             .Select(x => x.CommunityId);
-            
+
         var query = DbContext.ChatConversations
             .AsNoTracking()
             .Where(x =>
@@ -79,6 +80,7 @@ public sealed class ChatConversationRepository
                 (x.Kind == ChatConversationKind.Community &&
                 x.CommunityId.HasValue &&
                 joinedCommunityIds.Contains(x.CommunityId.Value)));
+
 
         return await query
             .OrderByDescending(x => x.LastMessageAtUtc)
@@ -94,7 +96,18 @@ public sealed class ChatConversationRepository
                 TargetUserId = x.Kind == ChatConversationKind.Direct
                     ? (x.DirectUserLowId == userId ? x.DirectUserHighId : x.DirectUserLowId)
                     : null,
-                Title = x.Title,
+                Title = x.Kind == ChatConversationKind.Direct
+                    ? DbContext.ChatConversationParticipants
+                        .Where(p => p.ConversationId == x.Id && p.UserId != userId)
+                        .Select(p => p.User.DisplayName)
+                        .FirstOrDefault()
+                    : x.Title,
+                NickName = x.Kind == ChatConversationKind.Direct
+                    ? DbContext.ChatConversationParticipants
+                        .Where(p => p.ConversationId == x.Id && p.UserId != userId)
+                        .Select(p => p.NickName)
+                        .FirstOrDefault()
+                    : null,
                 HasCustomTitle = x.HasCustomTitle,
                 LastMessageAtUtc = x.LastMessageAtUtc
             })

@@ -83,30 +83,29 @@ public sealed class ChatConversationSummaryBuilder : IChatConversationSummaryBui
         int currentUserId,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(conversation);
 
         var title = conversation.Title;
         var participantIds = Array.Empty<int>();
         if (conversation.Kind == ChatConversationKind.Direct && conversation.TargetUserId.HasValue)
         {
             var other = await RequireUserAsync(conversation.TargetUserId.Value, cancellationToken);
-            title = other.DisplayName;
+            // title = other.DisplayName;
             participantIds = [currentUserId, other.Id];
         }
         else if (conversation.Kind == ChatConversationKind.Group)
         {
             var entity = await _chatConversationRepository.GetByConversationKeyAsync(conversation.ConversationKey, cancellationToken);
             participantIds = entity?.Participants.Where(x => x.LeftAtUtc == null).Select(x => x.UserId).ToArray() ?? [];
-            if (!conversation.HasCustomTitle)
-            {
-                var names = new List<string>();
-                foreach (var id in participantIds.Where(x => x != currentUserId).Take(3))
-                {
-                    names.Add((await RequireUserAsync(id, cancellationToken)).DisplayName);
-                }
+            // if (!conversation.HasCustomTitle)
+            // {
+            //     var names = new List<string>();
+            //     foreach (var id in participantIds.Where(x => x != currentUserId).Take(3))
+            //     {
+            //         names.Add((await RequireUserAsync(id, cancellationToken)).DisplayName);
+            //     }
 
-                title = string.Join(", ", names);
-            }
+            //     title = string.Join(", ", names);
+            // }
         }
 
         return new ChatConversationSummaryDto

@@ -74,8 +74,8 @@ export function NewComposer() {
                             onDelete: (article) => void interactions.deleteArticle(article),
                             onOpenReactionPicker: interactions.openReactionPicker,
                             onScheduleCloseReactionPicker: interactions.scheduleCloseReactionPicker,
-                            onClearReaction: interactions.clearArticleReaction,
-                            onSelectReaction: selectReaction,
+                            onClearReaction: (articleId) => void interactions.clearArticleReaction(articleId),
+                            onSelectReaction: (articleId, reaction) => void interactions.selectReaction(articleId, reaction),
                             onToggleComments: (articleId) =>
                                 interactions.setCommentArticleId((current) =>
                                     current === articleId ? null : articleId,

@@ -62,16 +62,34 @@ export function useNewsInteractions({ isDemoMode, setArticles }: Options) {
         reactionCloseTimerRef.current = window.setTimeout(() => setOpenReactionArticleId(null), 260);
     };
 
-    const clearArticleReaction = (articleId: number) => {
-        /*
-            Click nút chính không dùng để mở list nữa.
-            Nó chỉ reset reaction của bài về trạng thái Like mặc định/inactive đúng theo yêu cầu.
-        */
+    const selectReaction = async (articleId: number, reaction: string) => {
+        if (reactionCloseTimerRef.current) window.clearTimeout(reactionCloseTimerRef.current);
+        setReactionByArticleId((current) => ({ ...current, [articleId]: reaction }));
+        setOpenReactionArticleId(null);
+        if (!isDemoMode) {
+            try {
+                await articlesApi.react(articleId, reaction);
+            } catch (err) {
+                console.error('Failed to send reaction to API:', err);
+            }
+        }
+    };
+
+    const clearArticleReaction = async (articleId: number) => {
+        if (reactionCloseTimerRef.current) window.clearTimeout(reactionCloseTimerRef.current);
         setReactionByArticleId((current) => {
             const next = { ...current };
             delete next[articleId];
             return next;
         });
+        setOpenReactionArticleId(null);
+        if (!isDemoMode) {
+            try {
+                await articlesApi.react(articleId, '');
+            } catch (err) {
+                console.error('Failed to clear reaction via API:', err);
+            }
+        }
     };
 
     const showNotice = (message: string) => {
@@ -132,5 +150,5 @@ export function useNewsInteractions({ isDemoMode, setArticles }: Options) {
         }
     };
 
-    return { openMenuArticleId, savedArticleIds, hiddenArticleIds, reactionByArticleId, commentArticleId, commentDraftByArticleId, commentingArticleId, deletingArticleId, openReactionArticleId, notice, setOpenMenuArticleId, setReactionByArticleId, setOpenReactionArticleId, setCommentArticleId, setCommentDraftByArticleId, openReactionPicker, scheduleCloseReactionPicker, clearArticleReaction, toggleSaveArticle, hideSimilarArticle, deleteArticle, submitComment };
+    return { openMenuArticleId, savedArticleIds, hiddenArticleIds, reactionByArticleId, commentArticleId, commentDraftByArticleId, commentingArticleId, deletingArticleId, openReactionArticleId, notice, setOpenMenuArticleId, setReactionByArticleId, setOpenReactionArticleId, setCommentArticleId, setCommentDraftByArticleId, openReactionPicker, scheduleCloseReactionPicker, selectReaction, clearArticleReaction, toggleSaveArticle, hideSimilarArticle, deleteArticle, submitComment };
 }

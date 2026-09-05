@@ -9,6 +9,7 @@ public sealed class ChatConversation : EntityBase
     public ChatConversationKind Kind { get; private set; }
     public int CreatedByUserId { get; private set; }
     public int? CommunityId { get; private set; }
+    public Community? Community { get; private set; }
     public int? DirectUserLowId { get; private set; }
     public int? DirectUserHighId { get; private set; }
     public string? Title { get; private set; }

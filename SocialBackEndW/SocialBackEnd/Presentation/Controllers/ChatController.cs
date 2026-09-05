@@ -31,7 +31,7 @@ public sealed class ChatController : ControllerBase
         }
 
         var result = await _chatPort.GetInboxAsync(userId, paganation, cancellationToken);
-        return Ok(ApiResponse<IReadOnlyList<ChatConversationSummaryDto>>.Ok(result));
+        return Ok(ApiResponse<IReadOnlyList<ConvertstationResultModel>>.Ok(result));
     }
 
     [HttpGet("messages")]
@@ -48,6 +48,18 @@ public sealed class ChatController : ControllerBase
 
         var result = await _chatPort.GetMessagesAsync(userId, conversationKey, take, beforeUtc, cancellationToken);
         return Ok(ApiResponse<IReadOnlyList<ChatMessageDto>>.Ok(result));
+    }
+
+    [HttpPost("nickname")]
+    public async Task<IActionResult> SetNickName([FromBody] RequestSetNickName request, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized(ApiResponse<string>.Fail("Token khong chua user id hop le."));
+        }
+
+        var result = await _chatPort.SetNickNameAsync(userId, request, cancellationToken);
+        return Ok(ApiResponse<string>.Ok(result));
     }
 
     [HttpPost("direct/send")]

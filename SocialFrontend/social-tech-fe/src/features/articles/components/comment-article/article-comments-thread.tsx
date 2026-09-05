@@ -102,6 +102,13 @@ export function ArticleCommentsThread({ articleId, onCommentCountChange, compact
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const threadRef = useRef<HTMLDivElement | null>(null);
 
+    // Dùng ref để giữ callback onCommentCountChange mới nhất mà không làm thay đổi reference của loadComments.
+    // Điều này giúp ngăn ngừa useEffect bị gọi lại (re-fetch API comment) khi component cha re-render do hover reaction.
+    const onCommentCountChangeRef = useRef(onCommentCountChange);
+    useEffect(() => {
+        onCommentCountChangeRef.current = onCommentCountChange;
+    }, [onCommentCountChange]);
+
     const loadComments = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -110,13 +117,13 @@ export function ArticleCommentsThread({ articleId, onCommentCountChange, compact
             const rawList: CommentOfArticleModelView[] = Array.isArray(data) ? data : data?.items ?? [];
             const normalizedList = rawList.map((item, idx) => normalizeApiComment(item, idx));
             setComments(normalizedList);
-            onCommentCountChange?.(normalizedList.length);
+            onCommentCountChangeRef.current?.(normalizedList.length);
         } catch (err) {
             console.error(`Failed to load comments for article ${articleId}:`, err);
         } finally {
             setIsLoading(false);
         }
-    }, [articleId, onCommentCountChange]);
+    }, [articleId]);
 
     useEffect(() => {
         let isMounted = true;

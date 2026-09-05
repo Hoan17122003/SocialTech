@@ -60,4 +60,11 @@ export const articlesApi = {
 
         return httpClient.post<ApiResponse<CommentView>>(`/api/Article/comment/${articleId}`, objectToFormData(data));
     },
+    react(articleId: number, reaction: string) {
+        return httpClient.post('/api/Article/react', {
+            ID: articleId,
+            React: reaction,
+        });
+    },
 };
+

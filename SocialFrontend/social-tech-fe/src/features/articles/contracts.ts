@@ -92,3 +92,8 @@ export type ArticleDetailResponse = ApiResponse<ArticleDetail>;
 
 export type CommentsOfArticleResponse = ApiResponse<CommentOfArticleModelView[]>;
 
+export type ReactArticleRequest = {
+    ID: number;
+    React: string;
+};
+

@@ -10,7 +10,8 @@ public sealed record ConvertstationResultModel
     public int? CommunityId { init; get; }
     public string? LastMessagePreview { get; init; }
     public int? TargetUserId { get; init; }
-    public string? Title { get; init; }
+    public string? Title { get; init; } 
+    public string? NickName { get; init; }
     public bool HasCustomTitle { get; init; }
     public DateTime? LastMessageAtUtc { get; init; }
 }

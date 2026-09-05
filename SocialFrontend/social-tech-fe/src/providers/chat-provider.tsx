@@ -9,6 +9,7 @@ import { getDateTimestamp } from '@/common/utils/format-date';
 import { chatApi } from '@/features/chat/chat-api';
 import type {
     ChatConversationSummary,
+    ChatConversationType,
     ChatMessage,
     ChatSendResult,
     SendCommunityMessageRequest,
@@ -36,13 +37,50 @@ type ChatContextType = {
     closeChat: (conversationKey: string) => void;
     sendMessage: (key: string, content: string) => Promise<void>;
     loadMessages: (conversationKey: string) => Promise<void>;
-    refreshInbox: () => Promise<void>;
+    refreshInbox: () => Promise<ChatConversationSummary[]>;
     searchCandidates: (query: string) => Promise<DetailUserFollow[]>;
     editMessage: (conversationKey: string, messageId: string, newContent: string) => Promise<void>;
     deleteMessage: (conversationKey: string, messageId: string) => Promise<void>;
+    setNickName: (conversationKey: string, nickName: string, userIdTarget?: number | null) => Promise<void>;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
+
+function normalizeConversation(raw: any): ChatConversationSummary {
+    const isDirect =
+        raw.kind === 1 ||
+        raw.kind === 'Direct' ||
+        raw.conversationType === 'Direct';
+
+    const isCommunity =
+        raw.kind === 2 ||
+        raw.kind === 'Community' ||
+        raw.conversationType === 'Community' ||
+        (Boolean(raw.communityId) && !isDirect);
+
+    let conversationType: ChatConversationType = 'Direct';
+    if (isCommunity) {
+        conversationType = 'Community';
+    } else if (isDirect) {
+        conversationType = 'Direct';
+    }
+
+    const nickName = raw.nickName || raw.nickname || null;
+    const title = raw.title || (nickName ? nickName : null);
+    const otherUserId = raw.otherUserId ?? raw.targetUserId ?? raw.OtherUserId ?? raw.TargetUserId ?? null;
+    const communityId = raw.communityId ?? raw.CommunityId ?? null;
+
+    return {
+        conversationKey: raw.conversationKey,
+        conversationType,
+        otherUserId,
+        communityId,
+        title,
+        nickName,
+        lastMessagePreview: raw.lastMessagePreview,
+        lastMessageAtUtc: raw.lastMessageAtUtc,
+    };
+}
 
 function sortInbox(items: ChatConversationSummary[]) {
     return [...items].sort((left, right) => {
@@ -99,8 +137,8 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         };
 
         // Xử lý sự kiện cuộc hội thoại được cập nhật (ví dụ: có tin nhắn mới thì đẩy hội thoại lên đầu inbox)
-        const handleConversationUpdated = (payload: ChatConversationSummary) => {
-            setInbox((current) => upsertConversation(current, payload));
+        const handleConversationUpdated = (payload: any) => {
+            setInbox((current) => upsertConversation(current, normalizeConversation(payload)));
         };
 
         // Đăng ký các bộ lắng nghe sự kiện từ Server phát xuống
@@ -141,51 +179,72 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         };
     }, [accessToken, isHydrated]);
 
-    // Load inbox on mount or when token changes
+    // Tự động tham gia các phòng SignalR (JoinConversation) cho tất cả các khung chat đang mở
     useEffect(() => {
-        if (!isHydrated || !accessToken) {
+        const connection = connectionRef.current;
+        if (!connection || !isConnected || connection.state !== 'Connected') {
             return;
         }
 
-        let isDisposed = false;
-
-        async function loadInbox() {
-            setIsLoadingInbox(true);
-            try {
-                const response = await chatApi.getInbox();
-                if (!isDisposed && response.data) {
-                    setInbox(sortInbox(response.data));
-                }
-            } catch (err) {
-                console.error('Failed to load chat inbox:', err);
-            } finally {
-                if (!isDisposed) {
-                    setIsLoadingInbox(false);
-                }
+        openChatBoxes.forEach((key) => {
+            if (!key.startsWith('draft:')) {
+                void connection.invoke('JoinConversation', key).catch((err) => {
+                    console.error(`Failed to join SignalR conversation group for ${key}:`, err);
+                });
             }
-        }
+        });
+    }, [isConnected, openChatBoxes]);
 
-        void loadInbox();
-
-        return () => {
-            isDisposed = true;
+    // Reset inbox when logged out or token changes
+    useEffect(() => {
+        if (!accessToken) {
             setInbox([]);
-        };
-    }, [accessToken, isHydrated]);
+        }
+    }, [accessToken]);
 
-    const refreshInbox = useCallback(async () => {
+    const refreshInbox = useCallback(async (): Promise<ChatConversationSummary[]> => {
         setIsLoadingInbox(true);
         try {
             const response = await chatApi.getInbox();
             if (response.data) {
-                setInbox(sortInbox(response.data));
+                const normalized = (response.data as any[]).map(normalizeConversation);
+                const sorted = sortInbox(normalized);
+                setInbox(sorted);
+                return sorted;
             }
+            return [];
         } catch (err) {
             console.error('Failed to refresh inbox:', err);
+            return [];
         } finally {
             setIsLoadingInbox(false);
         }
     }, []);
+
+    const setNickName = useCallback(
+        async (conversationKey: string, nickName: string, userIdTarget?: number | null) => {
+            const trimmed = nickName.trim();
+            await chatApi.setNickName({
+                conversationKey,
+                nickName: trimmed,
+                userIdTarget,
+            });
+
+            setInbox((current) =>
+                current.map((item) => {
+                    if (item.conversationKey === conversationKey) {
+                        return {
+                            ...item,
+                            nickName: trimmed || null,
+                            title: trimmed || item.title,
+                        };
+                    }
+                    return item;
+                }),
+            );
+        },
+        [],
+    );
 
     const loadMessages = useCallback(
         async (conversationKey: string) => {
@@ -245,18 +304,29 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             });
             setActiveChatBoxKey(conversationKey);
 
+            if (inbox.length === 0) {
+                await refreshInbox();
+            }
+
             // Load history messages if not already loaded
             if (!messages[conversationKey]) {
                 await loadMessages(conversationKey);
             }
         },
-        [loadMessages, messages],
+        [loadMessages, messages, inbox.length, refreshInbox],
     );
 
     const openDirectChatWithUser = useCallback(
         async (targetUserId: number, displayName: string, avatarUrl: string) => {
+            let currentInbox = inbox;
+            if (currentInbox.length === 0) {
+                currentInbox = await refreshInbox();
+            }
+
             // Check if there is already an existing direct conversation with this user
-            const existing = inbox.find((c) => c.conversationType === 'Direct' && c.otherUserId === targetUserId);
+            const existing = currentInbox.find(
+                (c) => c.conversationType === 'Direct' && Number(c.otherUserId) === Number(targetUserId),
+            );
 
             if (existing) {
                 await openChat(existing.conversationKey);
@@ -281,7 +351,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             setActiveChatBoxKey(draftKey);
             setMessages((curr) => ({ ...curr, [draftKey]: [] }));
         },
-        [inbox, openChat],
+        [inbox, openChat, refreshInbox],
     );
 
     const closeChat = useCallback(
@@ -372,12 +442,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                     }
                 } else {
                     // Xử lý gửi tin nhắn cho cuộc hội thoại đã tồn tại
-                    const isCommunity = inbox.find((c) => c.conversationKey === key)?.conversationType === 'Community';
+                    let currentInbox = inbox;
+                    let convo = currentInbox.find((c) => c.conversationKey === key);
+                    if (!convo) {
+                        currentInbox = await refreshInbox();
+                        convo = currentInbox.find((c) => c.conversationKey === key);
+                    }
+
+                    const isCommunity = convo?.conversationType === 'Community';
 
                     if (isCommunity) {
                         // Hội thoại nhóm
-                        const communityId = inbox.find((c) => c.conversationKey === key)?.communityId;
-                        if (!communityId) return;
+                        const communityId = convo?.communityId;
+                        if (!communityId) {
+                            console.error(`[Chat] Không thể gửi tin nhắn nhóm: thiếu communityId cho hội thoại ${key}`, convo);
+                            throw new Error('Không tìm thấy thông tin nhóm trò chuyện.');
+                        }
 
                         const payload: SendCommunityMessageRequest = {
                             communityId,
@@ -399,8 +479,11 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                         }));
                     } else {
                         // Hội thoại trực tiếp (1-1)
-                        const otherUserId = inbox.find((c) => c.conversationKey === key)?.otherUserId;
-                        if (!otherUserId) return;
+                        const otherUserId = convo?.otherUserId;
+                        if (!otherUserId) {
+                            console.error(`[Chat] Không thể gửi tin nhắn direct: thiếu otherUserId cho hội thoại ${key}`, convo);
+                            throw new Error('Không tìm thấy thông tin người nhận tin nhắn.');
+                        }
 
                         const payload: SendDirectMessageRequest = {
                             targetUserId: otherUserId,
@@ -482,6 +565,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             searchCandidates,
             editMessage,
             deleteMessage,
+            setNickName,
         }),
         [
             isConnected,
@@ -501,6 +585,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             searchCandidates,
             editMessage,
             deleteMessage,
+            setNickName,
         ],
     );
 

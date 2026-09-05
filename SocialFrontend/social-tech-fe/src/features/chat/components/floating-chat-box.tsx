@@ -41,6 +41,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
         sendMessage,
         editMessage,
         deleteMessage,
+        setNickName,
         closeChat,
     } = useChat();
 
@@ -49,34 +50,59 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
     const [isMinimized, setIsMinimized] = useState(false);
     const [isChatSettingsOpen, setIsChatSettingsOpen] = useState(false);
     const [nickname, setNickname] = useState('');
+    const [isSavingNickname, setIsSavingNickname] = useState(false);
     const [defaultReaction, setDefaultReaction] = useState('👍');
     const [openOptionsMessageId, setOpenOptionsMessageId] = useState<string | null>(null);
+    const [optionsPlacement, setOptionsPlacement] = useState<{
+        vertical: 'top' | 'bottom';
+        horizontal: 'left' | 'right';
+    }>({ vertical: 'bottom', horizontal: 'right' });
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [editingText, setEditingText] = useState('');
     const [busyMessageId, setBusyMessageId] = useState<string | null>(null);
     const [messageActionError, setMessageActionError] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
 
     const isDraft = conversationKey.startsWith('draft:');
 
     // Resolve conversation info
+    const convo = useMemo(() => {
+        return inbox.find((c) => c.conversationKey === conversationKey);
+    }, [conversationKey, inbox]);
+
     const conversationInfo = useMemo(() => {
         if (isDraft) {
             const draft = draftConversations[conversationKey];
             return {
                 title: draft?.displayName || 'Cuộc trò chuyện mới',
+                nickName: null as string | null,
                 avatar: draft?.avatarUrl || '',
                 isCommunity: false,
+                targetUserId: draft?.targetUserId,
             };
         }
 
-        const convo = inbox.find((c) => c.conversationKey === conversationKey);
+        const nick = convo?.nickName || null;
+        const title = nick || convo?.title || (convo?.conversationType === 'Direct' ? `Cá nhân` : `Nhóm`);
+
         return {
-            title: convo?.title || (convo?.conversationType === 'Direct' ? `Cá nhân` : `Nhóm`),
+            title,
+            nickName: nick,
             avatar: '',
             isCommunity: convo?.conversationType === 'Community',
+            targetUserId: convo?.otherUserId,
         };
-    }, [conversationKey, inbox, isDraft, draftConversations]);
+    }, [conversationKey, inbox, isDraft, draftConversations, convo]);
+
+    // Synchronize local nickname state when conversation info updates
+    useEffect(() => {
+        if (conversationInfo.nickName) {
+            setNickname(conversationInfo.nickName);
+        } else if (conversationInfo.title && !isDraft) {
+            setNickname(conversationInfo.title);
+        }
+    }, [conversationInfo.nickName, conversationInfo.title, isDraft]);
 
     const chatMessages = useMemo(() => messages[conversationKey] ?? [], [conversationKey, messages]);
     const isLoading = isLoadingMessages[conversationKey] ?? false;
@@ -107,6 +133,68 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
             document.removeEventListener('keydown', closeOnEscape);
         };
     }, [openOptionsMessageId]);
+
+    // Tự động đóng menu tùy chọn tin nhắn khi cuộn vượt quá kích thước đường viền của khung chat
+    useEffect(() => {
+        if (!openOptionsMessageId) return;
+
+        const container = messagesContainerRef.current;
+        if (!container) return;
+
+        const checkVisibilityOnScroll = () => {
+            const activeOptionEl = container.querySelector(
+                `[data-chat-message-options="${openOptionsMessageId}"]`,
+            );
+            if (!activeOptionEl) {
+                setOpenOptionsMessageId(null);
+                return;
+            }
+
+            const containerRect = container.getBoundingClientRect();
+            const elRect = activeOptionEl.getBoundingClientRect();
+
+            // Nếu phần tử vượt qua viền trên hoặc viền dưới của container khung chat thì tự động tắt
+            const isOutOfTop = elRect.top - 75 < containerRect.top;
+            const isOutOfBottom = elRect.bottom + 75 > containerRect.bottom;
+
+            if (isOutOfTop || isOutOfBottom) {
+                setOpenOptionsMessageId(null);
+            }
+        };
+
+        container.addEventListener('scroll', checkVisibilityOnScroll, { passive: true });
+        return () => {
+            container.removeEventListener('scroll', checkVisibilityOnScroll);
+        };
+    }, [openOptionsMessageId]);
+
+    const toggleMessageOptions = (event: React.MouseEvent, messageId: string) => {
+        event.stopPropagation();
+        if (openOptionsMessageId === messageId) {
+            setOpenOptionsMessageId(null);
+            return;
+        }
+
+        const buttonEl = event.currentTarget as HTMLElement;
+        const buttonRect = buttonEl.getBoundingClientRect();
+        const container = messagesContainerRef.current;
+
+        if (container) {
+            const containerRect = container.getBoundingClientRect();
+            const spaceAbove = buttonRect.top - containerRect.top;
+            const spaceBelow = containerRect.bottom - buttonRect.bottom;
+            const spaceRight = containerRect.right - buttonRect.right;
+
+            setOptionsPlacement({
+                // Nếu khoảng trống phía trên ít hơn 90px và phía dưới rộng hơn thì bung xuống dưới
+                vertical: spaceAbove < 90 && spaceBelow > spaceAbove ? 'top' : 'bottom',
+                // Nếu khoảng cách tới mép phải < 150px thì neo về mép phải (right-0) để menu tràn về bên trái
+                horizontal: spaceRight < 150 ? 'right' : 'left',
+            });
+        }
+
+        setOpenOptionsMessageId(messageId);
+    };
 
     useEffect(() => {
         if (!isChatSettingsOpen) return;
@@ -148,6 +236,19 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
             console.error('Failed to send:', err);
         } finally {
             setIsSending(false);
+        }
+    };
+
+    const handleSaveNickname = async () => {
+        if (!conversationKey || isDraft || isSavingNickname) return;
+        setIsSavingNickname(true);
+        try {
+            await setNickName(conversationKey, nickname, conversationInfo.targetUserId);
+            setIsChatSettingsOpen(false);
+        } catch (err) {
+            console.error('Failed to set nickname:', err);
+        } finally {
+            setIsSavingNickname(false);
         }
     };
 
@@ -274,13 +375,30 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                                         <span className="mb-1 block font-bold text-[var(--muted)]">
                                             Đặt biệt danh
                                         </span>
-                                        <input
-                                            type="text"
-                                            value={nickname}
-                                            onChange={(event) => setNickname(event.target.value)}
-                                            placeholder={conversationInfo.title}
-                                            className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-sm outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
-                                        />
+                                        <div className="flex gap-2 items-center">
+                                            <input
+                                                type="text"
+                                                value={nickname}
+                                                disabled={isSavingNickname}
+                                                onChange={(event) => setNickname(event.target.value)}
+                                                onKeyDown={(event) => {
+                                                    if (event.key === 'Enter') {
+                                                        event.preventDefault();
+                                                        void handleSaveNickname();
+                                                    }
+                                                }}
+                                                placeholder={conversationInfo.title}
+                                                className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-sm outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
+                                            />
+                                            <button
+                                                type="button"
+                                                disabled={isSavingNickname}
+                                                onClick={() => void handleSaveNickname()}
+                                                className="rounded-xl bg-[var(--accent)] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[var(--accent-strong)] transition cursor-pointer flex-shrink-0 disabled:opacity-50"
+                                            >
+                                                {isSavingNickname ? 'Lưu...' : 'Lưu'}
+                                            </button>
+                                        </div>
                                     </label>
 
                                     <div>
@@ -369,7 +487,10 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
             {/* Body */}
             {!isMinimized && (
                 <>
-                    <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                    <div
+                        ref={messagesContainerRef}
+                        className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-3 relative"
+                    >
                         {messageActionError && (
                             <div className="rounded-lg bg-rose-500/10 px-2 py-1.5 text-center text-xs text-rose-500">
                                 {messageActionError}
@@ -476,7 +597,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                                             {isMe && !msg.isDeleted && editingMessageId !== msg.messageId && (
                                                 <div
                                                     className="relative flex h-8 w-8 shrink-0 items-center justify-center"
-                                                    data-chat-message-options
+                                                    data-chat-message-options={msg.messageId}
                                                 >
                                                     {/*
                                                         Layout guard cho message actions:
@@ -490,12 +611,8 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                                                         aria-haspopup="menu"
                                                         aria-expanded={openOptionsMessageId === msg.messageId}
                                                         disabled={busyMessageId === msg.messageId}
-                                                        onClick={() =>
-                                                            setOpenOptionsMessageId((current) =>
-                                                                current === msg.messageId ? null : msg.messageId,
-                                                            )
-                                                        }
-                                                        className={`flex h-7 w-7 items-center justify-center rounded-full text-[var(--muted)] transition-all hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)] focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-40 ${
+                                                        onClick={(event) => toggleMessageOptions(event, msg.messageId)}
+                                                        className={`flex h-7 w-7 items-center justify-center rounded-full text-[var(--muted)] transition-all hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)] focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-40 cursor-pointer ${
                                                             openOptionsMessageId === msg.messageId
                                                                 ? 'bg-[var(--bg-hover)] opacity-100'
                                                                 : 'opacity-0 group-hover:opacity-100'
@@ -517,13 +634,17 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                                                     {openOptionsMessageId === msg.messageId && (
                                                         <div
                                                             role="menu"
-                                                            className="absolute bottom-8 left-0 z-20 w-36 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--surface-strong)] p-1 text-xs text-[var(--foreground)] shadow-xl"
+                                                            className={`absolute z-20 w-36 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--surface-strong)] p-1 text-xs text-[var(--foreground)] shadow-xl animate-fade-in ${
+                                                                optionsPlacement.vertical === 'top' ? 'top-8' : 'bottom-8'
+                                                            } ${
+                                                                optionsPlacement.horizontal === 'right' ? 'right-0' : 'left-0'
+                                                            }`}
                                                         >
                                                             <button
                                                                 type="button"
                                                                 role="menuitem"
                                                                 onClick={() => beginEditing(msg)}
-                                                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-[var(--bg-hover)]"
+                                                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-[var(--bg-hover)] cursor-pointer"
                                                             >
                                                                 Chỉnh sửa
                                                             </button>
@@ -531,7 +652,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                                                                 type="button"
                                                                 role="menuitem"
                                                                 onClick={() => void handleDeleteMessage(msg)}
-                                                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-rose-500 hover:bg-rose-500/10"
+                                                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-rose-500 hover:bg-rose-500/10 cursor-pointer"
                                                             >
                                                                 Xóa
                                                             </button>

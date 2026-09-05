@@ -26,6 +26,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IUserFollowRepository? UserFollows { get; }
     public IUserLoginRepository? UserLogin { get; }
     public IOutBoxRepository? OutBoxMessages { get; }
+    public IChatConversationRepository? ChatConversations { get; }
+    public IChatConverstationParticipantRepository? ChatConversationParticipants { get; }
 
     public UnitOfWork(AppDbContext context)
     {
@@ -45,6 +47,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         UserFollows = new UserFollowRepository(_context);
         UserLogin = new IpLoginRepository(_context);
         OutBoxMessages = new OutBoxRepository(_context);
+        ChatConversationParticipants = new ChatConversationParticipantRepository(_context);
+        ChatConversations = new ChatConversationRepository(_context);
     }
 
     public async Task BeginTransactionAsync()

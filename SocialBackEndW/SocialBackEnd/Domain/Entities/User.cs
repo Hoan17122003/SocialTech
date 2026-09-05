@@ -30,4 +30,5 @@ public class User : EntityBase
     public ICollection<UserSavedPost> SavedPosts { get; set; } = new List<UserSavedPost>();
     public ICollection<Reactions> Reactions { get; set; } = new List<Reactions>();
 
+    public ICollection<ChatConversationParticipant> ChatConversations { get; set; } = new List<ChatConversationParticipant>();
 }

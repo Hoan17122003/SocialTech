@@ -7,11 +7,18 @@ import type {
     SendDirectMessageRequest,
     ChatCandidatesResponse,
     EditChatMessageRequest,
+    RequestSetNickName,
 } from '@/features/chat/contracts';
+import type { ApiResponse } from '@/common/types/api';
 
 export const chatApi = {
     getInbox() {
         return httpClient.get<ChatInboxResponse>('/api/Chat/inbox', {
+            showGlobalLoading: false,
+        });
+    },
+    setNickName(payload: RequestSetNickName) {
+        return httpClient.post<ApiResponse<string>>('/api/Chat/nickname', payload, {
             showGlobalLoading: false,
         });
     },

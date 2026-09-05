@@ -21,7 +21,7 @@ public interface IChatPort
 
     Task<ChatSendResult> SendGroupMessageAsync(int senderUserId, SendGroupMessageRequest request, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<ChatConversationSummaryDto>> GetInboxAsync(
+    Task<IReadOnlyList<ConvertstationResultModel>> GetInboxAsync(
         int userId,
         Paganation paganation,
         CancellationToken cancellationToken = default);
@@ -45,5 +45,9 @@ public interface IChatPort
     Task<IReadOnlyList<DetailUserFollow>> SearchCandidatesAsync(
         int userId,
         string query,
+        CancellationToken cancellationToken = default);
+    Task<string> SetNickNameAsync(
+        int userId,
+        RequestSetNickName request,
         CancellationToken cancellationToken = default);
 }

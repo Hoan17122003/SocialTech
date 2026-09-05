@@ -210,16 +210,30 @@ public sealed class ChatAdapter : IChatPort
         };
     }
 
-    public async Task<IReadOnlyList<ChatConversationSummaryDto>> GetInboxAsync(
+    public async Task<IReadOnlyList<ConvertstationResultModel>> GetInboxAsync(
         int userId,
         Paganation paganation,
         CancellationToken cancellationToken = default)
     {
         var conversations = await _chatConversationRepository.GetInboxAsync(userId, paganation, cancellationToken);
-        var results = new List<ChatConversationSummaryDto>(conversations.Count);
-        foreach (var conversation in conversations)
-            results.Add(await _chatConversationSummaryBuilder.BuildAsync(conversation, userId, cancellationToken));
-        return results;
+        conversations = conversations.Select(x => new ConvertstationResultModel
+        {
+            ConversationKey = x.ConversationKey,
+            Kind = x.Kind,
+            CommunityId = x.CommunityId,
+            LastMessagePreview = x.LastMessagePreview,
+            TargetUserId = x.TargetUserId,
+            Title = x.Kind == ChatConversationKind.Direct
+                    ? (!string.IsNullOrWhiteSpace(x.NickName) ? x.NickName : x.Title)
+                    : x.Title,
+            NickName = x.NickName,
+            HasCustomTitle = x.HasCustomTitle,
+            LastMessageAtUtc = x.LastMessageAtUtc
+        }).ToList();
+        // var results = new List<ChatConversationSummaryDto>(conversations.Count);
+        // foreach (var conversation in conversations)
+        //     results.Add(await _chatConversationSummaryBuilder.BuildAsync(conversation, userId, cancellationToken));
+        return conversations;
     }
 
     public async Task<ChatConversationSummaryDto> CreateGroupAsync(int creatorUserId, CreateGroupConversationRequest request, CancellationToken cancellationToken = default)
@@ -409,5 +423,34 @@ public sealed class ChatAdapter : IChatPort
         }
 
         return results;
+    }
+
+    public async Task<string> SetNickNameAsync(
+        int userId,
+        RequestSetNickName request,
+        CancellationToken cancellationToken = default)
+    {
+
+        var conversation = await _chatConversationRepository.GetByConversationKeyAsync(request.ConversationKey, cancellationToken)
+            ?? throw new NotFoundException("Conversation khong ton tai.");
+
+        var isAccessible = conversation.Participants.Any(x => x.UserId == userId);
+
+        if (!isAccessible)
+            throw new ValidationException("User khong co quyen truy cap conversation nay.");
+
+        var targetUserId = request.UserIdTarget ?? conversation.Participants.FirstOrDefault(x => x.UserId != userId)?.UserId;
+
+        var userOfTarget = conversation.Participants
+            .FirstOrDefault(x => x.UserId == targetUserId);
+
+        if (userOfTarget is null)
+            throw new ValidationException("User khong phai thanh vien cua conversation nay.");
+
+        userOfTarget.NickName = request.NickName;
+
+        await _chatConversationRepository.SaveChangesAsync(cancellationToken);
+
+        return userOfTarget.NickName;
     }
 }

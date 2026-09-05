@@ -30,12 +30,13 @@ public static class RepositoryDependencyInjection
         services.AddScoped<ICommentVoteRepository, CommentVoteRepository>();
         services.AddScoped<IContentReportRepository, ContentReportRepository>();
         services.AddScoped<IUserFollowRepository, UserFollowRepository>();
+        services.AddScoped<IChatConverstationParticipantRepository, ChatConversationParticipantRepository>();
         services.AddScoped<IChatConversationRepository, ChatConversationRepository>();
         services.AddScoped<IUserLoginRepository, IpLoginRepository>();
         services.AddScoped<IAttachmentRepository, AttachmentRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IOutBoxRepository, OutBoxRepository>();
-
+        
         return services;
     }
 }

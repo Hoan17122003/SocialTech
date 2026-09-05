@@ -19,6 +19,8 @@ public interface IUnitOfWork : IDisposable
     ITagRepository Tag { get; }
     IUserFollowRepository UserFollows { get; }
     IUserLoginRepository UserLogin { get; }
+    IChatConversationRepository ChatConversations { get; }
+    IChatConverstationParticipantRepository ChatConversationParticipants { get; }
 
     IOutBoxRepository OutBoxMessages { get; }
 

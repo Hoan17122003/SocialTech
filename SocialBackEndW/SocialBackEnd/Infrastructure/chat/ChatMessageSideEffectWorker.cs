@@ -53,12 +53,13 @@ public sealed class ChatMessageSideEffectWorker : BackgroundService
         using var scope = _serviceScopeFactory.CreateScope();
         var searchIndex = scope.ServiceProvider.GetRequiredService<IChatSearchIndex>();
         var repository = scope.ServiceProvider.GetRequiredService<IChatConversationRepository>();
+        var repositoryChatParticipant = scope.ServiceProvider.GetRequiredService<IChatConverstationParticipantRepository>();
         var summaryBuilder = scope.ServiceProvider.GetRequiredService<IChatConversationSummaryBuilder>();
         var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<ChatHub>>();
 
         await TryIndexMessageAsync(searchIndex, workItem, cancellationToken);
 
-        var conversation = await PersistConversationAsync(repository, workItem, cancellationToken);
+        var conversation = await PersistConversationAsync(repository, repositoryChatParticipant, workItem, cancellationToken);
         await PublishConversationUpdatesAsync(hubContext, summaryBuilder, conversation, workItem, cancellationToken);
     }
 
@@ -83,6 +84,7 @@ public sealed class ChatMessageSideEffectWorker : BackgroundService
 
     private async Task<ChatConversation> PersistConversationAsync(
         IChatConversationRepository repository,
+        IChatConverstationParticipantRepository repositoryChatParticipant,
         ChatMessageSideEffectWorkItem workItem,
         CancellationToken cancellationToken)
     {
@@ -100,6 +102,14 @@ public sealed class ChatMessageSideEffectWorker : BackgroundService
                 await repository.AddAsync(workItem.Conversation, cancellationToken);
                 await repository.SaveChangesAsync(cancellationToken);
                 conversation = workItem.Conversation;
+                var participant = new ChatConversationParticipant
+                {
+                    ConversationId = workItem.Conversation.Id,
+                    UserId = workItem.Message.SenderUserId,
+                    NickName = workItem.SenderName,
+                    JoinedAtUtc = DateTime.UtcNow
+                };
+                await repositoryChatParticipant.AddAsync(participant, cancellationToken);
             }
             catch (DbUpdateException)
             {

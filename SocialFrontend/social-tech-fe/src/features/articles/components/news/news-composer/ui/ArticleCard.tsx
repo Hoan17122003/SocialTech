@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { formatDateTime } from '@/common/utils/format-date';
 import { Card } from '@/shared/ui/card';
@@ -45,6 +45,11 @@ export function ArticleCard({
     const baseCommentsCount = getStableMetric(article.id, 2, 18);
     const commentsCount = realtimeCommentsCount !== null ? realtimeCommentsCount : baseCommentsCount;
     const reactionsCount = getStableMetric(article.id, 8, 74) + (selectedReaction ? 1 : 0);
+
+    // Callback ổn định định danh cho ArticleCommentsThread nhằm tránh re-fetch comments khi hover reaction
+    const handleCommentCountChange = useCallback((count: number) => {
+        setRealtimeCommentsCount(count);
+    }, []);
 
     return (
         <Card
@@ -158,18 +163,28 @@ export function ArticleCard({
                 <span>{commentsCount} bình luận</span>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2 border-t border-[var(--line)] pt-3 text-xs font-bold">
+                {/* 
+                    Khu vực Reaction:
+                    - Rê chuột (onMouseEnter) để mở popover mini chọn cảm xúc.
+                    - Rê chuột ra ngoài (onMouseLeave) để lên lịch đóng popover mini.
+                    - Chặn hoàn toàn event bubbling bằng preventDefault & stopPropagation để không làm reload trang.
+                */}
                 <div
                     className="relative"
                     onMouseEnter={() => onOpenReactionPicker(article.id)}
                     onMouseLeave={onScheduleCloseReactionPicker}
-                    onFocus={() => onOpenReactionPicker(article.id)}
-                    onBlur={(event) => {
-                        if (!event.currentTarget.contains(event.relatedTarget)) onScheduleCloseReactionPicker();
-                    }}
                 >
                     <button
                         type="button"
-                        onClick={() => onClearReaction(article.id)}
+                        onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            if (selectedReaction) {
+                                onClearReaction(article.id);
+                            } else {
+                                onSelectReaction(article.id, '👍');
+                            }
+                        }}
                         aria-pressed={Boolean(selectedReaction)}
                         className={`flex w-full items-center justify-center gap-1.5 rounded-2xl px-3 py-2 transition ${selectedReaction ? 'bg-[var(--accent)]/10 text-[var(--accent)] hover:bg-[var(--accent)]/15' : 'text-[var(--muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)]'}`}
                     >
@@ -186,7 +201,11 @@ export function ArticleCard({
                                     <button
                                         key={reaction}
                                         type="button"
-                                        onClick={() => onSelectReaction(article.id, reaction)}
+                                        onClick={(event) => {
+                                            event.preventDefault();
+                                            event.stopPropagation();
+                                            onSelectReaction(article.id, reaction);
+                                        }}
                                         className="flex h-9 w-9 items-center justify-center rounded-full text-lg transition hover:scale-110 hover:bg-[var(--bg-hover)]"
                                     >
                                         {reaction}
@@ -198,7 +217,11 @@ export function ArticleCard({
                 </div>
                 <button
                     type="button"
-                    onClick={() => onToggleComments(article.id)}
+                    onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onToggleComments(article.id);
+                    }}
                     className={`rounded-2xl px-3 py-2 transition hover:bg-[var(--bg-hover)] ${commentArticleId === article.id ? 'bg-[var(--accent)]/10 text-[var(--accent)] font-extrabold' : 'text-[var(--muted)] hover:text-[var(--foreground)]'}`}
                 >
                     💬 Bình luận
@@ -219,7 +242,7 @@ export function ArticleCard({
             {commentArticleId === article.id && (
                 <ArticleCommentsThread
                     articleId={article.id}
-                    onCommentCountChange={(count) => setRealtimeCommentsCount(count)}
+                    onCommentCountChange={handleCommentCountChange}
                 />
             )}
         </Card>
