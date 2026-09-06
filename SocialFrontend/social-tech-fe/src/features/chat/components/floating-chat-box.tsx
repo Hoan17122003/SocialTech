@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useChat } from '@/providers/chat-provider';
 import { useAuth } from '@/providers/auth-provider';
 import type { ChatMessage } from '@/features/chat/contracts';
 import { formatChatMessageTime } from '@/common/utils/format-date';
+import { AvatarImage } from '@/shared/ui/avatar-image';
 
 type FloatingChatBoxProps = {
     conversationKey: string;
@@ -30,6 +32,7 @@ function getUserIdFromToken(token: string | null) {
 }
 
 export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
+    const router = useRouter();
     const { accessToken } = useAuth();
     const currentUserId = useMemo(() => getUserIdFromToken(accessToken), [accessToken]);
 
@@ -49,6 +52,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
     const [isSending, setIsSending] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
     const [isChatSettingsOpen, setIsChatSettingsOpen] = useState(false);
+    const [expandedChatSetting, setExpandedChatSetting] = useState<'nickname' | 'reaction' | null>(null);
     const [nickname, setNickname] = useState('');
     const [isSavingNickname, setIsSavingNickname] = useState(false);
     const [defaultReaction, setDefaultReaction] = useState('👍');
@@ -312,27 +316,97 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
 
     return (
         <div
+            onClick={() => {
+                if (isMinimized) {
+                    setIsMinimized(false);
+                    setIsChatSettingsOpen(false);
+                }
+            }}
             className={`flex flex-col rounded-t-2xl border border-[var(--line)] bg-[var(--surface-strong)] shadow-2xl transition-all duration-300 ${
-                isMinimized ? 'h-12 w-64' : 'h-[28rem] w-80'
+                isMinimized ? 'h-12 w-64 cursor-pointer' : 'h-[28rem] w-80'
             }`}
         >
             {/* Header */}
             <div className="flex h-12 items-center justify-between border-b border-[var(--line)] bg-[var(--surface)] px-3 py-2 rounded-t-2xl select-none">
                 <button
                     type="button"
-                    onClick={() => setIsMinimized(!isMinimized)}
-                    className="flex flex-1 items-center gap-2 text-left cursor-pointer min-w-0 mr-2"
+                    onClick={() => {
+                        if (isMinimized) return;
+                        if (conversationInfo.targetUserId) {
+                            router.push(`/user/${conversationInfo.targetUserId}`);
+                        }
+                    }}
+                    disabled={!conversationInfo.targetUserId}
+                    aria-label="Mở trang cá nhân"
+                    className="flex flex-1 items-center gap-2 text-left cursor-pointer min-w-0 mr-2 disabled:cursor-default"
                 >
-                    {/* Status Dot */}
-                    <span className="relative flex h-2 w-2 flex-shrink-0 rounded-full bg-emerald-500">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-[var(--line)] bg-[var(--background-soft)]">
+                        <AvatarImage
+                            src={conversationInfo.avatar}
+                            alt={nickname.trim() || conversationInfo.title}
+                            fallback={
+                                <span className="text-xs font-bold text-[var(--accent)]">
+                                    {(nickname.trim() || conversationInfo.title).charAt(0).toUpperCase()}
+                                </span>
+                            }
+                            sizes="32px"
+                            className="h-full w-full"
+                        />
+                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[var(--surface)] bg-emerald-500" />
                     </span>
-                    <span className="text-sm font-semibold text-[var(--foreground)] truncate">
+                    <span className="min-w-0 truncate text-sm font-semibold text-[var(--foreground)]">
                         {nickname.trim() || conversationInfo.title}
                     </span>
                 </button>
 
                 <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {/* Voice call */}
+                    <button
+                        type="button"
+                        aria-label="Gọi thoại"
+                        title="Gọi thoại"
+                        className="rounded-lg p-1 text-[var(--muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)]"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                        >
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92z" />
+                        </svg>
+                    </button>
+
+                    {/* Video call */}
+                    <button
+                        type="button"
+                        aria-label="Gọi video"
+                        title="Gọi video"
+                        className="rounded-lg p-1 text-[var(--muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)]"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                        >
+                            <path d="m22 8-6 4 6 4V8Z" />
+                            <rect x="2" y="6" width="14" height="12" rx="2" ry="2" />
+                        </svg>
+                    </button>
+
                     {/* Chat settings */}
                     <div className="relative" data-chat-room-options>
                         {/*
@@ -346,7 +420,10 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                             aria-label="Tùy chỉnh cuộc trò chuyện"
                             aria-haspopup="menu"
                             aria-expanded={isChatSettingsOpen}
-                            onClick={() => setIsChatSettingsOpen((current) => !current)}
+                            onClick={() => {
+                                if (isMinimized) return;
+                                setIsChatSettingsOpen((current) => !current);
+                            }}
                             className={`rounded-lg p-1 text-[var(--muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)] ${
                                 isChatSettingsOpen ? 'bg-[var(--bg-hover)] text-[var(--foreground)]' : ''
                             }`}
@@ -368,59 +445,151 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                         {isChatSettingsOpen && (
                             <div
                                 role="menu"
-                                className="absolute right-0 top-8 z-30 w-64 rounded-2xl border border-[var(--line)] bg-[var(--surface-strong)] p-3 text-xs text-[var(--foreground)] shadow-2xl"
+                                className="absolute right-0 top-10 z-50 w-72 rounded-2xl border border-[var(--line)] bg-[var(--surface-strong)] p-3 text-xs text-[var(--foreground)] shadow-2xl"
                             >
                                 <div className="space-y-2">
-                                    <label className="block">
-                                        <span className="mb-1 block font-bold text-[var(--muted)]">
-                                            Đặt biệt danh
-                                        </span>
-                                        <div className="flex gap-2 items-center">
-                                            <input
-                                                type="text"
-                                                value={nickname}
-                                                disabled={isSavingNickname}
-                                                onChange={(event) => setNickname(event.target.value)}
-                                                onKeyDown={(event) => {
-                                                    if (event.key === 'Enter') {
-                                                        event.preventDefault();
-                                                        void handleSaveNickname();
-                                                    }
-                                                }}
-                                                placeholder={conversationInfo.title}
-                                                className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-sm outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
+                                    <button
+                                        type="button"
+                                        role="menuitem"
+                                        disabled={!conversationInfo.targetUserId}
+                                        onClick={() => {
+                                            if (conversationInfo.targetUserId) {
+                                                router.push(`/user/${conversationInfo.targetUserId}`);
+                                                setIsChatSettingsOpen(false);
+                                            }
+                                        }}
+                                        className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-[var(--bg-hover)] disabled:cursor-default"
+                                    >
+                                        <span className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-full border border-[var(--line)] bg-[var(--background-soft)]">
+                                            <AvatarImage
+                                                src={conversationInfo.avatar}
+                                                alt={nickname.trim() || conversationInfo.title}
+                                                fallback={
+                                                    <span className="font-bold text-[var(--accent)]">
+                                                        {(nickname.trim() || conversationInfo.title)
+                                                            .charAt(0)
+                                                            .toUpperCase()}
+                                                    </span>
+                                                }
+                                                sizes="44px"
+                                                className="h-full w-full"
                                             />
-                                            <button
-                                                type="button"
-                                                disabled={isSavingNickname}
-                                                onClick={() => void handleSaveNickname()}
-                                                className="rounded-xl bg-[var(--accent)] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[var(--accent-strong)] transition cursor-pointer flex-shrink-0 disabled:opacity-50"
-                                            >
-                                                {isSavingNickname ? 'Lưu...' : 'Lưu'}
-                                            </button>
-                                        </div>
-                                    </label>
-
-                                    <div>
-                                        <span className="mb-1.5 block font-bold text-[var(--muted)]">
-                                            Cảm xúc mặc định
                                         </span>
-                                        <div className="grid grid-cols-6 gap-1.5">
-                                            {['👍', '❤️', '😂', '😮', '😢', '🔥'].map((reaction) => (
-                                                <button
-                                                    key={reaction}
-                                                    type="button"
-                                                    onClick={() => setDefaultReaction(reaction)}
-                                                    className={`flex h-8 items-center justify-center rounded-xl border text-base transition hover:bg-[var(--bg-hover)] ${
-                                                        defaultReaction === reaction
-                                                            ? 'border-[var(--accent)] bg-[var(--accent)]/10'
-                                                            : 'border-[var(--line)]'
-                                                    }`}
-                                                >
-                                                    {reaction}
-                                                </button>
-                                            ))}
-                                        </div>
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate text-sm font-semibold">
+                                                {nickname.trim() || conversationInfo.title}
+                                            </span>
+                                            <span className="mt-0.5 block text-[11px] text-[var(--muted)]">
+                                                Xem trang cá nhân
+                                            </span>
+                                        </span>
+                                    </button>
+
+                                    <div className="border-t border-[var(--line)] pt-2" />
+                                    <div className="overflow-hidden rounded-xl border border-[var(--line)]">
+                                        <button
+                                            type="button"
+                                            role="menuitem"
+                                            aria-expanded={expandedChatSetting === 'nickname'}
+                                            onClick={() =>
+                                                setExpandedChatSetting((current) =>
+                                                    current === 'nickname' ? null : 'nickname',
+                                                )
+                                            }
+                                            className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left font-semibold transition hover:bg-[var(--bg-hover)]"
+                                        >
+                                            <span>Đặt biệt danh</span>
+                                            <svg
+                                                width="14"
+                                                height="14"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                className={`transition-transform ${expandedChatSetting === 'nickname' ? 'rotate-180' : ''}`}
+                                                aria-hidden="true"
+                                            >
+                                                <path d="m6 9 6 6 6-6" />
+                                            </svg>
+                                        </button>
+
+                                        {expandedChatSetting === 'nickname' && (
+                                            <div className="border-t border-[var(--line)] bg-[var(--surface)] p-2">
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={nickname}
+                                                        disabled={isSavingNickname}
+                                                        onChange={(event) => setNickname(event.target.value)}
+                                                        onKeyDown={(event) => {
+                                                            if (event.key === 'Enter') {
+                                                                event.preventDefault();
+                                                                void handleSaveNickname();
+                                                            }
+                                                        }}
+                                                        placeholder={conversationInfo.title}
+                                                        className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface-strong)] px-3 py-2 text-sm outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        disabled={isSavingNickname}
+                                                        onClick={() => void handleSaveNickname()}
+                                                        className="flex-shrink-0 rounded-xl bg-[var(--accent)] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:opacity-50"
+                                                    >
+                                                        {isSavingNickname ? 'Lưu...' : 'Lưu'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="overflow-hidden rounded-xl border border-[var(--line)]">
+                                        <button
+                                            type="button"
+                                            role="menuitem"
+                                            aria-expanded={expandedChatSetting === 'reaction'}
+                                            onClick={() =>
+                                                setExpandedChatSetting((current) =>
+                                                    current === 'reaction' ? null : 'reaction',
+                                                )
+                                            }
+                                            className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left font-semibold transition hover:bg-[var(--bg-hover)]"
+                                        >
+                                            <span>Biểu tượng mặc định</span>
+                                            <svg
+                                                width="14"
+                                                height="14"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                className={`transition-transform ${expandedChatSetting === 'reaction' ? 'rotate-180' : ''}`}
+                                                aria-hidden="true"
+                                            >
+                                                <path d="m6 9 6 6 6-6" />
+                                            </svg>
+                                        </button>
+
+                                        {expandedChatSetting === 'reaction' && (
+                                            <div className="border-t border-[var(--line)] bg-[var(--surface)] p-2">
+                                                <div className="grid grid-cols-6 gap-1.5">
+                                                    {['👍', '❤️', '😂', '😮', '😢', '🔥'].map((reaction) => (
+                                                        <button
+                                                            key={reaction}
+                                                            type="button"
+                                                            onClick={() => setDefaultReaction(reaction)}
+                                                            className={`flex h-8 items-center justify-center rounded-xl border text-base transition hover:bg-[var(--bg-hover)] ${
+                                                                defaultReaction === reaction
+                                                                    ? 'border-[var(--accent)] bg-[var(--accent)]/10'
+                                                                    : 'border-[var(--line)]'
+                                                            }`}
+                                                        >
+                                                            {reaction}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <p className="rounded-xl bg-[var(--background-soft)] px-3 py-2 text-[11px] leading-4 text-[var(--muted)]">
@@ -434,7 +603,12 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                     {/* Minimize toggle */}
                     <button
                         type="button"
-                        onClick={() => setIsMinimized(!isMinimized)}
+                        aria-label={isMinimized ? 'Mở rộng khung chat' : 'Thu nhỏ khung chat'}
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            setIsMinimized((current) => !current);
+                            setIsChatSettingsOpen(false);
+                        }}
                         className="rounded-lg p-1 text-[var(--muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)] transition-colors"
                     >
                         {isMinimized ? (
@@ -466,7 +640,10 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                     {/* Close */}
                     <button
                         type="button"
-                        onClick={() => closeChat(conversationKey)}
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            closeChat(conversationKey);
+                        }}
                         className="rounded-lg p-1 text-[var(--muted)] hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
                     >
                         <svg

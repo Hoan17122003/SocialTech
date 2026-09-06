@@ -24,6 +24,8 @@ export type ChatMessage = {
     conversationKey: string;
     senderId: string;
     senderName: string;
+    // Bổ sung senderNickName: Biệt danh của người gửi trong cuộc trò chuyện (nếu có)
+    senderNickName?: string | null;
     content: string;
     sentAtUtc: string;
     isEdited: boolean;

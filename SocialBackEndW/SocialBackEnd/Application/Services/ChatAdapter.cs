@@ -127,7 +127,9 @@ public sealed class ChatAdapter : IChatPort
         await _chatMessageStore.AppendAsync(message, cancellationToken);
         await QueueSideEffectsAsync(conversation, message, sender.DisplayName, conversationCreated, request.TargetUserId, cancellationToken);
 
-        var dto = ToMessageDto(message, sender.DisplayName);
+        // Sửa: Tìm participant của người gửi để lấy NickName (nếu có)
+        var senderParticipant = conversation.Participants.FirstOrDefault(p => p.UserId == senderUserId);
+        var dto = ToMessageDto(message, sender.DisplayName, senderParticipant?.NickName);
         await PublishMessageCreatedAsync(dto, conversation.ConversationKey, cancellationToken);
 
         return new ChatSendResult
@@ -267,7 +269,8 @@ public sealed class ChatAdapter : IChatPort
         var message = ChatMessage.Create(conversation.ConversationKey, senderUserId, request.Content, request.ClientMessageId);
         await _chatMessageStore.AppendAsync(message, cancellationToken);
         await QueueSideEffectsAsync(conversation, message, sender.DisplayName, false, null, cancellationToken);
-        var dto = ToMessageDto(message, sender.DisplayName);
+        var senderParticipant = conversation.Participants.FirstOrDefault(p => p.UserId == senderUserId);
+        var dto = ToMessageDto(message, sender.DisplayName, senderParticipant?.NickName);
         await _hubContext.Clients.Group(ChatHub.BuildConversationGroupName(conversation.ConversationKey))
             .SendAsync("chat.message.created", dto, cancellationToken);
         return new ChatSendResult { ConversationKey = conversation.ConversationKey, Message = dto };
@@ -288,6 +291,13 @@ public sealed class ChatAdapter : IChatPort
             beforeUtc,
             cancellationToken);
 
+        // Sửa: Lấy danh sách NickName của các thành viên trong cuộc hội thoại để gắn vào message
+        var conversation = await _chatConversationRepository.GetByConversationKeyAsync(conversationKey, cancellationToken);
+        var participantNickNames = conversation?.Participants
+            .Where(p => !string.IsNullOrWhiteSpace(p.NickName))
+            .ToDictionary(p => p.UserId, p => p.NickName)
+            ?? new Dictionary<int, string?>();
+
         var senderNames = new Dictionary<int, string>();
         var results = new List<ChatMessageDto>(messages.Count);
 
@@ -300,7 +310,8 @@ public sealed class ChatAdapter : IChatPort
                 senderNames[message.SenderUserId] = senderName;
             }
 
-            results.Add(ToMessageDto(message, senderName));
+            participantNickNames.TryGetValue(message.SenderUserId, out var senderNickName);
+            results.Add(ToMessageDto(message, senderName, senderNickName));
         }
 
         return results;
@@ -386,7 +397,8 @@ public sealed class ChatAdapter : IChatPort
         }
     }
 
-    private static ChatMessageDto ToMessageDto(ChatMessage message, string senderName)
+    // Sửa: Thêm senderNickName vào ToMessageDto
+    private static ChatMessageDto ToMessageDto(ChatMessage message, string senderName, string? senderNickName = null)
     {
         return new ChatMessageDto
         {
@@ -394,6 +406,7 @@ public sealed class ChatAdapter : IChatPort
             ConversationKey = message.ConversationKey,
             SenderId = message.SenderUserId.ToString(),
             SenderName = senderName,
+            SenderNickName = senderNickName,
             Content = message.Content,
             SentAtUtc = message.SentAtUtc,
             IsEdited = message.State == ChatMessageState.Edited,

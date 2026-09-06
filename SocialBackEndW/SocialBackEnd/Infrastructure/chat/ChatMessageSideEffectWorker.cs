@@ -102,14 +102,10 @@ public sealed class ChatMessageSideEffectWorker : BackgroundService
                 await repository.AddAsync(workItem.Conversation, cancellationToken);
                 await repository.SaveChangesAsync(cancellationToken);
                 conversation = workItem.Conversation;
-                var participant = new ChatConversationParticipant
-                {
-                    ConversationId = workItem.Conversation.Id,
-                    UserId = workItem.Message.SenderUserId,
-                    NickName = workItem.SenderName,
-                    JoinedAtUtc = DateTime.UtcNow
-                };
-                await repositoryChatParticipant.AddAsync(participant, cancellationToken);
+                // Sửa: Bỏ đoạn tự động add thêm participant thừa ở đây.
+                // workItem.Conversation khi khởi tạo qua CreateDirect/CreateGroup đã bao gồm đầy đủ Participants,
+                // và repository.AddAsync(workItem.Conversation) ở trên đã tự động lưu toàn bộ participants vào DB.
+                // Việc add thêm ở đây gây duplicate row và gán sai NickName = SenderName.
             }
             catch (DbUpdateException)
             {

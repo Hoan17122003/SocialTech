@@ -337,3 +337,15 @@
 .dark .glow-card:hover {
     box-shadow: 0 16px 35px -10px rgba(0, 0, 0, 0.45), 0 0 20px rgba(0, 242, 254, 0.12);
 }
+
+/* Chat Settings Side Panel Animation */
+@keyframes slideInSettings {
+    from {
+        opacity: 0;
+        transform: translateX(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

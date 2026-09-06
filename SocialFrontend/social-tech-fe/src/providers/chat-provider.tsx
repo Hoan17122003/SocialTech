@@ -66,7 +66,12 @@ function normalizeConversation(raw: any): ChatConversationSummary {
     }
 
     const nickName = raw.nickName || raw.nickname || null;
-    const title = raw.title || (nickName ? nickName : null);
+    // Sửa theo yêu cầu:
+    // Nếu Kind là Direct thì sẽ lấy Title bằng NickName luôn (nếu có), fallback về raw.title hoặc 'Cá nhân'.
+    // Còn nếu Group hay Community thì vẫn lấy bình thường theo raw.title (fallback về 'Nhóm').
+    const title = isDirect
+        ? (nickName || raw.title || 'Cá nhân')
+        : (raw.title || (isCommunity ? 'Nhóm' : null));
     const otherUserId = raw.otherUserId ?? raw.targetUserId ?? raw.OtherUserId ?? raw.TargetUserId ?? null;
     const communityId = raw.communityId ?? raw.CommunityId ?? null;
 
@@ -138,7 +143,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
         // Xử lý sự kiện cuộc hội thoại được cập nhật (ví dụ: có tin nhắn mới thì đẩy hội thoại lên đầu inbox)
         const handleConversationUpdated = (payload: any) => {
-            setInbox((current) => upsertConversation(current, normalizeConversation(payload)));
+            const normalized = normalizeConversation(payload);
+            setInbox((current) => {
+                // Sửa: Bảo toàn nickName nếu payload từ server bị thiếu nhưng trong inbox hiện tại đã có biệt danh
+                const existing = current.find((item) => item.conversationKey === normalized.conversationKey);
+                if (existing?.nickName && !normalized.nickName) {
+                    normalized.nickName = existing.nickName;
+                    if (normalized.conversationType === 'Direct') {
+                        normalized.title = existing.nickName;
+                    }
+                }
+                return upsertConversation(current, normalized);
+            });
         };
 
         // Đăng ký các bộ lắng nghe sự kiện từ Server phát xuống
