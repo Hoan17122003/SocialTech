@@ -53,7 +53,7 @@ public sealed class ChatConversationRepository
                 cancellationToken);
     }
 
-    public async Task<List<ConvertstationResultModel>> GetInboxAsync(
+    public Task<List<ConvertstationResultModel>> GetInboxAsync(
         int userId,
         Paganation paganation,
         CancellationToken cancellationToken = default)
@@ -69,49 +69,54 @@ public sealed class ChatConversationRepository
             .Where(x => x.UserId == userId && x.Status == CommunityMemberStatus.Active)
             .Select(x => x.CommunityId);
 
-        var query = DbContext.ChatConversations
+        return DbContext.ChatConversations
             .AsNoTracking()
             .Where(x =>
-                (x.Kind == ChatConversationKind.Direct &&
-                participantIds.Contains(x.Id))
-                ||
-                (x.Kind == ChatConversationKind.Group && participantIds.Contains(x.Id))
-                ||
-                (x.Kind == ChatConversationKind.Community &&
-                x.CommunityId.HasValue &&
-                joinedCommunityIds.Contains(x.CommunityId.Value)));
-
-
-        return await query
-            .OrderByDescending(x => x.LastMessageAtUtc)
-            .ThenByDescending(x => x.Id)
-            .Skip((page - 1) * limit)
-            .Take(limit)
-            .Select(x => new ConvertstationResultModel
+                (x.Kind == ChatConversationKind.Direct && participantIds.Contains(x.Id)) ||
+                (x.Kind == ChatConversationKind.Group && participantIds.Contains(x.Id)) ||
+                (x.Kind == ChatConversationKind.Community && x.CommunityId.HasValue && joinedCommunityIds.Contains(x.CommunityId.Value)))
+            .Select(x => new
             {
-                ConversationKey = x.ConversationKey,
-                Kind = x.Kind,
-                CommunityId = x.CommunityId,
-                LastMessagePreview = x.LastMessagePreview,
+                Conversation = x,
                 TargetUserId = x.Kind == ChatConversationKind.Direct
                     ? (x.DirectUserLowId == userId ? x.DirectUserHighId : x.DirectUserLowId)
-                    : null,
-                Title = x.Kind == ChatConversationKind.Direct
-                    ? DbContext.ChatConversationParticipants
-                        .Where(p => p.ConversationId == x.Id && p.UserId != userId)
-                        .Select(p => p.User.DisplayName)
-                        .FirstOrDefault()
-                    : x.Title,
-                NickName = x.Kind == ChatConversationKind.Direct
-                    ? DbContext.ChatConversationParticipants
-                        .Where(p => p.ConversationId == x.Id && p.UserId != userId)
-                        .Select(p => p.NickName)
-                        .FirstOrDefault()
-                    : null,
-                HasCustomTitle = x.HasCustomTitle,
-                LastMessageAtUtc = x.LastMessageAtUtc
+                    : (int?)null
             })
+            // join thêm bảng Users để lấy PublicId
+            .GroupJoin(DbContext.Users,
+                conv => conv.TargetUserId,
+                u => u.Id,
+                (conv, users) => new { conv, users })
+            .SelectMany(
+                cu => cu.users.DefaultIfEmpty(),
+                (cu, u) => new ConvertstationResultModel
+                {
+                    ConversationKey = cu.conv.Conversation.ConversationKey,
+                    Kind = cu.conv.Conversation.Kind,
+                    CommunityId = cu.conv.Conversation.CommunityId,
+                    LastMessagePreview = cu.conv.Conversation.LastMessagePreview,
+                    PublicTargetUserID = u != null ? u.PublicId : null, // thêm trường mới
+                    Title = cu.conv.Conversation.Kind == ChatConversationKind.Direct
+                        ? DbContext.ChatConversationParticipants
+                            .Where(p => p.ConversationId == cu.conv.Conversation.Id && p.UserId != userId)
+                            .Select(p => p.User.DisplayName)
+                            .FirstOrDefault()
+                        : cu.conv.Conversation.Title,
+                    NickName = cu.conv.Conversation.Kind == ChatConversationKind.Direct
+                        ? DbContext.ChatConversationParticipants
+                            .Where(p => p.ConversationId == cu.conv.Conversation.Id && p.UserId != userId)
+                            .Select(p => p.NickName)
+                            .FirstOrDefault()
+                        : null,
+                    HasCustomTitle = cu.conv.Conversation.HasCustomTitle,
+                    LastMessageAtUtc = cu.conv.Conversation.LastMessageAtUtc
+                })
+            .OrderByDescending(x => x.LastMessageAtUtc)
+            .ThenByDescending(x => x.ConversationKey) // hoặc Id nếu cần
+            .Skip((page - 1) * limit)
+            .Take(limit)
             .ToListAsync(cancellationToken);
+
     }
 
     public async Task<bool> CanAccessAsync(

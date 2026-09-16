@@ -9,7 +9,7 @@ public sealed record ConvertstationResultModel
     public ChatConversationKind Kind { init; get; }
     public int? CommunityId { init; get; }
     public string? LastMessagePreview { get; init; }
-    public int? TargetUserId { get; init; }
+    public Guid? PublicTargetUserID { get; init; }
     public string? Title { get; init; } 
     public string? NickName { get; init; }
     public bool HasCustomTitle { get; init; }

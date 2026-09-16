@@ -96,9 +96,9 @@ public sealed class ChatConversationSummaryBuilder : IChatConversationSummaryBui
         var nickName = conversation.NickName;
         var title = conversation.Title;
         var participantIds = Array.Empty<int>();
-        if (conversation.Kind == ChatConversationKind.Direct && conversation.TargetUserId.HasValue)
+        if (conversation.Kind == ChatConversationKind.Direct && conversation.PublicTargetUserID.HasValue)
         {
-            var other = await RequireUserAsync(conversation.TargetUserId.Value, cancellationToken);
+            var other = await RequireUserAsync(conversation.PublicTargetUserID.Value, cancellationToken);
             // Sửa: Direct ưu tiên lấy Title theo NickName
             title = !string.IsNullOrWhiteSpace(nickName) ? nickName : (!string.IsNullOrWhiteSpace(conversation.Title) ? conversation.Title : other.DisplayName);
             participantIds = [currentUserId, other.Id];
@@ -113,7 +113,7 @@ public sealed class ChatConversationSummaryBuilder : IChatConversationSummaryBui
         {
             ConversationKey = conversation.ConversationKey,
             ConversationType = conversation.Kind.ToString().ToLowerInvariant(),
-            OtherUserId = conversation.TargetUserId,
+            OtherPublicUserId = conversation.PublicTargetUserID,
             CommunityId = conversation.CommunityId,
             ParticipantUserIds = participantIds,
             Title = title,
@@ -126,9 +126,9 @@ public sealed class ChatConversationSummaryBuilder : IChatConversationSummaryBui
         };
     }
 
-    private async Task<User> RequireUserAsync(int userId, CancellationToken cancellationToken)
+    private async Task<User> RequireUserAsync(Guid publicId, CancellationToken cancellationToken)
     {
-        return await _userRepository.GetByIdAsync(userId, cancellationToken)
-            ?? throw new InvalidOperationException($"User {userId} khong ton tai.");
+        return await _userRepository.GetUserByPublicIdAsync(publicId, cancellationToken)
+            ?? throw new InvalidOperationException($"User {publicId} khong ton tai.");
     }
 }

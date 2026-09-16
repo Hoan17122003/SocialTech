@@ -4,7 +4,7 @@ public sealed record ChatConversationSummaryDto
 {
     public string ConversationKey { get; init; } = string.Empty;
     public string ConversationType { get; init; } = string.Empty;
-    public int? OtherUserId { get; init; }
+    public Guid? OtherPublicUserId { get; init; }
     public int? CommunityId { get; init; }
     public string? Avatar { get; init; }
     public IReadOnlyList<int> ParticipantUserIds { get; init; } = Array.Empty<int>();

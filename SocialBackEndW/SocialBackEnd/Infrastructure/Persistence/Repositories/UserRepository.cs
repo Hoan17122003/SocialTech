@@ -200,5 +200,12 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public Task<User?> GetUserByPublicIdAsync(Guid publicId, CancellationToken cancellationToken = default)
+    {
+        return DbContext.Users
+            .AsNoTracking()
+            .Where(x => x.PublicId == publicId)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
 
 }

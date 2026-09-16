@@ -224,7 +224,8 @@ public sealed class ChatAdapter : IChatPort
             Kind = x.Kind,
             CommunityId = x.CommunityId,
             LastMessagePreview = x.LastMessagePreview,
-            TargetUserId = x.TargetUserId,
+            PublicTargetUserID = x.PublicTargetUserID,
+            // TargetUserId = x.TargetUserId,
             Title = x.Kind == ChatConversationKind.Direct
                     ? (!string.IsNullOrWhiteSpace(x.NickName) ? x.NickName : x.Title)
                     : x.Title,
