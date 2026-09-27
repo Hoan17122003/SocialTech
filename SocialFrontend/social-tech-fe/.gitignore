@@ -12,13 +12,15 @@
 
 # testing
 /coverage
-
+SocialFrontend/social-tech-fe/.vscode/
 # next.js
 /.next/
 /out/
 
 # production
 /build
+# config debug
+.vscode/
 
 
 # misc

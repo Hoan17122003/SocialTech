@@ -12,14 +12,7 @@ type InboxPopoverProps = {
 };
 
 export function InboxPopover({ onClose }: InboxPopoverProps) {
-    const {
-        inbox,
-        isLoadingInbox,
-        openChat,
-        openDirectChatWithUser,
-        searchCandidates,
-        refreshInbox,
-    } = useChat();
+    const { inbox, isLoadingInbox, openChat, openDirectChatWithUser, searchCandidates, refreshInbox } = useChat();
 
     const [query, setQuery] = useState('');
     const debouncedQuery = useDebouncedValue(query, 300);
@@ -78,7 +71,7 @@ export function InboxPopover({ onClose }: InboxPopoverProps) {
     };
 
     const handleSelectCandidate = async (user: DetailUserFollow) => {
-        await openDirectChatWithUser(user.id, user.displayName, user.avatar);
+        await openDirectChatWithUser(user.publicId, user.displayName, user.avatar);
         onClose();
     };
 
@@ -167,7 +160,7 @@ export function InboxPopover({ onClose }: InboxPopoverProps) {
                         ) : (
                             candidates.map((user) => (
                                 <button
-                                    key={user.id}
+                                    key={user.publicId}
                                     type="button"
                                     onClick={() => void handleSelectCandidate(user)}
                                     className="flex w-full items-center gap-3 rounded-2xl p-2.5 hover:bg-[var(--bg-hover)] text-left transition-all duration-200"
@@ -200,9 +193,7 @@ export function InboxPopover({ onClose }: InboxPopoverProps) {
                         </div>
 
                         {isLoadingInbox && inbox.length === 0 ? (
-                            <div className="py-12 text-center text-sm text-[var(--muted)]">
-                                Đang tải tin nhắn...
-                            </div>
+                            <div className="py-12 text-center text-sm text-[var(--muted)]">Đang tải tin nhắn...</div>
                         ) : inbox.length === 0 ? (
                             <div className="py-12 text-center text-sm text-[var(--muted)] flex flex-col items-center gap-2">
                                 <svg

@@ -18,7 +18,8 @@ import type {
 } from '@/features/chat/contracts';
 
 type DraftConversationInfo = {
-    targetUserId: number;
+    // Guid PublicId của user nhận tin, không phải id nội bộ (int)
+    targetPublicId: string;
     displayName: string;
     avatarUrl: string;
 };
@@ -33,7 +34,7 @@ type ChatContextType = {
     draftConversations: Record<string, DraftConversationInfo>;
     activeChatBoxKey: string | null;
     openChat: (conversationKey: string) => Promise<void>;
-    openDirectChatWithUser: (targetUserId: number, displayName: string, avatarUrl: string) => Promise<void>;
+    openDirectChatWithUser: (targetPublicId: string, displayName: string, avatarUrl: string) => Promise<void>;
     closeChat: (conversationKey: string) => void;
     sendMessage: (key: string, content: string) => Promise<void>;
     loadMessages: (conversationKey: string) => Promise<void>;
@@ -72,13 +73,14 @@ function normalizeConversation(raw: any): ChatConversationSummary {
     const title = isDirect
         ? (nickName || raw.title || 'Cá nhân')
         : (raw.title || (isCommunity ? 'Nhóm' : null));
-    const otherUserId = raw.otherUserId ?? raw.targetUserId ?? raw.OtherUserId ?? raw.TargetUserId ?? null;
+    const publicTargetUserID =
+        raw.publicTargetUserID ?? raw.PublicTargetUserID ?? raw.targetPublicId ?? null;
     const communityId = raw.communityId ?? raw.CommunityId ?? null;
 
     return {
         conversationKey: raw.conversationKey,
         conversationType,
-        otherUserId,
+        publicTargetUserID,
         communityId,
         title,
         nickName,
@@ -333,15 +335,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     );
 
     const openDirectChatWithUser = useCallback(
-        async (targetUserId: number, displayName: string, avatarUrl: string) => {
+        async (targetPublicId: string, displayName: string, avatarUrl: string) => {
             let currentInbox = inbox;
             if (currentInbox.length === 0) {
                 currentInbox = await refreshInbox();
             }
 
             // Check if there is already an existing direct conversation with this user
+            // publicTargetUserID là Guid string -> so sánh chuỗi, không ép Number() (Number(guid) = NaN)
             const existing = currentInbox.find(
-                (c) => c.conversationType === 'Direct' && Number(c.otherUserId) === Number(targetUserId),
+                (c) =>
+                    c.conversationType === 'Direct' &&
+                    (c.publicTargetUserID ?? '').toLowerCase() === targetPublicId.toLowerCase(),
             );
 
             if (existing) {
@@ -350,10 +355,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             }
 
             // Otherwise open a draft chat box
-            const draftKey = `draft:user:${targetUserId}`;
+            const draftKey = `draft:user:${targetPublicId}`;
             setDraftConversations((prev) => ({
                 ...prev,
-                [draftKey]: { targetUserId, displayName, avatarUrl },
+                [draftKey]: { targetPublicId, displayName, avatarUrl },
             }));
 
             setOpenChatBoxes((prev) => {
@@ -405,7 +410,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                     if (!draftInfo) return;
 
                     const payload: SendDirectMessageRequest = {
-                        targetUserId: draftInfo.targetUserId,
+                        targetPublicId: draftInfo.targetPublicId,
                         content: trimmed,
                         clientMessageId: crypto.randomUUID(), // Tạo GUID định danh tin nhắn phía Client để phòng tránh trùng lặp
                     };
@@ -445,7 +450,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                     const newConversation: ChatConversationSummary = {
                         conversationKey: realKey,
                         conversationType: 'Direct',
-                        otherUserId: draftInfo.targetUserId,
+                        publicTargetUserID: draftInfo.targetPublicId,
                         title: draftInfo.displayName,
                         lastMessagePreview: trimmed,
                         lastMessageAtUtc: result.message.sentAtUtc,
@@ -495,14 +500,14 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                         }));
                     } else {
                         // Hội thoại trực tiếp (1-1)
-                        const otherUserId = convo?.otherUserId;
-                        if (!otherUserId) {
-                            console.error(`[Chat] Không thể gửi tin nhắn direct: thiếu otherUserId cho hội thoại ${key}`, convo);
+                        const publicTargetUserID = convo?.publicTargetUserID;
+                        if (!publicTargetUserID) {
+                            console.error(`[Chat] Không thể gửi tin nhắn direct: thiếu publicTargetUserID cho hội thoại ${key}`, convo);
                             throw new Error('Không tìm thấy thông tin người nhận tin nhắn.');
                         }
 
                         const payload: SendDirectMessageRequest = {
-                            targetUserId: otherUserId,
+                            targetPublicId: publicTargetUserID,
                             content: trimmed,
                             clientMessageId: crypto.randomUUID(),
                         };

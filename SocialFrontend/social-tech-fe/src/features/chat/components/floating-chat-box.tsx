@@ -83,7 +83,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                 nickName: null as string | null,
                 avatar: draft?.avatarUrl || '',
                 isCommunity: false,
-                targetUserId: draft?.targetUserId,
+                targetUserId: draft?.targetPublicId,
             };
         }
 
@@ -95,7 +95,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
             nickName: nick,
             avatar: '',
             isCommunity: convo?.conversationType === 'Community',
-            targetUserId: convo?.otherUserId,
+            targetUserId: convo?.publicTargetUserID,
         };
     }, [conversationKey, inbox, isDraft, draftConversations, convo]);
 
@@ -146,9 +146,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
         if (!container) return;
 
         const checkVisibilityOnScroll = () => {
-            const activeOptionEl = container.querySelector(
-                `[data-chat-message-options="${openOptionsMessageId}"]`,
-            );
+            const activeOptionEl = container.querySelector(`[data-chat-message-options="${openOptionsMessageId}"]`);
             if (!activeOptionEl) {
                 setOpenOptionsMessageId(null);
                 return;
@@ -247,7 +245,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
         if (!conversationKey || isDraft || isSavingNickname) return;
         setIsSavingNickname(true);
         try {
-            await setNickName(conversationKey, nickname, conversationInfo.targetUserId);
+            await setNickName(conversationKey, nickname);
             setIsChatSettingsOpen(false);
         } catch (err) {
             console.error('Failed to set nickname:', err);
@@ -333,7 +331,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                     onClick={() => {
                         if (isMinimized) return;
                         if (conversationInfo.targetUserId) {
-                            router.push(`/user/${conversationInfo.targetUserId}`);
+                            router.push(`/profile/${conversationInfo.targetUserId}`);
                         }
                     }}
                     disabled={!conversationInfo.targetUserId}
@@ -454,7 +452,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                                         disabled={!conversationInfo.targetUserId}
                                         onClick={() => {
                                             if (conversationInfo.targetUserId) {
-                                                router.push(`/user/${conversationInfo.targetUserId}`);
+                                                router.push(`/profile/${conversationInfo.targetUserId}`);
                                                 setIsChatSettingsOpen(false);
                                             }
                                         }}
@@ -812,9 +810,13 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                                                         <div
                                                             role="menu"
                                                             className={`absolute z-20 w-36 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--surface-strong)] p-1 text-xs text-[var(--foreground)] shadow-xl animate-fade-in ${
-                                                                optionsPlacement.vertical === 'top' ? 'top-8' : 'bottom-8'
+                                                                optionsPlacement.vertical === 'top'
+                                                                    ? 'top-8'
+                                                                    : 'bottom-8'
                                                             } ${
-                                                                optionsPlacement.horizontal === 'right' ? 'right-0' : 'left-0'
+                                                                optionsPlacement.horizontal === 'right'
+                                                                    ? 'right-0'
+                                                                    : 'left-0'
                                                             }`}
                                                         >
                                                             <button

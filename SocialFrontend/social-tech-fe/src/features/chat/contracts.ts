@@ -5,7 +5,7 @@ export type ChatConversationType = 'Direct' | 'Community';
 export type ChatConversationSummary = {
     conversationKey: string;
     conversationType: ChatConversationType;
-    otherUserId?: number | null;
+    publicTargetUserID?: string | null;
     communityId?: number | null;
     title?: string | null;
     nickName?: string | null;
@@ -39,7 +39,7 @@ export type ChatSendResult = {
 };
 
 export type SendDirectMessageRequest = {
-    targetUserId: number;
+    targetPublicId: string
     content: string;
     clientMessageId?: string;
 };
@@ -61,7 +61,7 @@ export type ChatMessagesResponse = ApiResponse<ChatMessage[]>;
 export type ChatSendResponse = ApiResponse<ChatSendResult>;
 
 export type DetailUserFollow = {
-    id: number;
+    publicId: string;
     avatar: string;
     displayName: string;
 };
