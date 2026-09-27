@@ -154,7 +154,7 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
             .Skip((page - 1) * limit)
             .Take(limit)
             .Select(x => new DetailUserFollow(
-                x.Follower.Id,
+                x.Follower.PublicId,
                 x.Follower.ProfileImageUrl ?? string.Empty,
                 x.Follower.DisplayName
             ))
@@ -206,6 +206,20 @@ public sealed class UserRepository : RepositoryBase<User>, IUserRepository
             .AsNoTracking()
             .Where(x => x.PublicId == publicId)
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<List<User>> GetByIdsAsync(IEnumerable<int> ids, CancellationToken cancellationToken = default)
+    {
+        var idList = ids.Distinct().ToList();
+        if (idList.Count == 0)
+        {
+            return Task.FromResult(new List<User>());
+        }
+
+        return DbContext.Users
+            .AsNoTracking()
+            .Where(x => idList.Contains(x.Id))
+            .ToListAsync(cancellationToken);
     }
 
 }

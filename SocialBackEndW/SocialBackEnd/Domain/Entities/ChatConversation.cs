@@ -5,7 +5,7 @@ namespace SocialBackEnd.Domain.Entities;
 public sealed class ChatConversation : EntityBase
 {
     public Guid PublicId { get; private set; }
-    public string ConversationKey { get; private set; } = string.Empty;
+    public string ConversationKey { get; private set; } = string.Empty; // Todo : Cân nhắc bỏ!
     public ChatConversationKind Kind { get; private set; }
     public int CreatedByUserId { get; private set; }
     public int? CommunityId { get; private set; }

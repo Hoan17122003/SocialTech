@@ -44,7 +44,8 @@ public sealed class ChatConversationConfiguration : IEntityTypeConfiguration<Cha
         builder.HasIndex(x => x.ConversationKey)
             .IsUnique();
 
-        builder.HasIndex(x => new { x.DirectUserLowId, x.DirectUserHighId });
+        builder.HasIndex(x => new { x.DirectUserLowId, x.DirectUserHighId })
+            .IsUnique();
 
         builder.HasIndex(x => x.CommunityId);
 

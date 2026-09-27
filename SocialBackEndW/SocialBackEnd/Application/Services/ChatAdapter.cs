@@ -65,26 +65,25 @@ public sealed class ChatAdapter : IChatPort
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        var sender = await RequireUserAsync(senderUserId, cancellationToken);
+        var target = await RequireUserAsync(request.TargetPublicId, cancellationToken);
+        var targetUserId = target.Id;
 
-        if (senderUserId == request.TargetUserId)
-        {
+        if (senderUserId == targetUserId)
             throw new ValidationException("Khong the tao direct chat voi chinh minh.");
-        }
 
         if (string.IsNullOrWhiteSpace(request.Content))
         {
             throw new ValidationException("Noi dung tin nhan la bat buoc.");
         }
 
-        var sender = await RequireUserAsync(senderUserId, cancellationToken);
-        await RequireUserAsync(request.TargetUserId, cancellationToken);
-
         var senderFollowsTarget = await _userFollowRepository.IsFollowingAsync(
             senderUserId,
-            request.TargetUserId,
+            targetUserId,
             cancellationToken);
+
         var targetFollowsSender = await _userFollowRepository.IsFollowingAsync(
-            request.TargetUserId,
+            targetUserId,
             senderUserId,
             cancellationToken);
 
@@ -93,13 +92,14 @@ public sealed class ChatAdapter : IChatPort
             throw new ValidationException("Chat user-user chi hop le khi hai ben da follow nhau.");
         }
 
-        var conversation = await _chatConversationRepository.GetDirectConversationAsync(
-            senderUserId,
-            request.TargetUserId,
-            cancellationToken);
-        var conversationCreated = conversation is null;
-        conversation ??= ChatConversation.CreateDirect(senderUserId, request.TargetUserId, senderUserId);
-
+        // var conversation = await _chatConversationRepository.GetDirectConversationAsync(
+        //     senderUserId,
+        //     targetUserId,
+        //     cancellationToken);
+        // var conversationCreated = conversation is null;
+        // conversation ??= ChatConversation.CreateDirect(senderUserId, targetUserId, senderUserId);
+        var (conversation, conversationCreated) = await _chatConversationRepository
+                .GetOrCreateDirectConversationAsync(senderUserId, targetUserId, senderUserId, cancellationToken);
         /*
          * =================================================================================
          * GIẢI THÍCH VỀ CƠ CHẾ IDEMPOTENCY TRONG DIRECT CHAT (TRÁNH TRÙNG LẶP TIN NHẮN)
@@ -125,11 +125,11 @@ public sealed class ChatAdapter : IChatPort
             request.ClientMessageId);
 
         await _chatMessageStore.AppendAsync(message, cancellationToken);
-        await QueueSideEffectsAsync(conversation, message, sender.DisplayName, conversationCreated, request.TargetUserId, cancellationToken);
-
+        // await QueueSideEffectsAsync(conversation, message, sender.DisplayName, conversationCreated, targetUserId, cancellationToken);
+        await QueueSideEffectsAsync(conversation, message, sender.DisplayName, false, targetUserId, cancellationToken);
         // Sửa: Tìm participant của người gửi để lấy NickName (nếu có)
         var senderParticipant = conversation.Participants.FirstOrDefault(p => p.UserId == senderUserId);
-        var dto = ToMessageDto(message, sender.DisplayName, senderParticipant?.NickName);
+        var dto = ToMessageDto(message, sender, senderParticipant?.NickName);
         await PublishMessageCreatedAsync(dto, conversation.ConversationKey, cancellationToken);
 
         return new ChatSendResult
@@ -199,7 +199,7 @@ public sealed class ChatAdapter : IChatPort
         await _chatMessageStore.AppendAsync(message, cancellationToken);
         await QueueSideEffectsAsync(conversation, message, sender.DisplayName, conversationCreated, null, cancellationToken);
 
-        var dto = ToMessageDto(message, sender.DisplayName);
+        var dto = ToMessageDto(message, sender);
         await _hubContext.Clients
             .Group(ChatHub.BuildConversationGroupName(conversation.ConversationKey))
             .SendAsync("chat.message.created", dto, cancellationToken);
@@ -271,7 +271,7 @@ public sealed class ChatAdapter : IChatPort
         await _chatMessageStore.AppendAsync(message, cancellationToken);
         await QueueSideEffectsAsync(conversation, message, sender.DisplayName, false, null, cancellationToken);
         var senderParticipant = conversation.Participants.FirstOrDefault(p => p.UserId == senderUserId);
-        var dto = ToMessageDto(message, sender.DisplayName, senderParticipant?.NickName);
+        var dto = ToMessageDto(message, sender, senderParticipant?.NickName);
         await _hubContext.Clients.Group(ChatHub.BuildConversationGroupName(conversation.ConversationKey))
             .SendAsync("chat.message.created", dto, cancellationToken);
         return new ChatSendResult { ConversationKey = conversation.ConversationKey, Message = dto };
@@ -292,45 +292,58 @@ public sealed class ChatAdapter : IChatPort
             beforeUtc,
             cancellationToken);
 
-        // Sửa: Lấy danh sách NickName của các thành viên trong cuộc hội thoại để gắn vào message
+        if (messages.Count == 0)
+        {
+            return Array.Empty<ChatMessageDto>();
+        }
+
+        // Danh sách NickName của các thành viên trong cuộc hội thoại, dùng để gắn vào message.
         var conversation = await _chatConversationRepository.GetByConversationKeyAsync(conversationKey, cancellationToken);
         var participantNickNames = conversation?.Participants
             .Where(p => !string.IsNullOrWhiteSpace(p.NickName))
             .ToDictionary(p => p.UserId, p => p.NickName)
             ?? new Dictionary<int, string?>();
 
-        var senderNames = new Dictionary<int, string>();
-        var results = new List<ChatMessageDto>(messages.Count);
+        // Nạp toàn bộ sender cần thiết trong 1 lần query duy nhất, tránh N+1.
+        var senderIds = messages.Select(m => m.SenderUserId).Distinct().ToList();
+        var senders = await _userRepository.GetByIdsAsync(senderIds, cancellationToken);
+        var sendersById = senders.ToDictionary(u => u.Id);
 
+        var results = new List<ChatMessageDto>(messages.Count);
         foreach (var message in messages.OrderBy(x => x.SentAtUtc))
         {
-            if (!senderNames.TryGetValue(message.SenderUserId, out var senderName))
+            if (!sendersById.TryGetValue(message.SenderUserId, out var sender))
             {
-                var sender = await RequireUserAsync(message.SenderUserId, cancellationToken);
-                senderName = sender.DisplayName;
-                senderNames[message.SenderUserId] = senderName;
+                // Sender bị xoá/không còn tồn tại: không throw để tránh sập cả trang chat,
+                // nhưng cũng không dùng "new User{}" (PublicId rỗng) như code cũ.
+                _logger.LogWarning(
+                    "Sender {SenderUserId} not found for message {MessageId} in conversation {ConversationKey}.",
+                    message.SenderUserId,
+                    message.MessageId,
+                    conversationKey);
+                continue;
             }
 
             participantNickNames.TryGetValue(message.SenderUserId, out var senderNickName);
-            results.Add(ToMessageDto(message, senderName, senderNickName));
+            results.Add(ToMessageDto(message, sender, senderNickName));
         }
 
         return results;
     }
 
-    public async Task<IReadOnlyList<ChatMessageDto>> SearchMessagesAsync(
-        int userId, string conversationKey, string query, int take,
-        CancellationToken cancellationToken = default)
-    {
-        if (string.IsNullOrWhiteSpace(query))
-            throw new ValidationException("Tu khoa tim kiem la bat buoc.");
-        await EnsureConversationAccessAsync(userId, conversationKey, cancellationToken);
-        var messages = await _chatSearchIndex.SearchAsync(conversationKey, query.Trim(), take, cancellationToken);
-        var results = new List<ChatMessageDto>(messages.Count);
-        foreach (var message in messages)
-            results.Add(ToMessageDto(message, (await RequireUserAsync(message.SenderUserId, cancellationToken)).DisplayName));
-        return results;
-    }
+    // public async Task<IReadOnlyList<ChatMessageDto>> SearchMessagesAsync(
+    //     int userId, string conversationKey, string query, int take,
+    //     CancellationToken cancellationToken = default)
+    // {
+    //     if (string.IsNullOrWhiteSpace(query))
+    //         throw new ValidationException("Tu khoa tim kiem la bat buoc.");
+    //     await EnsureConversationAccessAsync(userId, conversationKey, cancellationToken);
+    //     var messages = await _chatSearchIndex.SearchAsync(conversationKey, query.Trim(), take, cancellationToken);
+    //     var results = new List<ChatMessageDto>(messages.Count);
+    //     foreach (var message in messages)
+    //         results.Add(ToMessageDto(message, (await RequireUserAsync(message.SenderUserId, cancellationToken))));
+    //     return results;
+    // }
 
     public async Task EnsureConversationAccessAsync(
         int userId,
@@ -369,6 +382,12 @@ public sealed class ChatAdapter : IChatPort
             ?? throw new NotFoundException($"User {userId} khong ton tai.");
     }
 
+    private async Task<User> RequireUserAsync(Guid publicId, CancellationToken cancellationToken)
+    {
+        return await _userRepository.GetUserByPublicIdAsync(publicId, cancellationToken)
+            ?? throw new NotFoundException($"User {publicId} khong ton tai.");
+    }
+
     private async Task QueueSideEffectsAsync(
         ChatConversation conversation,
         ChatMessage message,
@@ -399,14 +418,15 @@ public sealed class ChatAdapter : IChatPort
     }
 
     // Sửa: Thêm senderNickName vào ToMessageDto
-    private static ChatMessageDto ToMessageDto(ChatMessage message, string senderName, string? senderNickName = null)
+    private static ChatMessageDto ToMessageDto(ChatMessage message, User sender, string? senderNickName = null)
     {
         return new ChatMessageDto
         {
             MessageId = message.MessageId.ToString(),
             ConversationKey = message.ConversationKey,
             SenderId = message.SenderUserId.ToString(),
-            SenderName = senderName,
+            SenderPublicId = sender.PublicId,      // MỚI
+            SenderName = sender.DisplayName,       // trước: senderName
             SenderNickName = senderNickName,
             Content = message.Content,
             SentAtUtc = message.SentAtUtc,
@@ -414,6 +434,9 @@ public sealed class ChatAdapter : IChatPort
             IsDeleted = message.State == ChatMessageState.Deleted
         };
     }
+
+
+
 
     public async Task<IReadOnlyList<DetailUserFollow>> SearchCandidatesAsync(
         int userId,
@@ -430,7 +453,7 @@ public sealed class ChatAdapter : IChatPort
                 : await _minioFileStorage.GetPresignedUrlAsync(user.ProfileImageUrl);
 
             results.Add(new DetailUserFollow(
-                user.Id,
+                user.PublicId,
                 avatarUrl,
                 user.DisplayName
             ));

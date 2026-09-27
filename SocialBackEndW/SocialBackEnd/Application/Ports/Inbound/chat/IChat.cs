@@ -33,9 +33,9 @@ public interface IChatPort
         DateTimeOffset? beforeUtc = null,
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<ChatMessageDto>> SearchMessagesAsync(
-        int userId, string conversationKey, string query, int take,
-        CancellationToken cancellationToken = default);
+    // Task<IReadOnlyList<ChatMessageDto>> SearchMessagesAsync(
+    //     int userId, string conversationKey, string query, int take,
+    //     CancellationToken cancellationToken = default);
 
     Task EnsureConversationAccessAsync(
         int userId,

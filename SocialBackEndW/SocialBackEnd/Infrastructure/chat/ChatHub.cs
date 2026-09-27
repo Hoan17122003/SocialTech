@@ -84,7 +84,8 @@ public sealed class ChatHub : Hub
         DateTimeOffset? beforeUtc = null)
     {
         var userId = ParseCurrentUserId();
-        return _chatPort.GetMessagesAsync(userId, conversationKey, take, beforeUtc, Context.ConnectionAborted);
+        var getMessages =  _chatPort.GetMessagesAsync(userId, conversationKey, take, beforeUtc, Context.ConnectionAborted);
+        return getMessages;
     }
 
     /// <summary>

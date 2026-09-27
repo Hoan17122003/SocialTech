@@ -76,15 +76,15 @@ public sealed class ChatController : ControllerBase
         return Ok(ApiResponse<ChatSendResult>.Ok(result));
     }
 
-    [HttpGet("messages/search")]
-    public async Task<IActionResult> SearchMessages(
-        [FromQuery] string conversationKey, [FromQuery] string query,
-        [FromQuery] int take = 50, CancellationToken cancellationToken = default)
-    {
-        if (!TryGetUserId(out var userId)) return Unauthorized();
-        var result = await _chatPort.SearchMessagesAsync(userId, conversationKey, query, take, cancellationToken);
-        return Ok(ApiResponse<IReadOnlyList<ChatMessageDto>>.Ok(result));
-    }
+    // [HttpGet("messages/search")]
+    // public async Task<IActionResult> SearchMessages(
+    //     [FromQuery] string conversationKey, [FromQuery] string query,
+    //     [FromQuery] int take = 50, CancellationToken cancellationToken = default)
+    // {
+    //     if (!TryGetUserId(out var userId)) return Unauthorized();
+    //     var result = await _chatPort.SearchMessagesAsync(userId, conversationKey, query, take, cancellationToken);
+    //     return Ok(ApiResponse<IReadOnlyList<ChatMessageDto>>.Ok(result));
+    // }
 
     [HttpPost("community/send")]
     public async Task<IActionResult> SendCommunityMessage(

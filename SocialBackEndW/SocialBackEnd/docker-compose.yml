@@ -1,6 +1,16 @@
 version: '3.8'
 
 services:
+  # Docker Desktop (Windows/Mac) chạy mọi container trong 1 VM Linux dùng chung.
+  # vm.max_map_count là kernel param của VM đó, không set được từ Windows,
+  # nên phải set qua 1 container privileged mỗi lần "docker compose up".
+  # Service này chạy, set xong rồi thoát; es01/02/03 và Cassandra chờ nó
+  # chạy xong (condition: service_completed_successfully) trước khi khởi động.
+  sysctl-init:
+    image: busybox
+    privileged: true
+    command: sysctl -w vm.max_map_count=1048575
+
   mysqlhost:
     image: mysql:8.0.45
     restart: on-failure
@@ -22,6 +32,10 @@ services:
       - SocialNetwork
     env_file:
       - .env.prod
+    deploy:
+      resources:
+        limits:
+          memory: 1g
 
   redis:
     image: redis:7.0.11
@@ -30,6 +44,10 @@ services:
       - "6379:6379"
     networks:
       - SocialNetwork
+    deploy:
+      resources:
+        limits:
+          memory: 256m
 
   kafka:
       image: apache/kafka:3.9.0
@@ -51,7 +69,11 @@ services:
         KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       networks:
         - SocialNetwork
-  
+      deploy:
+        resources:
+          limits:
+            memory: 1g
+
   debezium:
     image: debezium/connect:2.4
     container_name: debezium_connect
@@ -73,6 +95,10 @@ services:
       - .env.prod
     networks:
       - SocialNetwork
+    deploy:
+      resources:
+        limits:
+          memory: 1g
 
   debezium-ui:
     image: debezium/debezium-ui:2.4
@@ -118,53 +144,91 @@ services:
   ChatNodeVNArea:
     image: cassandra:latest
     container_name: cassandra1
+    # restart: unless-stopped
+    depends_on:
+      sysctl-init:
+        condition: service_completed_successfully
     ports:
       - "9042:9042"
     environment:
       - CASSANDRA_CLUSTER_NAME=ChatVNCluster
+      - MAX_HEAP_SIZE=512M
+      - HEAP_NEWSIZE=100M
     networks:
       - cassandra-net
+      - SocialNetwork
+    deploy:
+      resources:
+        limits:
+          memory: 1g
 
   es01:
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    depends_on:
+      sysctl-init:
+        condition: service_completed_successfully
     environment:
       - node.name=es01
       - cluster.name=es-docker-cluster
       - discovery.seed_hosts=es02,es03
       - cluster.initial_master_nodes=es01,es02,es03
+      - discovery.seed_resolver.timeout=30s
       - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
       - ${ES_PORT}:9200
     volumes:
       - es01-data:/usr/share/elasticsearch/data
     networks:
       - SocialNetwork
+    deploy:
+      resources:
+        limits:
+          memory: 1g
 
   es02:
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    depends_on:
+      sysctl-init:
+        condition: service_completed_successfully
     environment:
       - node.name=es02
       - cluster.name=es-docker-cluster
       - discovery.seed_hosts=es01,es03
       - cluster.initial_master_nodes=es01,es02,es03
+      - discovery.seed_resolver.timeout=30s
       - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
     volumes:
       - es02-data:/usr/share/elasticsearch/data
     networks:
       - SocialNetwork
+    deploy:
+      resources:
+        limits:
+          memory: 1g
 
   es03:
     image: docker.elastic.co/elasticsearch/elasticsearch:${STACK_VERSION}
+    depends_on:
+      sysctl-init:
+        condition: service_completed_successfully
     environment:
       - node.name=es03
       - cluster.name=es-docker-cluster
       - discovery.seed_hosts=es01,es02
       - cluster.initial_master_nodes=es01,es02,es03
+      - discovery.seed_resolver.timeout=30s
       - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD}
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
     volumes:
       - es03-data:/usr/share/elasticsearch/data
     networks:
       - SocialNetwork
+    deploy:
+      resources:
+        limits:
+          memory: 1g
 
   kibana:
     image: docker.elastic.co/kibana/kibana:${STACK_VERSION}
@@ -175,6 +239,8 @@ services:
       - KIBANA_PASSWORD=${KIBANA_PASSWORD}
     ports:
       - "5601:5601"
+    depends_on:
+      - es01
     networks:
       - SocialNetwork
 

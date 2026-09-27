@@ -28,11 +28,11 @@ namespace SocialBackEnd.Infrastructure.Persistence.Configurations
             builder.Property(x => x.ReactTypeId)
                 .IsRequired(true);
 
-            // Ràng buộc CHECK: đảm bảo cả 3 cột phải khác null
-            builder.HasCheckConstraint(
-                "CK_Reactions_User_Post_ReactType",
-                "`UserId` IS NOT NULL AND `PostId` IS NOT NULL AND `ReactTypeId` IS NOT NULL"
-            );
+            // // Ràng buộc CHECK: đảm bảo cả 3 cột phải khác null
+            // builder.HasCheckConstraint(
+            //     "CK_Reactions_User_Post_ReactType",
+            //     "`UserId` IS NOT NULL AND `PostId` IS NOT NULL AND `ReactTypeId` IS NOT NULL"
+            // );
 
             builder.HasOne(x => x.User)
                 .WithMany(x => x.Reactions)

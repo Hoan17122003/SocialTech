@@ -30,6 +30,7 @@ public sealed class ChatConversationSummaryBuilder : IChatConversationSummaryBui
         var title = conversation.Title;
         var participantIds = Array.Empty<int>();
         var otherUserId = default(int?);
+        var otherPublicUserId = default(Guid?);
         string? nickName = null;
 
         if (conversation.Kind == ChatConversationKind.Direct)
@@ -47,7 +48,8 @@ public sealed class ChatConversationSummaryBuilder : IChatConversationSummaryBui
 
                 // Sửa: Nếu là Direct thì Title ưu tiên bằng NickName, nếu không có mới lấy DisplayName
                 title = !string.IsNullOrWhiteSpace(nickName) ? nickName : otherUser.DisplayName;
-                participantIds = [currentUserId, otherUserId.Value];
+                // participantIds = [currentUserId, otherUserId.Value];
+                otherPublicUserId = otherUser.PublicId;
             }
         }
         else if (conversation.Kind == ChatConversationKind.Group)
@@ -74,7 +76,7 @@ public sealed class ChatConversationSummaryBuilder : IChatConversationSummaryBui
         {
             ConversationKey = conversation.ConversationKey,
             ConversationType = conversation.Kind.ToString().ToLowerInvariant(),
-            OtherUserId = otherUserId,
+            OtherPublicUserId = otherPublicUserId,
             CommunityId = conversation.CommunityId,
             ParticipantUserIds = participantIds,
             Title = title,
@@ -101,7 +103,7 @@ public sealed class ChatConversationSummaryBuilder : IChatConversationSummaryBui
             var other = await RequireUserAsync(conversation.PublicTargetUserID.Value, cancellationToken);
             // Sửa: Direct ưu tiên lấy Title theo NickName
             title = !string.IsNullOrWhiteSpace(nickName) ? nickName : (!string.IsNullOrWhiteSpace(conversation.Title) ? conversation.Title : other.DisplayName);
-            participantIds = [currentUserId, other.Id];
+            // participantIds = [currentUserId, other.Id];
         }
         else if (conversation.Kind == ChatConversationKind.Group)
         {
@@ -130,5 +132,11 @@ public sealed class ChatConversationSummaryBuilder : IChatConversationSummaryBui
     {
         return await _userRepository.GetUserByPublicIdAsync(publicId, cancellationToken)
             ?? throw new InvalidOperationException($"User {publicId} khong ton tai.");
+    }
+
+    private async Task<User> RequireUserAsync(int userId, CancellationToken cancellationToken)
+    {
+        return await _userRepository.GetByIdAsync(userId, cancellationToken)
+            ?? throw new InvalidOperationException($"User {userId} khong ton tai.");
     }
 }

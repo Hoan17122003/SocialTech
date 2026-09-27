@@ -12,5 +12,5 @@ public class Reactions : EntityBase
     public Post Post { get; set; } = null!;
     public ReactTypeEnums? ReactEnums { get; set; } = null!;
     public int ReactTypeId { get; set; }
-    public ReactType React { get; set; }
+    public ReactType? React { get; set; }
 }

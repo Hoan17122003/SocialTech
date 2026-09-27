@@ -25,6 +25,35 @@ public sealed class ChatConversationRepository
                 cancellationToken);
     }
 
+    public async Task<(ChatConversation Conversation, bool Created)> GetOrCreateDirectConversationAsync(
+        int firstUserId,
+        int secondUserId,
+        int createdByUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var existing = await GetDirectConversationAsync(firstUserId, secondUserId, cancellationToken);
+        if (existing is not null)
+            return (existing, false);
+
+        var conversation = ChatConversation.CreateDirect(firstUserId, secondUserId, createdByUserId);
+        await DbSet.AddAsync(conversation, cancellationToken);
+
+        try
+        {
+            await DbContext.SaveChangesAsync(cancellationToken);
+            return (conversation, true);
+        }
+        catch (DbUpdateException)
+        {
+            // Request khác vừa tạo cặp này -> bỏ entity đang tracking, lấy bản đã commit
+            DbContext.ChangeTracker.Clear();
+            var winner = await GetDirectConversationAsync(firstUserId, secondUserId, cancellationToken);
+            if (winner is null) throw;   // lỗi khác, không nuốt
+            return (winner, false);
+        }
+    }
+
+
     public Task<ChatConversation?> GetDirectConversationAsync(
         int firstUserId,
         int secondUserId,
@@ -133,7 +162,7 @@ public sealed class ChatConversationRepository
             return false;
         }
 
-        if (conversation.Kind is ChatConversationKind.Direct or ChatConversationKind.Group)
+        if (conversation.Kind is ChatConversationKind.Direct)
         {
             return await DbContext.ChatConversationParticipants
                 .AsNoTracking()
