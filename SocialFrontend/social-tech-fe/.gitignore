@@ -17,6 +17,8 @@ SocialFrontend/social-tech-fe/.vscode/
 /.next/
 /out/
 
+/package-lock.json
+
 # production
 /build
 # config debug

@@ -270,7 +270,7 @@ public sealed class KafkaEventConsumer : BackgroundService
                         await emailService.SendEmailAsync(emailUserFollow, model, cancellationToken);
                     }
 
-                    var notificationMessage = $"{payload.NameAuthor} vua dang bai viet moi: {payload.Title}";
+                    var notificationMessage = $"{payload.NameAuthor} Vừa đăng bài viết mới: {payload.Title}";
                     foreach (var followerUserId in payload.FollowerUserIds.Distinct())
                     {
                         await inAppNotificationService.SendNotificationAsync(

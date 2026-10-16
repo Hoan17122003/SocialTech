@@ -67,13 +67,13 @@ public class ArticleAdapterPort : IArticlePort
             Attachments = requestCreateArticle.Attachments
         };
 
-        //var validateArticle = await _geminiArticlePort.ValidateArticle(articleValidateParam);
+        var validateArticle = await _geminiArticlePort.ValidateArticle(articleValidateParam);
 
-        //if (!validateArticle)
-        //{
-        //    _logger.LogInformation($"value of validate: {validateArticle}");
-        //    return Constant.ResponseStatusArticle.BadParamOfArticle;
-        //}
+        if (!validateArticle)
+        {
+            _logger.LogInformation($"value of validate: {validateArticle}");
+            return Constant.ResponseStatusArticle.BadParamOfArticle;
+        }
         await _unitOfWork.BeginTransactionAsync();
         try
         {
@@ -114,13 +114,13 @@ public class ArticleAdapterPort : IArticlePort
             await _unitOfWork.SaveChangesAsync();
             await _unitOfWork.CommitAsync();
             // không nên bỏ toàn bộ vào phía PublisArticleCreatedAsync nên bỏ luôn await tại vì nó sẽ bị buộc phải chờ kết quả 
-            // var articleCreatedEvent = await _repository.GetArticleCreatedEventAsync(articleEntity.Id);
-            // if (articleCreatedEvent is not null)
-            // {
-            //     articleCreatedEvent.AvatarAuthor = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(articleCreatedEvent.AvatarAuthor);
-            //     articleCreatedEvent.Thumbnail = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(articleCreatedEvent.Thumbnail);
-            //     await _applicationEventPublisher.PublishArticleCreatedAsync(articleCreatedEvent);
-            // }
+            var articleCreatedEvent = await _repository.GetArticleCreatedEventAsync(articleEntity.Id);
+            if (articleCreatedEvent is not null)
+            {
+                articleCreatedEvent.AvatarAuthor = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(articleCreatedEvent.AvatarAuthor);
+                articleCreatedEvent.Thumbnail = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(articleCreatedEvent.Thumbnail);
+                await _applicationEventPublisher.PublishArticleCreatedAsync(articleCreatedEvent);
+            }
             return articleEntity.Id;
         }
         catch (Exception ex)

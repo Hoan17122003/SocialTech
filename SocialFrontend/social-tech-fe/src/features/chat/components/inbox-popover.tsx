@@ -216,7 +216,7 @@ export function InboxPopover({ onClose }: InboxPopoverProps) {
                                 const title =
                                     conversation.title ||
                                     (conversation.conversationType === 'Direct'
-                                        ? `User ${conversation.otherUserId}`
+                                        ? `User ${conversation.publicTargetUserID}`
                                         : `Community ${conversation.communityId}`);
 
                                 return (

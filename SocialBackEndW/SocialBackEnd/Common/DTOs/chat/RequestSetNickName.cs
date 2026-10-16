@@ -9,10 +9,9 @@ public record RequestSetNickName(
     string ConversationKey,
 
     [param: FromBody]
-    [param: Required]
-    [param: MinLength(1)]             // tối thiểu 1 ký tự
+    // [param: Required]
     [param: MaxLength(20)]            // tối đa 20 ký tự
-    string NickName,
+    string? NickName,
 
     [param: FromBody]
     int? UserIdTarget

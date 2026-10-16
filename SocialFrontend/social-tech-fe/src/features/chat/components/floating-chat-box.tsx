@@ -7,29 +7,11 @@ import { useAuth } from '@/providers/auth-provider';
 import type { ChatMessage } from '@/features/chat/contracts';
 import { formatChatMessageTime } from '@/common/utils/format-date';
 import { AvatarImage } from '@/shared/ui/avatar-image';
+import { getUserIdFromToken } from '@/common/utils/get-user-id-from-token';
 
 type FloatingChatBoxProps = {
     conversationKey: string;
 };
-
-function getUserIdFromToken(token: string | null) {
-    if (!token) return null;
-    try {
-        const parts = token.split('.');
-        if (parts.length !== 3) return null;
-        // Decode base64url safely
-        const payloadDecoded = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
-        const payload = JSON.parse(payloadDecoded);
-        const userId =
-            payload.sub ||
-            payload.nameid ||
-            payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
-        return userId ? String(userId) : null;
-    } catch (err) {
-        console.error('Error decoding JWT token:', err);
-        return null;
-    }
-}
 
 export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
     const router = useRouter();
@@ -341,10 +323,13 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                     <span className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-[var(--line)] bg-[var(--background-soft)]">
                         <AvatarImage
                             src={conversationInfo.avatar}
-                            alt={nickname.trim() || conversationInfo.title}
+                            // alt={nickname.trim() || conversationInfo.title}
+                            alt={conversationInfo.title}
                             fallback={
                                 <span className="text-xs font-bold text-[var(--accent)]">
-                                    {(nickname.trim() || conversationInfo.title).charAt(0).toUpperCase()}
+                                    {/* {(nickname.trim() || conversationInfo.title).charAt(0).toUpperCase()}
+                                     */}
+                                    {conversationInfo.title.charAt(0).toUpperCase()}
                                 </span>
                             }
                             sizes="32px"
@@ -353,7 +338,8 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                         <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[var(--surface)] bg-emerald-500" />
                     </span>
                     <span className="min-w-0 truncate text-sm font-semibold text-[var(--foreground)]">
-                        {nickname.trim() || conversationInfo.title}
+                        {/* {nickname.trim() || conversationInfo.title} */}
+                        {conversationInfo.title}
                     </span>
                 </button>
 
@@ -693,7 +679,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                                     >
                                         {!isMe && (
                                             <span className="text-[10px] text-[var(--muted)] mb-0.5 ml-1">
-                                                {msg.senderName}
+                                                {msg.senderNickName || msg.senderName}
                                             </span>
                                         )}
                                         <div

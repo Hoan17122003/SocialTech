@@ -13,6 +13,8 @@ using SocialBackEnd.Infrastructure.chat;
 using SocialBackEnd.Common.DTOs;
 using SocialBackEnd.Application.Ports.Outbound.Search;
 using Microsoft.Extensions.Logging;
+using CommunityToolkit.HighPerformance;
+using SocialBackEnd.Common.DTOs.Chat;
 
 namespace SocialBackEnd.Application.Services;
 
@@ -462,32 +464,83 @@ public sealed class ChatAdapter : IChatPort
         return results;
     }
 
-    public async Task<string> SetNickNameAsync(
-        int userId,
-        RequestSetNickName request,
-        CancellationToken cancellationToken = default)
-    {
+    // public async Task<string> SetNickNameAsync(
+    //     int userId,
+    //     RequestSetNickName request,
+    //     CancellationToken cancellationToken = default)
+    // {
 
-        var conversation = await _chatConversationRepository.GetByConversationKeyAsync(request.ConversationKey, cancellationToken)
+    //     var conversation = await _chatConversationRepository.GetByConversationKeyAsync(request.ConversationKey, cancellationToken)
+    //         ?? throw new NotFoundException("Conversation khong ton tai.");
+
+    //     var isAccessible = conversation.Participants.Any(x => x.UserId == userId);
+
+    //     if (!isAccessible)
+    //         throw new ValidationException("User khong co quyen truy cap conversation nay.");
+
+    //     var targetUserId = request.UserIdTarget ?? conversation.Participants.FirstOrDefault(x => x.UserId != userId)?.UserId;
+
+    //     var userOfTarget = conversation.Participants
+    //         .FirstOrDefault(x => x.UserId == targetUserId);
+
+    //     if (userOfTarget is null)
+    //         throw new ValidationException("User khong phai thanh vien cua conversation nay.");
+
+    //     if (string.IsNullOrEmpty(request.NickName))
+    //     {
+    //         var userTarget = await _userRepository.GetByIdAsync(userOfTarget.UserId);
+    //         userOfTarget.NickName = userTarget.DisplayName;
+    //         await _chatConversationRepository.SaveChangesAsync(cancellationToken);
+    //         return userOfTarget.NickName;
+    //     }
+
+    //     userOfTarget.NickName = request.NickName;
+
+    //     await _chatConversationRepository.SaveChangesAsync(cancellationToken);
+
+    //     await _hubContext.Clients
+    //         .Group(ChatHub.BuildConversationGroupName(conversation.ConversationKey))
+    //         .SendAsync("chat.nickname.update", dto, cancellationToken);
+
+    //     return userOfTarget.NickName;
+    // }
+
+    public async Task<string> SetNickNameAsync(int userId, RequestSetNickName request, CancellationToken cancellationToken = default)
+    {
+        var conversation = await _chatConversationRepository
+            .GetByConversationKeyAsync(request.ConversationKey, cancellationToken)
             ?? throw new NotFoundException("Conversation khong ton tai.");
 
-        var isAccessible = conversation.Participants.Any(x => x.UserId == userId);
-
-        if (!isAccessible)
+        if (!conversation.Participants.Any(x => x.UserId == userId))
             throw new ValidationException("User khong co quyen truy cap conversation nay.");
 
-        var targetUserId = request.UserIdTarget ?? conversation.Participants.FirstOrDefault(x => x.UserId != userId)?.UserId;
+        var targetUserId = request.UserIdTarget
+            ?? conversation.Participants.FirstOrDefault(x => x.UserId != userId)?.UserId;
 
-        var userOfTarget = conversation.Participants
-            .FirstOrDefault(x => x.UserId == targetUserId);
+        var target = conversation.Participants.FirstOrDefault(x => x.UserId == targetUserId)
+            ?? throw new ValidationException("User khong phai thanh vien cua conversation nay.");
 
-        if (userOfTarget is null)
-            throw new ValidationException("User khong phai thanh vien cua conversation nay.");
+        var nickName = request.NickName?.Trim();
+        if (nickName is { Length: > 50 })
+            throw new ValidationException("Biet danh toi da 50 ky tu.");
 
-        userOfTarget.NickName = request.NickName;
+        var targetUser = await _userRepository.GetByIdAsync(target.UserId)
+            ?? throw new NotFoundException("User khong ton tai.");
 
+        // Rỗng = xóa biệt danh: lưu null thay vì lưu DisplayName
+        target.NickName = string.IsNullOrEmpty(nickName) ? null : nickName;
         await _chatConversationRepository.SaveChangesAsync(cancellationToken);
 
-        return userOfTarget.NickName;
+        var payload = new NicknameUpdatedEvent(
+           conversation.ConversationKey,
+            target.UserId,
+            target.NickName,
+            targetUser.DisplayName,
+            userId);
+        var recipients = conversation.Participants.Select(p => p.UserId.ToString()).ToList();
+        await _hubContext.Clients.Users(recipients)
+            .SendAsync("chat.nickname.updated", payload, cancellationToken);
+
+        return target.NickName ?? targetUser.DisplayName;
     }
 }

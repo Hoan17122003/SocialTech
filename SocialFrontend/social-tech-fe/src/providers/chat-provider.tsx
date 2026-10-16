@@ -16,6 +16,7 @@ import type {
     SendDirectMessageRequest,
     DetailUserFollow,
 } from '@/features/chat/contracts';
+import { getUserIdFromToken } from '@/common/utils/get-user-id-from-token';
 
 type DraftConversationInfo = {
     // Guid PublicId của user nhận tin, không phải id nội bộ (int)
@@ -48,10 +49,7 @@ type ChatContextType = {
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 function normalizeConversation(raw: any): ChatConversationSummary {
-    const isDirect =
-        raw.kind === 1 ||
-        raw.kind === 'Direct' ||
-        raw.conversationType === 'Direct';
+    const isDirect = raw.kind === 1 || raw.kind === 'Direct' || raw.conversationType === 'Direct';
 
     const isCommunity =
         raw.kind === 2 ||
@@ -70,11 +68,8 @@ function normalizeConversation(raw: any): ChatConversationSummary {
     // Sửa theo yêu cầu:
     // Nếu Kind là Direct thì sẽ lấy Title bằng NickName luôn (nếu có), fallback về raw.title hoặc 'Cá nhân'.
     // Còn nếu Group hay Community thì vẫn lấy bình thường theo raw.title (fallback về 'Nhóm').
-    const title = isDirect
-        ? (nickName || raw.title || 'Cá nhân')
-        : (raw.title || (isCommunity ? 'Nhóm' : null));
-    const publicTargetUserID =
-        raw.publicTargetUserID ?? raw.PublicTargetUserID ?? raw.targetPublicId ?? null;
+    const title = isDirect ? nickName || raw.title || 'Cá nhân' : raw.title || (isCommunity ? 'Nhóm' : null);
+    const publicTargetUserID = raw.publicTargetUserID ?? raw.PublicTargetUserID ?? raw.targetPublicId ?? null;
     const communityId = raw.communityId ?? raw.CommunityId ?? null;
 
     return {
@@ -110,6 +105,9 @@ function appendUniqueMessage(items: ChatMessage[], nextItem: ChatMessage) {
 export function ChatProvider({ children }: { children: ReactNode }) {
     const { accessToken, isHydrated } = useAuth();
     const connectionRef = useRef<HubConnection | null>(null);
+    const wasConnectedRef = useRef(false);
+    const hasDroppedRef = useRef(false);
+    const wasEverConnectedRef = useRef(false);
     const [isConnected, setIsConnected] = useState(false);
     const [inbox, setInbox] = useState<ChatConversationSummary[]>([]);
     const [isLoadingInbox, setIsLoadingInbox] = useState(false);
@@ -129,8 +127,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         // Tạo đối tượng kết nối SignalR đến /chatHub
         const connection = createChatHubConnection();
         connectionRef.current = connection;
+        const currentUserId = getUserIdFromToken(accessToken); // THÊM
         let isDisposed = false;
         let hasStarted = false;
+        // THÊM: đồng bộ isConnected với trạng thái thật của SignalR
+        connection.onreconnecting(() => {
+            if (!isDisposed) setIsConnected(false);
+        });
+        connection.onreconnected(() => {
+            if (!isDisposed) setIsConnected(true);
+        });
+        connection.onclose(() => {
+            if (!isDisposed) setIsConnected(false);
+        });
 
         // Xử lý sự kiện nhận tin nhắn mới từ bất kỳ cuộc hội thoại nào đang tham gia
         const handleMessageCreated = (payload: ChatMessage) => {
@@ -159,9 +168,50 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             });
         };
 
+        const handleNicknameUpdated = (payload: {
+            conversationKey: string;
+            userId: number | string;
+            nickName: string | null;
+            displayName?: string | null;
+        }) => {
+            const { conversationKey, displayName } = payload;
+            const targetId = String(payload.userId);
+            const nextNick = payload.nickName?.trim() || null;
+
+            // 1) Cập nhật tên hiển thị trên các tin nhắn đã tải của người bị đổi biệt danh
+            setMessages((current) => {
+                const list = current[conversationKey];
+                if (!list) return current;
+                return {
+                    ...current,
+                    [conversationKey]: list.map((m) =>
+                        String(m.senderId) === targetId ? { ...m, senderNickName: nextNick } : m,
+                    ),
+                };
+            });
+
+            // 2) Cập nhật inbox: tiêu đề chat 1-1 là tên của NGƯỜI KIA,
+            //    nên nếu biệt danh của chính mình bị đổi thì không đụng tới tiêu đề
+            if (targetId === currentUserId) return;
+
+            setInbox((current) =>
+                current.map((item) => {
+                    if (item.conversationKey !== conversationKey || item.conversationType !== 'Direct') {
+                        return item;
+                    }
+                    return {
+                        ...item,
+                        nickName: nextNick,
+                        title: nextNick || displayName || item.title,
+                    };
+                }),
+            );
+        };
+
         // Đăng ký các bộ lắng nghe sự kiện từ Server phát xuống
         connection.on('chat.message.created', handleMessageCreated);
         connection.on('chat.conversation.updated', handleConversationUpdated);
+        connection.on('chat.nickname.updated', handleNicknameUpdated);
 
         // Hàm bắt đầu kết nối SignalR
         async function startConnection() {
@@ -187,6 +237,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             setIsConnected(false);
             connection.off('chat.message.created', handleMessageCreated);
             connection.off('chat.conversation.updated', handleConversationUpdated);
+            connection.off('chat.nickname.updated', handleNicknameUpdated);
             if (connectionRef.current === connection) {
                 connectionRef.current = null;
             }
@@ -196,6 +247,34 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             }
         };
     }, [accessToken, isHydrated]);
+
+    useEffect(() => {
+        // Chỉ chạy khi chuyển false -> true SAU lần kết nối đầu tiên
+        if (isConnected && !wasConnectedRef.current) {
+            wasConnectedRef.current = true;
+            return;
+        }
+        if (!isConnected) {
+            // đánh dấu đã từng kết nối, lần true tiếp theo là reconnect
+            return;
+        }
+    }, [isConnected]);
+
+    useEffect(() => {
+        if (!isConnected) {
+            if (wasEverConnectedRef.current) hasDroppedRef.current = true;
+            return;
+        }
+        wasEverConnectedRef.current = true;
+
+        if (hasDroppedRef.current) {
+            hasDroppedRef.current = false;
+            void refreshInbox(); // lấy lại nickname, lastMessage mới nhất
+            openChatBoxes.forEach((key) => {
+                if (!key.startsWith('draft:')) void loadMessages(key);
+            });
+        }
+    }, [isConnected]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Tự động tham gia các phòng SignalR (JoinConversation) cho tất cả các khung chat đang mở
     useEffect(() => {
@@ -248,20 +327,25 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 userIdTarget,
             });
 
-            setInbox((current) =>
-                current.map((item) => {
-                    if (item.conversationKey === conversationKey) {
-                        return {
-                            ...item,
-                            nickName: trimmed || null,
-                            title: trimmed || item.title,
-                        };
-                    }
-                    return item;
-                }),
-            );
+            const connection = connectionRef.current;
+            if (!connection || connection.state !== 'Connected') {
+                await refreshInbox();
+            }
+
+            // setInbox((current) =>
+            //     current.map((item) => {
+            //         if (item.conversationKey === conversationKey) {
+            //             return {
+            //                 ...item,
+            //                 nickName: trimmed || null,
+            //                 title: trimmed || item.title,
+            //             };
+            //         }
+            //         return item;
+            //     }),
+            // );
         },
-        [],
+        [refreshInbox],
     );
 
     const loadMessages = useCallback(
@@ -476,7 +560,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                         // Hội thoại nhóm
                         const communityId = convo?.communityId;
                         if (!communityId) {
-                            console.error(`[Chat] Không thể gửi tin nhắn nhóm: thiếu communityId cho hội thoại ${key}`, convo);
+                            console.error(
+                                `[Chat] Không thể gửi tin nhắn nhóm: thiếu communityId cho hội thoại ${key}`,
+                                convo,
+                            );
                             throw new Error('Không tìm thấy thông tin nhóm trò chuyện.');
                         }
 
@@ -502,7 +589,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                         // Hội thoại trực tiếp (1-1)
                         const publicTargetUserID = convo?.publicTargetUserID;
                         if (!publicTargetUserID) {
-                            console.error(`[Chat] Không thể gửi tin nhắn direct: thiếu publicTargetUserID cho hội thoại ${key}`, convo);
+                            console.error(
+                                `[Chat] Không thể gửi tin nhắn direct: thiếu publicTargetUserID cho hội thoại ${key}`,
+                                convo,
+                            );
                             throw new Error('Không tìm thấy thông tin người nhận tin nhắn.');
                         }
 
