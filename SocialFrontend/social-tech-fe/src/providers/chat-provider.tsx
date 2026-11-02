@@ -49,12 +49,13 @@ type ChatContextType = {
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 function normalizeConversation(raw: any): ChatConversationSummary {
-    const isDirect = raw.kind === 1 || raw.kind === 'Direct' || raw.conversationType === 'Direct';
+    const rawType = (raw.conversationType ?? '').toLowerCase();
+    const isDirect = raw.kind === 1 || raw.kind === 'Direct' || rawType === 'direct';
 
     const isCommunity =
         raw.kind === 2 ||
         raw.kind === 'Community' ||
-        raw.conversationType === 'Community' ||
+        rawType === 'community' ||
         (Boolean(raw.communityId) && !isDirect);
 
     let conversationType: ChatConversationType = 'Direct';
@@ -69,7 +70,7 @@ function normalizeConversation(raw: any): ChatConversationSummary {
     // Nếu Kind là Direct thì sẽ lấy Title bằng NickName luôn (nếu có), fallback về raw.title hoặc 'Cá nhân'.
     // Còn nếu Group hay Community thì vẫn lấy bình thường theo raw.title (fallback về 'Nhóm').
     const title = isDirect ? nickName || raw.title || 'Cá nhân' : raw.title || (isCommunity ? 'Nhóm' : null);
-    const publicTargetUserID = raw.publicTargetUserID ?? raw.PublicTargetUserID ?? raw.targetPublicId ?? null;
+    const publicTargetUserID = raw.otherPublicUserId ?? raw.publicTargetUserID ?? raw.PublicTargetUserID ?? raw.targetPublicId ?? null;
     const communityId = raw.communityId ?? raw.CommunityId ?? null;
 
     return {
