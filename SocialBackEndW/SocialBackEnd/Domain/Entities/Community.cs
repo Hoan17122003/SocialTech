@@ -19,4 +19,6 @@ public class Community : EntityBase
     public ICollection<CommunityMembership> Members { get; set; } = new List<CommunityMembership>();
     public ICollection<Post> Posts { get; set; } = new List<Post>();
     public ICollection<ContentReport> Reports { get; set; } = new List<ContentReport>();
+
+    public ICollection<ChatConversation> ChatConversations { get; set; } = new List<ChatConversation>();
 }

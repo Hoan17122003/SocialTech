@@ -5,11 +5,18 @@ export type ChatConversationType = 'Direct' | 'Community';
 export type ChatConversationSummary = {
     conversationKey: string;
     conversationType: ChatConversationType;
-    otherUserId?: number | null;
+    publicTargetUserID?: string | null;
     communityId?: number | null;
     title?: string | null;
+    nickName?: string | null;
     lastMessagePreview?: string | null;
     lastMessageAtUtc?: string | null;
+};
+
+export type RequestSetNickName = {
+    conversationKey: string;
+    nickName: string;
+    userIdTarget?: number | null;
 };
 
 export type ChatMessage = {
@@ -17,6 +24,8 @@ export type ChatMessage = {
     conversationKey: string;
     senderId: string;
     senderName: string;
+    // Bổ sung senderNickName: Biệt danh của người gửi trong cuộc trò chuyện (nếu có)
+    senderNickName?: string | null;
     content: string;
     sentAtUtc: string;
     isEdited: boolean;
@@ -30,7 +39,7 @@ export type ChatSendResult = {
 };
 
 export type SendDirectMessageRequest = {
-    targetUserId: number;
+    targetPublicId: string
     content: string;
     clientMessageId?: string;
 };
@@ -52,7 +61,7 @@ export type ChatMessagesResponse = ApiResponse<ChatMessage[]>;
 export type ChatSendResponse = ApiResponse<ChatSendResult>;
 
 export type DetailUserFollow = {
-    id: number;
+    publicId: string;
     avatar: string;
     displayName: string;
 };

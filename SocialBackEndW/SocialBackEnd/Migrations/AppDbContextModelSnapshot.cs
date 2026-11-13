@@ -158,6 +158,10 @@ namespace SocialBackEnd.Migrations
                     b.Property<DateTime?>("LeftAtUtc")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("NickName")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime(6)");
 
@@ -165,6 +169,8 @@ namespace SocialBackEnd.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.HasIndex("ConversationId", "UserId")
                         .IsUnique();
@@ -502,6 +508,52 @@ namespace SocialBackEnd.Migrations
                     b.ToTable("Notifications", (string)null);
                 });
 
+            modelBuilder.Entity("SocialBackEnd.Domain.Entities.OutBoxMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("AggregateId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AggregateType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Error")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("ProcessedOnUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AggregateType");
+
+                    b.HasIndex("EventType");
+
+                    b.HasIndex("ProcessedOnUtc", "CreatedAtUtc");
+
+                    b.ToTable("OutBoxMessages");
+                });
+
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Post", b =>
                 {
                     b.Property<int>("Id")
@@ -643,6 +695,29 @@ namespace SocialBackEnd.Migrations
                     b.ToTable("PostVotes", (string)null);
                 });
 
+            modelBuilder.Entity("SocialBackEnd.Domain.Entities.ReactType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Type")
+                        .HasMaxLength(100)
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Type");
+
+                    b.ToTable("ReactTypes", (string)null);
+                });
+
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.SystemStatus", b =>
                 {
                     b.Property<int>("Id")
@@ -681,7 +756,7 @@ namespace SocialBackEnd.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAtUtc = new DateTime(2026, 7, 1, 9, 53, 17, 610, DateTimeKind.Utc).AddTicks(3454),
+                            CreatedAtUtc = new DateTime(2026, 9, 4, 16, 13, 15, 957, DateTimeKind.Utc).AddTicks(7648),
                             Environment = "Seed",
                             Name = "SocialBackEnd",
                             UtcTime = new DateTime(2026, 4, 9, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -854,6 +929,44 @@ namespace SocialBackEnd.Migrations
                     b.ToTable("UserSavedPost", (string)null);
                 });
 
+            modelBuilder.Entity("SocialBackend.Domain.Entities.Reactions", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("PostId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ReactEnums")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ReactTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostId");
+
+                    b.HasIndex("ReactTypeId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Reactions", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Reactions_User_Post_ReactType", "`UserId` IS NOT NULL AND `PostId` IS NOT NULL AND `ReactTypeId` IS NOT NULL");
+                        });
+                });
+
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Attachments", b =>
                 {
                     b.HasOne("SocialBackEnd.Domain.Entities.Comment", "Comment")
@@ -878,7 +991,15 @@ namespace SocialBackEnd.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("SocialBackEnd.Domain.Entities.User", "User")
+                        .WithMany("ChatConversations")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Conversation");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Comment", b =>
@@ -1134,6 +1255,33 @@ namespace SocialBackEnd.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("SocialBackend.Domain.Entities.Reactions", b =>
+                {
+                    b.HasOne("SocialBackEnd.Domain.Entities.Post", "Post")
+                        .WithMany("Reactions")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SocialBackEnd.Domain.Entities.ReactType", "React")
+                        .WithMany("Reactions")
+                        .HasForeignKey("ReactTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SocialBackEnd.Domain.Entities.User", "User")
+                        .WithMany("Reactions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Post");
+
+                    b.Navigation("React");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.ChatConversation", b =>
                 {
                     b.Navigation("Participants");
@@ -1171,11 +1319,18 @@ namespace SocialBackEnd.Migrations
 
                     b.Navigation("PostTags");
 
+                    b.Navigation("Reactions");
+
                     b.Navigation("Reports");
 
                     b.Navigation("SavedByUsers");
 
                     b.Navigation("Votes");
+                });
+
+            modelBuilder.Entity("SocialBackEnd.Domain.Entities.ReactType", b =>
+                {
+                    b.Navigation("Reactions");
                 });
 
             modelBuilder.Entity("SocialBackEnd.Domain.Entities.Tag", b =>
@@ -1191,6 +1346,8 @@ namespace SocialBackEnd.Migrations
 
                     b.Navigation("AuthoredPosts");
 
+                    b.Navigation("ChatConversations");
+
                     b.Navigation("CommentVotes");
 
                     b.Navigation("CommunityMemberships");
@@ -1204,6 +1361,8 @@ namespace SocialBackEnd.Migrations
                     b.Navigation("OwnedCommunities");
 
                     b.Navigation("PostVotes");
+
+                    b.Navigation("Reactions");
 
                     b.Navigation("SavedPosts");
 

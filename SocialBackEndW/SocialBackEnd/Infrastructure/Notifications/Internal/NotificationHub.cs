@@ -71,9 +71,21 @@ public class NotificationHub : Hub
         return Groups.RemoveFromGroupAsync(Context.ConnectionId, GetPostGroupName(postId));
     }
 
+    public Task JoinCommentDisplayGroup(int postId)
+    {
+        return Groups.AddToGroupAsync(Context.ConnectionId, GetCommentDisplayGroupName(postId));
+    }
+
+    public Task LeaveCommentDisplayGroup(int postId)
+    {
+        return Groups.RemoveFromGroupAsync(Context.ConnectionId, GetCommentDisplayGroupName(postId));
+    }
+
     public static string GetUserGroupName(string userId) => $"user:{userId}";
 
     public static string GetPostGroupName(int postId) => $"post:{postId}";
+
+    public static string GetCommentDisplayGroupName(int postId) => $"post:{postId}:comment-display";
 
     private string GetRequiredUserId()
     {

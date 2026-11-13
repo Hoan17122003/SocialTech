@@ -10,6 +10,12 @@ public interface IChatConversationRepository : IRepository<ChatConversation>
         string conversationKey,
         CancellationToken cancellationToken = default);
 
+    Task<(ChatConversation Conversation, bool Created)> GetOrCreateDirectConversationAsync(
+        int firstUserId,
+        int secondUserId,
+        int createdByUserId,
+        CancellationToken cancellationToken = default);
+
     Task<ChatConversation?> GetDirectConversationAsync(
         int firstUserId,
         int secondUserId,

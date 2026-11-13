@@ -69,7 +69,7 @@ public sealed class ChatHub : Hub
     /// <summary>
     /// Lấy danh sách cuộc hội thoại hiện có của người dùng (Inbox).
     /// </summary>
-    public Task<IReadOnlyList<ChatConversationSummaryDto>> GetInbox()
+    public Task<IReadOnlyList<ConvertstationResultModel>> GetInbox()
     {
         var userId = ParseCurrentUserId();
         return _chatPort.GetInboxAsync(userId, new Paganation { Page = 1, Limit = 50 }, Context.ConnectionAborted);
@@ -84,7 +84,8 @@ public sealed class ChatHub : Hub
         DateTimeOffset? beforeUtc = null)
     {
         var userId = ParseCurrentUserId();
-        return _chatPort.GetMessagesAsync(userId, conversationKey, take, beforeUtc, Context.ConnectionAborted);
+        var getMessages =  _chatPort.GetMessagesAsync(userId, conversationKey, take, beforeUtc, Context.ConnectionAborted);
+        return getMessages;
     }
 
     /// <summary>

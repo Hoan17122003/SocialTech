@@ -7,6 +7,7 @@ using SocialBackEnd.Application.Ports.Inbound.web;
 using SocialBackEnd.Application.Ports.Outbound.cache;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Application.Ports.Outbound.Security;
+using SocialBackEnd.Application.Ports.Outbound.UoW;
 using SocialBackEnd.Common.Constants;
 using SocialBackEnd.Common.DTOs.Auth;
 using SocialBackEnd.Common.DTOs.IpLogin;
@@ -23,6 +24,7 @@ public class AuthenticationAdapter : IAuthenticationPort
     private readonly ICacheInternal _cacheInternal;
     private readonly IConfiguration _configuration;
     private readonly ILogger _logger;
+
 
     public AuthenticationAdapter(
         IUserAuthenticationService userAuthenticationService,

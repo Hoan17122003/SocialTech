@@ -31,7 +31,7 @@ public sealed class ChatController : ControllerBase
         }
 
         var result = await _chatPort.GetInboxAsync(userId, paganation, cancellationToken);
-        return Ok(ApiResponse<IReadOnlyList<ChatConversationSummaryDto>>.Ok(result));
+        return Ok(ApiResponse<IReadOnlyList<ConvertstationResultModel>>.Ok(result));
     }
 
     [HttpGet("messages")]
@@ -50,6 +50,18 @@ public sealed class ChatController : ControllerBase
         return Ok(ApiResponse<IReadOnlyList<ChatMessageDto>>.Ok(result));
     }
 
+    [HttpPost("nickname")]
+    public async Task<IActionResult> SetNickName([FromBody] RequestSetNickName request, CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized(ApiResponse<string>.Fail("Token khong chua user id hop le."));
+        }
+
+        var result = await _chatPort.SetNickNameAsync(userId, request, cancellationToken);
+        return Ok(ApiResponse<string>.Ok(result));
+    }
+
     [HttpPost("direct/send")]
     public async Task<IActionResult> SendDirectMessage(
         [FromBody] SendDirectMessageRequest request,
@@ -64,15 +76,15 @@ public sealed class ChatController : ControllerBase
         return Ok(ApiResponse<ChatSendResult>.Ok(result));
     }
 
-    [HttpGet("messages/search")]
-    public async Task<IActionResult> SearchMessages(
-        [FromQuery] string conversationKey, [FromQuery] string query,
-        [FromQuery] int take = 50, CancellationToken cancellationToken = default)
-    {
-        if (!TryGetUserId(out var userId)) return Unauthorized();
-        var result = await _chatPort.SearchMessagesAsync(userId, conversationKey, query, take, cancellationToken);
-        return Ok(ApiResponse<IReadOnlyList<ChatMessageDto>>.Ok(result));
-    }
+    // [HttpGet("messages/search")]
+    // public async Task<IActionResult> SearchMessages(
+    //     [FromQuery] string conversationKey, [FromQuery] string query,
+    //     [FromQuery] int take = 50, CancellationToken cancellationToken = default)
+    // {
+    //     if (!TryGetUserId(out var userId)) return Unauthorized();
+    //     var result = await _chatPort.SearchMessagesAsync(userId, conversationKey, query, take, cancellationToken);
+    //     return Ok(ApiResponse<IReadOnlyList<ChatMessageDto>>.Ok(result));
+    // }
 
     [HttpPost("community/send")]
     public async Task<IActionResult> SendCommunityMessage(
@@ -123,8 +135,7 @@ public sealed class ChatController : ControllerBase
     [HttpPut("message/edit")]
     public async Task<IActionResult> EditMessage([FromBody] EditMessageRequest request)
     {
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdClaim, out var userId))
+        if (!TryGetUserId(out var userId))
         {
             return Unauthorized("Token không chứa user id hợp lệ.");
         }
@@ -134,8 +145,7 @@ public sealed class ChatController : ControllerBase
     [HttpDelete("message/delete/${messageId:int}")]
     public async Task<IActionResult> DeleteMessage([FromRoute] int messageId)
     {
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdClaim, out var userId))
+        if (!TryGetUserId(out var userId))
         {
             return Unauthorized("Token không chứa user id hợp lệ.");
         }

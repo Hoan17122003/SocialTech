@@ -13,6 +13,7 @@
         "@mediapipe/tasks-vision": "^0.10.35",
         "@microsoft/signalr": "^10.0.0",
         "@uiw/react-md-editor": "^4.1.0",
+        "latest": "^0.2.0",
         "next": "16.2.6",
         "react": "19.2.4",
         "react-dom": "19.2.4",

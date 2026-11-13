@@ -1,35 +1,20 @@
 'use client';
 
 import { useEffect, useRef, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useChat } from '@/providers/chat-provider';
 import { useAuth } from '@/providers/auth-provider';
 import type { ChatMessage } from '@/features/chat/contracts';
 import { formatChatMessageTime } from '@/common/utils/format-date';
+import { AvatarImage } from '@/shared/ui/avatar-image';
+import { getUserIdFromToken } from '@/common/utils/get-user-id-from-token';
 
 type FloatingChatBoxProps = {
     conversationKey: string;
 };
 
-function getUserIdFromToken(token: string | null) {
-    if (!token) return null;
-    try {
-        const parts = token.split('.');
-        if (parts.length !== 3) return null;
-        // Decode base64url safely
-        const payloadDecoded = atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'));
-        const payload = JSON.parse(payloadDecoded);
-        const userId =
-            payload.sub ||
-            payload.nameid ||
-            payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
-        return userId ? String(userId) : null;
-    } catch (err) {
-        console.error('Error decoding JWT token:', err);
-        return null;
-    }
-}
-
 export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
+    const router = useRouter();
     const { accessToken } = useAuth();
     const currentUserId = useMemo(() => getUserIdFromToken(accessToken), [accessToken]);
 
@@ -41,6 +26,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
         sendMessage,
         editMessage,
         deleteMessage,
+        setNickName,
         closeChat,
     } = useChat();
 
@@ -48,35 +34,61 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
     const [isSending, setIsSending] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
     const [isChatSettingsOpen, setIsChatSettingsOpen] = useState(false);
+    const [expandedChatSetting, setExpandedChatSetting] = useState<'nickname' | 'reaction' | null>(null);
     const [nickname, setNickname] = useState('');
+    const [isSavingNickname, setIsSavingNickname] = useState(false);
     const [defaultReaction, setDefaultReaction] = useState('👍');
     const [openOptionsMessageId, setOpenOptionsMessageId] = useState<string | null>(null);
+    const [optionsPlacement, setOptionsPlacement] = useState<{
+        vertical: 'top' | 'bottom';
+        horizontal: 'left' | 'right';
+    }>({ vertical: 'bottom', horizontal: 'right' });
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
     const [editingText, setEditingText] = useState('');
     const [busyMessageId, setBusyMessageId] = useState<string | null>(null);
     const [messageActionError, setMessageActionError] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
 
     const isDraft = conversationKey.startsWith('draft:');
 
     // Resolve conversation info
+    const convo = useMemo(() => {
+        return inbox.find((c) => c.conversationKey === conversationKey);
+    }, [conversationKey, inbox]);
+
     const conversationInfo = useMemo(() => {
         if (isDraft) {
             const draft = draftConversations[conversationKey];
             return {
                 title: draft?.displayName || 'Cuộc trò chuyện mới',
+                nickName: null as string | null,
                 avatar: draft?.avatarUrl || '',
                 isCommunity: false,
+                targetUserId: draft?.targetPublicId,
             };
         }
 
-        const convo = inbox.find((c) => c.conversationKey === conversationKey);
+        const nick = convo?.nickName || null;
+        const title = nick || convo?.title || (convo?.conversationType === 'Direct' ? `Cá nhân` : `Nhóm`);
+
         return {
-            title: convo?.title || (convo?.conversationType === 'Direct' ? `Cá nhân` : `Nhóm`),
+            title,
+            nickName: nick,
             avatar: '',
             isCommunity: convo?.conversationType === 'Community',
+            targetUserId: convo?.publicTargetUserID,
         };
-    }, [conversationKey, inbox, isDraft, draftConversations]);
+    }, [conversationKey, inbox, isDraft, draftConversations, convo]);
+
+    // Synchronize local nickname state when conversation info updates
+    useEffect(() => {
+        if (conversationInfo.nickName) {
+            setNickname(conversationInfo.nickName);
+        } else if (conversationInfo.title && !isDraft) {
+            setNickname(conversationInfo.title);
+        }
+    }, [conversationInfo.nickName, conversationInfo.title, isDraft]);
 
     const chatMessages = useMemo(() => messages[conversationKey] ?? [], [conversationKey, messages]);
     const isLoading = isLoadingMessages[conversationKey] ?? false;
@@ -107,6 +119,66 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
             document.removeEventListener('keydown', closeOnEscape);
         };
     }, [openOptionsMessageId]);
+
+    // Tự động đóng menu tùy chọn tin nhắn khi cuộn vượt quá kích thước đường viền của khung chat
+    useEffect(() => {
+        if (!openOptionsMessageId) return;
+
+        const container = messagesContainerRef.current;
+        if (!container) return;
+
+        const checkVisibilityOnScroll = () => {
+            const activeOptionEl = container.querySelector(`[data-chat-message-options="${openOptionsMessageId}"]`);
+            if (!activeOptionEl) {
+                setOpenOptionsMessageId(null);
+                return;
+            }
+
+            const containerRect = container.getBoundingClientRect();
+            const elRect = activeOptionEl.getBoundingClientRect();
+
+            // Nếu phần tử vượt qua viền trên hoặc viền dưới của container khung chat thì tự động tắt
+            const isOutOfTop = elRect.top - 75 < containerRect.top;
+            const isOutOfBottom = elRect.bottom + 75 > containerRect.bottom;
+
+            if (isOutOfTop || isOutOfBottom) {
+                setOpenOptionsMessageId(null);
+            }
+        };
+
+        container.addEventListener('scroll', checkVisibilityOnScroll, { passive: true });
+        return () => {
+            container.removeEventListener('scroll', checkVisibilityOnScroll);
+        };
+    }, [openOptionsMessageId]);
+
+    const toggleMessageOptions = (event: React.MouseEvent, messageId: string) => {
+        event.stopPropagation();
+        if (openOptionsMessageId === messageId) {
+            setOpenOptionsMessageId(null);
+            return;
+        }
+
+        const buttonEl = event.currentTarget as HTMLElement;
+        const buttonRect = buttonEl.getBoundingClientRect();
+        const container = messagesContainerRef.current;
+
+        if (container) {
+            const containerRect = container.getBoundingClientRect();
+            const spaceAbove = buttonRect.top - containerRect.top;
+            const spaceBelow = containerRect.bottom - buttonRect.bottom;
+            const spaceRight = containerRect.right - buttonRect.right;
+
+            setOptionsPlacement({
+                // Nếu khoảng trống phía trên ít hơn 90px và phía dưới rộng hơn thì bung xuống dưới
+                vertical: spaceAbove < 90 && spaceBelow > spaceAbove ? 'top' : 'bottom',
+                // Nếu khoảng cách tới mép phải < 150px thì neo về mép phải (right-0) để menu tràn về bên trái
+                horizontal: spaceRight < 150 ? 'right' : 'left',
+            });
+        }
+
+        setOpenOptionsMessageId(messageId);
+    };
 
     useEffect(() => {
         if (!isChatSettingsOpen) return;
@@ -148,6 +220,19 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
             console.error('Failed to send:', err);
         } finally {
             setIsSending(false);
+        }
+    };
+
+    const handleSaveNickname = async () => {
+        if (!conversationKey || isDraft || isSavingNickname) return;
+        setIsSavingNickname(true);
+        try {
+            await setNickName(conversationKey, nickname);
+            setIsChatSettingsOpen(false);
+        } catch (err) {
+            console.error('Failed to set nickname:', err);
+        } finally {
+            setIsSavingNickname(false);
         }
     };
 
@@ -211,27 +296,101 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
 
     return (
         <div
+            onClick={() => {
+                if (isMinimized) {
+                    setIsMinimized(false);
+                    setIsChatSettingsOpen(false);
+                }
+            }}
             className={`flex flex-col rounded-t-2xl border border-[var(--line)] bg-[var(--surface-strong)] shadow-2xl transition-all duration-300 ${
-                isMinimized ? 'h-12 w-64' : 'h-[28rem] w-80'
+                isMinimized ? 'h-12 w-64 cursor-pointer' : 'h-[28rem] w-80'
             }`}
         >
             {/* Header */}
             <div className="flex h-12 items-center justify-between border-b border-[var(--line)] bg-[var(--surface)] px-3 py-2 rounded-t-2xl select-none">
                 <button
                     type="button"
-                    onClick={() => setIsMinimized(!isMinimized)}
-                    className="flex flex-1 items-center gap-2 text-left cursor-pointer min-w-0 mr-2"
+                    onClick={() => {
+                        if (isMinimized) return;
+                        if (conversationInfo.targetUserId) {
+                            router.push(`/profile/${conversationInfo.targetUserId}`);
+                        }
+                    }}
+                    disabled={!conversationInfo.targetUserId}
+                    aria-label="Mở trang cá nhân"
+                    className="flex flex-1 items-center gap-2 text-left cursor-pointer min-w-0 mr-2 disabled:cursor-default"
                 >
-                    {/* Status Dot */}
-                    <span className="relative flex h-2 w-2 flex-shrink-0 rounded-full bg-emerald-500">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-full border border-[var(--line)] bg-[var(--background-soft)]">
+                        <AvatarImage
+                            src={conversationInfo.avatar}
+                            // alt={nickname.trim() || conversationInfo.title}
+                            alt={conversationInfo.title}
+                            fallback={
+                                <span className="text-xs font-bold text-[var(--accent)]">
+                                    {/* {(nickname.trim() || conversationInfo.title).charAt(0).toUpperCase()}
+                                     */}
+                                    {conversationInfo.title.charAt(0).toUpperCase()}
+                                </span>
+                            }
+                            sizes="32px"
+                            className="h-full w-full"
+                        />
+                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[var(--surface)] bg-emerald-500" />
                     </span>
-                    <span className="text-sm font-semibold text-[var(--foreground)] truncate">
-                        {nickname.trim() || conversationInfo.title}
+                    <span className="min-w-0 truncate text-sm font-semibold text-[var(--foreground)]">
+                        {/* {nickname.trim() || conversationInfo.title} */}
+                        {conversationInfo.title}
                     </span>
                 </button>
 
                 <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {/* Voice call */}
+                    <button
+                        type="button"
+                        aria-label="Gọi thoại"
+                        title="Gọi thoại"
+                        className="rounded-lg p-1 text-[var(--muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)]"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                        >
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.62 2.63a2 2 0 0 1-.45 2.11L8 9.73a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.85.29 1.73.5 2.63.62A2 2 0 0 1 22 16.92z" />
+                        </svg>
+                    </button>
+
+                    {/* Video call */}
+                    <button
+                        type="button"
+                        aria-label="Gọi video"
+                        title="Gọi video"
+                        className="rounded-lg p-1 text-[var(--muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)]"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                        >
+                            <path d="m22 8-6 4 6 4V8Z" />
+                            <rect x="2" y="6" width="14" height="12" rx="2" ry="2" />
+                        </svg>
+                    </button>
+
                     {/* Chat settings */}
                     <div className="relative" data-chat-room-options>
                         {/*
@@ -245,7 +404,10 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                             aria-label="Tùy chỉnh cuộc trò chuyện"
                             aria-haspopup="menu"
                             aria-expanded={isChatSettingsOpen}
-                            onClick={() => setIsChatSettingsOpen((current) => !current)}
+                            onClick={() => {
+                                if (isMinimized) return;
+                                setIsChatSettingsOpen((current) => !current);
+                            }}
                             className={`rounded-lg p-1 text-[var(--muted)] transition-colors hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)] ${
                                 isChatSettingsOpen ? 'bg-[var(--bg-hover)] text-[var(--foreground)]' : ''
                             }`}
@@ -267,42 +429,151 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                         {isChatSettingsOpen && (
                             <div
                                 role="menu"
-                                className="absolute right-0 top-8 z-30 w-64 rounded-2xl border border-[var(--line)] bg-[var(--surface-strong)] p-3 text-xs text-[var(--foreground)] shadow-2xl"
+                                className="absolute right-0 top-10 z-50 w-72 rounded-2xl border border-[var(--line)] bg-[var(--surface-strong)] p-3 text-xs text-[var(--foreground)] shadow-2xl"
                             >
                                 <div className="space-y-2">
-                                    <label className="block">
-                                        <span className="mb-1 block font-bold text-[var(--muted)]">
-                                            Đặt biệt danh
+                                    <button
+                                        type="button"
+                                        role="menuitem"
+                                        disabled={!conversationInfo.targetUserId}
+                                        onClick={() => {
+                                            if (conversationInfo.targetUserId) {
+                                                router.push(`/profile/${conversationInfo.targetUserId}`);
+                                                setIsChatSettingsOpen(false);
+                                            }
+                                        }}
+                                        className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-[var(--bg-hover)] disabled:cursor-default"
+                                    >
+                                        <span className="h-11 w-11 flex-shrink-0 overflow-hidden rounded-full border border-[var(--line)] bg-[var(--background-soft)]">
+                                            <AvatarImage
+                                                src={conversationInfo.avatar}
+                                                alt={nickname.trim() || conversationInfo.title}
+                                                fallback={
+                                                    <span className="font-bold text-[var(--accent)]">
+                                                        {(nickname.trim() || conversationInfo.title)
+                                                            .charAt(0)
+                                                            .toUpperCase()}
+                                                    </span>
+                                                }
+                                                sizes="44px"
+                                                className="h-full w-full"
+                                            />
                                         </span>
-                                        <input
-                                            type="text"
-                                            value={nickname}
-                                            onChange={(event) => setNickname(event.target.value)}
-                                            placeholder={conversationInfo.title}
-                                            className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 py-2 text-sm outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
-                                        />
-                                    </label>
+                                        <span className="min-w-0 flex-1">
+                                            <span className="block truncate text-sm font-semibold">
+                                                {nickname.trim() || conversationInfo.title}
+                                            </span>
+                                            <span className="mt-0.5 block text-[11px] text-[var(--muted)]">
+                                                Xem trang cá nhân
+                                            </span>
+                                        </span>
+                                    </button>
 
-                                    <div>
-                                        <span className="mb-1.5 block font-bold text-[var(--muted)]">
-                                            Cảm xúc mặc định
-                                        </span>
-                                        <div className="grid grid-cols-6 gap-1.5">
-                                            {['👍', '❤️', '😂', '😮', '😢', '🔥'].map((reaction) => (
-                                                <button
-                                                    key={reaction}
-                                                    type="button"
-                                                    onClick={() => setDefaultReaction(reaction)}
-                                                    className={`flex h-8 items-center justify-center rounded-xl border text-base transition hover:bg-[var(--bg-hover)] ${
-                                                        defaultReaction === reaction
-                                                            ? 'border-[var(--accent)] bg-[var(--accent)]/10'
-                                                            : 'border-[var(--line)]'
-                                                    }`}
-                                                >
-                                                    {reaction}
-                                                </button>
-                                            ))}
-                                        </div>
+                                    <div className="border-t border-[var(--line)] pt-2" />
+                                    <div className="overflow-hidden rounded-xl border border-[var(--line)]">
+                                        <button
+                                            type="button"
+                                            role="menuitem"
+                                            aria-expanded={expandedChatSetting === 'nickname'}
+                                            onClick={() =>
+                                                setExpandedChatSetting((current) =>
+                                                    current === 'nickname' ? null : 'nickname',
+                                                )
+                                            }
+                                            className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left font-semibold transition hover:bg-[var(--bg-hover)]"
+                                        >
+                                            <span>Đặt biệt danh</span>
+                                            <svg
+                                                width="14"
+                                                height="14"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                className={`transition-transform ${expandedChatSetting === 'nickname' ? 'rotate-180' : ''}`}
+                                                aria-hidden="true"
+                                            >
+                                                <path d="m6 9 6 6 6-6" />
+                                            </svg>
+                                        </button>
+
+                                        {expandedChatSetting === 'nickname' && (
+                                            <div className="border-t border-[var(--line)] bg-[var(--surface)] p-2">
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={nickname}
+                                                        disabled={isSavingNickname}
+                                                        onChange={(event) => setNickname(event.target.value)}
+                                                        onKeyDown={(event) => {
+                                                            if (event.key === 'Enter') {
+                                                                event.preventDefault();
+                                                                void handleSaveNickname();
+                                                            }
+                                                        }}
+                                                        placeholder={conversationInfo.title}
+                                                        className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface-strong)] px-3 py-2 text-sm outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        disabled={isSavingNickname}
+                                                        onClick={() => void handleSaveNickname()}
+                                                        className="flex-shrink-0 rounded-xl bg-[var(--accent)] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[var(--accent-strong)] disabled:opacity-50"
+                                                    >
+                                                        {isSavingNickname ? 'Lưu...' : 'Lưu'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="overflow-hidden rounded-xl border border-[var(--line)]">
+                                        <button
+                                            type="button"
+                                            role="menuitem"
+                                            aria-expanded={expandedChatSetting === 'reaction'}
+                                            onClick={() =>
+                                                setExpandedChatSetting((current) =>
+                                                    current === 'reaction' ? null : 'reaction',
+                                                )
+                                            }
+                                            className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left font-semibold transition hover:bg-[var(--bg-hover)]"
+                                        >
+                                            <span>Biểu tượng mặc định</span>
+                                            <svg
+                                                width="14"
+                                                height="14"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                className={`transition-transform ${expandedChatSetting === 'reaction' ? 'rotate-180' : ''}`}
+                                                aria-hidden="true"
+                                            >
+                                                <path d="m6 9 6 6 6-6" />
+                                            </svg>
+                                        </button>
+
+                                        {expandedChatSetting === 'reaction' && (
+                                            <div className="border-t border-[var(--line)] bg-[var(--surface)] p-2">
+                                                <div className="grid grid-cols-6 gap-1.5">
+                                                    {['👍', '❤️', '😂', '😮', '😢', '🔥'].map((reaction) => (
+                                                        <button
+                                                            key={reaction}
+                                                            type="button"
+                                                            onClick={() => setDefaultReaction(reaction)}
+                                                            className={`flex h-8 items-center justify-center rounded-xl border text-base transition hover:bg-[var(--bg-hover)] ${
+                                                                defaultReaction === reaction
+                                                                    ? 'border-[var(--accent)] bg-[var(--accent)]/10'
+                                                                    : 'border-[var(--line)]'
+                                                            }`}
+                                                        >
+                                                            {reaction}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <p className="rounded-xl bg-[var(--background-soft)] px-3 py-2 text-[11px] leading-4 text-[var(--muted)]">
@@ -316,7 +587,12 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                     {/* Minimize toggle */}
                     <button
                         type="button"
-                        onClick={() => setIsMinimized(!isMinimized)}
+                        aria-label={isMinimized ? 'Mở rộng khung chat' : 'Thu nhỏ khung chat'}
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            setIsMinimized((current) => !current);
+                            setIsChatSettingsOpen(false);
+                        }}
                         className="rounded-lg p-1 text-[var(--muted)] hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)] transition-colors"
                     >
                         {isMinimized ? (
@@ -348,7 +624,10 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                     {/* Close */}
                     <button
                         type="button"
-                        onClick={() => closeChat(conversationKey)}
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            closeChat(conversationKey);
+                        }}
                         className="rounded-lg p-1 text-[var(--muted)] hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
                     >
                         <svg
@@ -369,7 +648,10 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
             {/* Body */}
             {!isMinimized && (
                 <>
-                    <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                    <div
+                        ref={messagesContainerRef}
+                        className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-3 relative"
+                    >
                         {messageActionError && (
                             <div className="rounded-lg bg-rose-500/10 px-2 py-1.5 text-center text-xs text-rose-500">
                                 {messageActionError}
@@ -397,7 +679,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                                     >
                                         {!isMe && (
                                             <span className="text-[10px] text-[var(--muted)] mb-0.5 ml-1">
-                                                {msg.senderName}
+                                                {msg.senderNickName || msg.senderName}
                                             </span>
                                         )}
                                         <div
@@ -476,7 +758,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                                             {isMe && !msg.isDeleted && editingMessageId !== msg.messageId && (
                                                 <div
                                                     className="relative flex h-8 w-8 shrink-0 items-center justify-center"
-                                                    data-chat-message-options
+                                                    data-chat-message-options={msg.messageId}
                                                 >
                                                     {/*
                                                         Layout guard cho message actions:
@@ -490,12 +772,8 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                                                         aria-haspopup="menu"
                                                         aria-expanded={openOptionsMessageId === msg.messageId}
                                                         disabled={busyMessageId === msg.messageId}
-                                                        onClick={() =>
-                                                            setOpenOptionsMessageId((current) =>
-                                                                current === msg.messageId ? null : msg.messageId,
-                                                            )
-                                                        }
-                                                        className={`flex h-7 w-7 items-center justify-center rounded-full text-[var(--muted)] transition-all hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)] focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-40 ${
+                                                        onClick={(event) => toggleMessageOptions(event, msg.messageId)}
+                                                        className={`flex h-7 w-7 items-center justify-center rounded-full text-[var(--muted)] transition-all hover:bg-[var(--bg-hover)] hover:text-[var(--foreground)] focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-[var(--accent)] disabled:opacity-40 cursor-pointer ${
                                                             openOptionsMessageId === msg.messageId
                                                                 ? 'bg-[var(--bg-hover)] opacity-100'
                                                                 : 'opacity-0 group-hover:opacity-100'
@@ -517,13 +795,21 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                                                     {openOptionsMessageId === msg.messageId && (
                                                         <div
                                                             role="menu"
-                                                            className="absolute bottom-8 left-0 z-20 w-36 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--surface-strong)] p-1 text-xs text-[var(--foreground)] shadow-xl"
+                                                            className={`absolute z-20 w-36 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--surface-strong)] p-1 text-xs text-[var(--foreground)] shadow-xl animate-fade-in ${
+                                                                optionsPlacement.vertical === 'top'
+                                                                    ? 'top-8'
+                                                                    : 'bottom-8'
+                                                            } ${
+                                                                optionsPlacement.horizontal === 'right'
+                                                                    ? 'right-0'
+                                                                    : 'left-0'
+                                                            }`}
                                                         >
                                                             <button
                                                                 type="button"
                                                                 role="menuitem"
                                                                 onClick={() => beginEditing(msg)}
-                                                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-[var(--bg-hover)]"
+                                                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-[var(--bg-hover)] cursor-pointer"
                                                             >
                                                                 Chỉnh sửa
                                                             </button>
@@ -531,7 +817,7 @@ export function FloatingChatBox({ conversationKey }: FloatingChatBoxProps) {
                                                                 type="button"
                                                                 role="menuitem"
                                                                 onClick={() => void handleDeleteMessage(msg)}
-                                                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-rose-500 hover:bg-rose-500/10"
+                                                                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-rose-500 hover:bg-rose-500/10 cursor-pointer"
                                                             >
                                                                 Xóa
                                                             </button>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { formatDateTime } from '@/common/utils/format-date';
 import { ApiError } from '@/common/types/api';
 import { usersApi } from '@/features/users/users-api';
@@ -29,6 +30,34 @@ export function ProfilePanel({ userId }: { userId?: string }) {
     // Modal settings states
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [settingsTab, setSettingsTab] = useState<'profile' | 'security'>('profile');
+    const [isClientMounted, setIsClientMounted] = useState(false);
+
+    useEffect(() => {
+        setIsClientMounted(true);
+    }, []);
+
+    // Khóa cuộn trang khi modal settings đang mở
+    useEffect(() => {
+        if (isSettingsOpen) {
+            const originalOverflow = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+            return () => {
+                document.body.style.overflow = originalOverflow;
+            };
+        }
+    }, [isSettingsOpen]);
+
+    // Hỗ trợ đóng modal bằng phím Escape
+    useEffect(() => {
+        if (!isSettingsOpen) return;
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && !isSubmitting) {
+                setIsSettingsOpen(false);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isSettingsOpen, isSubmitting]);
 
     useEffect(() => {
         let isMounted = true;
@@ -336,15 +365,15 @@ export function ProfilePanel({ userId }: { userId?: string }) {
             </SectionShell>
 
             {/* Popup Settings Modal (Gear Icon Click) */}
-            {isSettingsOpen && profile.isPermissionEdit && (
+            {isClientMounted && isSettingsOpen && profile.isPermissionEdit && createPortal(
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 py-6 animate-fade-in"
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
                     onClick={() => {
                         if (!isSubmitting) setIsSettingsOpen(false);
                     }}
                 >
-                    <Card
-                        className="w-full max-w-lg rounded-[2.5rem] border border-[var(--line)] bg-[var(--surface)] p-6 md:p-8 shadow-2xl relative overflow-hidden animate-fade-in-up"
+                    <div
+                        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-[2.5rem] border border-[var(--line)] bg-[var(--surface)] p-6 md:p-8 shadow-2xl relative animate-fade-in-up"
                         onClick={(event) => event.stopPropagation()}
                     >
                         <div className="absolute -top-12 -left-12 w-28 h-28 rounded-full bg-[var(--accent)]/5 blur-2xl pointer-events-none" />
@@ -585,8 +614,9 @@ export function ProfilePanel({ userId }: { userId?: string }) {
                                 </Button>
                             </div>
                         </form>
-                    </Card>
-                </div>
+                    </div>
+                </div>,
+                document.body,
             )}
         </div>
     );

@@ -9,15 +9,18 @@ import { getDateTimestamp } from '@/common/utils/format-date';
 import { chatApi } from '@/features/chat/chat-api';
 import type {
     ChatConversationSummary,
+    ChatConversationType,
     ChatMessage,
     ChatSendResult,
     SendCommunityMessageRequest,
     SendDirectMessageRequest,
     DetailUserFollow,
 } from '@/features/chat/contracts';
+import { getUserIdFromToken } from '@/common/utils/get-user-id-from-token';
 
 type DraftConversationInfo = {
-    targetUserId: number;
+    // Guid PublicId của user nhận tin, không phải id nội bộ (int)
+    targetPublicId: string;
     displayName: string;
     avatarUrl: string;
 };
@@ -32,17 +35,55 @@ type ChatContextType = {
     draftConversations: Record<string, DraftConversationInfo>;
     activeChatBoxKey: string | null;
     openChat: (conversationKey: string) => Promise<void>;
-    openDirectChatWithUser: (targetUserId: number, displayName: string, avatarUrl: string) => Promise<void>;
+    openDirectChatWithUser: (targetPublicId: string, displayName: string, avatarUrl: string) => Promise<void>;
     closeChat: (conversationKey: string) => void;
     sendMessage: (key: string, content: string) => Promise<void>;
     loadMessages: (conversationKey: string) => Promise<void>;
-    refreshInbox: () => Promise<void>;
+    refreshInbox: () => Promise<ChatConversationSummary[]>;
     searchCandidates: (query: string) => Promise<DetailUserFollow[]>;
     editMessage: (conversationKey: string, messageId: string, newContent: string) => Promise<void>;
     deleteMessage: (conversationKey: string, messageId: string) => Promise<void>;
+    setNickName: (conversationKey: string, nickName: string, userIdTarget?: number | null) => Promise<void>;
 };
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
+
+function normalizeConversation(raw: any): ChatConversationSummary {
+    const rawType = (raw.conversationType ?? '').toLowerCase();
+    const isDirect = raw.kind === 1 || raw.kind === 'Direct' || rawType === 'direct';
+
+    const isCommunity =
+        raw.kind === 2 ||
+        raw.kind === 'Community' ||
+        rawType === 'community' ||
+        (Boolean(raw.communityId) && !isDirect);
+
+    let conversationType: ChatConversationType = 'Direct';
+    if (isCommunity) {
+        conversationType = 'Community';
+    } else if (isDirect) {
+        conversationType = 'Direct';
+    }
+
+    const nickName = raw.nickName || raw.nickname || null;
+    // Sửa theo yêu cầu:
+    // Nếu Kind là Direct thì sẽ lấy Title bằng NickName luôn (nếu có), fallback về raw.title hoặc 'Cá nhân'.
+    // Còn nếu Group hay Community thì vẫn lấy bình thường theo raw.title (fallback về 'Nhóm').
+    const title = isDirect ? nickName || raw.title || 'Cá nhân' : raw.title || (isCommunity ? 'Nhóm' : null);
+    const publicTargetUserID = raw.otherPublicUserId ?? raw.publicTargetUserID ?? raw.PublicTargetUserID ?? raw.targetPublicId ?? null;
+    const communityId = raw.communityId ?? raw.CommunityId ?? null;
+
+    return {
+        conversationKey: raw.conversationKey,
+        conversationType,
+        publicTargetUserID,
+        communityId,
+        title,
+        nickName,
+        lastMessagePreview: raw.lastMessagePreview,
+        lastMessageAtUtc: raw.lastMessageAtUtc,
+    };
+}
 
 function sortInbox(items: ChatConversationSummary[]) {
     return [...items].sort((left, right) => {
@@ -65,6 +106,9 @@ function appendUniqueMessage(items: ChatMessage[], nextItem: ChatMessage) {
 export function ChatProvider({ children }: { children: ReactNode }) {
     const { accessToken, isHydrated } = useAuth();
     const connectionRef = useRef<HubConnection | null>(null);
+    const wasConnectedRef = useRef(false);
+    const hasDroppedRef = useRef(false);
+    const wasEverConnectedRef = useRef(false);
     const [isConnected, setIsConnected] = useState(false);
     const [inbox, setInbox] = useState<ChatConversationSummary[]>([]);
     const [isLoadingInbox, setIsLoadingInbox] = useState(false);
@@ -84,8 +128,19 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         // Tạo đối tượng kết nối SignalR đến /chatHub
         const connection = createChatHubConnection();
         connectionRef.current = connection;
+        const currentUserId = getUserIdFromToken(accessToken); // THÊM
         let isDisposed = false;
         let hasStarted = false;
+        // THÊM: đồng bộ isConnected với trạng thái thật của SignalR
+        connection.onreconnecting(() => {
+            if (!isDisposed) setIsConnected(false);
+        });
+        connection.onreconnected(() => {
+            if (!isDisposed) setIsConnected(true);
+        });
+        connection.onclose(() => {
+            if (!isDisposed) setIsConnected(false);
+        });
 
         // Xử lý sự kiện nhận tin nhắn mới từ bất kỳ cuộc hội thoại nào đang tham gia
         const handleMessageCreated = (payload: ChatMessage) => {
@@ -99,13 +154,65 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         };
 
         // Xử lý sự kiện cuộc hội thoại được cập nhật (ví dụ: có tin nhắn mới thì đẩy hội thoại lên đầu inbox)
-        const handleConversationUpdated = (payload: ChatConversationSummary) => {
-            setInbox((current) => upsertConversation(current, payload));
+        const handleConversationUpdated = (payload: any) => {
+            const normalized = normalizeConversation(payload);
+            setInbox((current) => {
+                // Sửa: Bảo toàn nickName nếu payload từ server bị thiếu nhưng trong inbox hiện tại đã có biệt danh
+                const existing = current.find((item) => item.conversationKey === normalized.conversationKey);
+                if (existing?.nickName && !normalized.nickName) {
+                    normalized.nickName = existing.nickName;
+                    if (normalized.conversationType === 'Direct') {
+                        normalized.title = existing.nickName;
+                    }
+                }
+                return upsertConversation(current, normalized);
+            });
+        };
+
+        const handleNicknameUpdated = (payload: {
+            conversationKey: string;
+            userId: number | string;
+            nickName: string | null;
+            displayName?: string | null;
+        }) => {
+            const { conversationKey, displayName } = payload;
+            const targetId = String(payload.userId);
+            const nextNick = payload.nickName?.trim() || null;
+
+            // 1) Cập nhật tên hiển thị trên các tin nhắn đã tải của người bị đổi biệt danh
+            setMessages((current) => {
+                const list = current[conversationKey];
+                if (!list) return current;
+                return {
+                    ...current,
+                    [conversationKey]: list.map((m) =>
+                        String(m.senderId) === targetId ? { ...m, senderNickName: nextNick } : m,
+                    ),
+                };
+            });
+
+            // 2) Cập nhật inbox: tiêu đề chat 1-1 là tên của NGƯỜI KIA,
+            //    nên nếu biệt danh của chính mình bị đổi thì không đụng tới tiêu đề
+            if (targetId === currentUserId) return;
+
+            setInbox((current) =>
+                current.map((item) => {
+                    if (item.conversationKey !== conversationKey || item.conversationType !== 'Direct') {
+                        return item;
+                    }
+                    return {
+                        ...item,
+                        nickName: nextNick,
+                        title: nextNick || displayName || item.title,
+                    };
+                }),
+            );
         };
 
         // Đăng ký các bộ lắng nghe sự kiện từ Server phát xuống
         connection.on('chat.message.created', handleMessageCreated);
         connection.on('chat.conversation.updated', handleConversationUpdated);
+        connection.on('chat.nickname.updated', handleNicknameUpdated);
 
         // Hàm bắt đầu kết nối SignalR
         async function startConnection() {
@@ -131,6 +238,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             setIsConnected(false);
             connection.off('chat.message.created', handleMessageCreated);
             connection.off('chat.conversation.updated', handleConversationUpdated);
+            connection.off('chat.nickname.updated', handleNicknameUpdated);
             if (connectionRef.current === connection) {
                 connectionRef.current = null;
             }
@@ -141,257 +249,259 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         };
     }, [accessToken, isHydrated]);
 
-    // Load inbox on mount or when token changes
     useEffect(() => {
-        if (!isHydrated || !accessToken) {
+        // Chỉ chạy khi chuyển false -> true SAU lần kết nối đầu tiên
+        if (isConnected && !wasConnectedRef.current) {
+            wasConnectedRef.current = true;
+            return;
+        }
+        if (!isConnected) {
+            // đánh dấu đã từng kết nối, lần true tiếp theo là reconnect
+            return;
+        }
+    }, [isConnected]);
+
+    useEffect(() => {
+        if (!isConnected) {
+            if (wasEverConnectedRef.current) hasDroppedRef.current = true;
+            return;
+        }
+        wasEverConnectedRef.current = true;
+
+        if (hasDroppedRef.current) {
+            hasDroppedRef.current = false;
+            void refreshInbox(); // lấy lại nickname, lastMessage mới nhất
+            openChatBoxes.forEach((key) => {
+                if (!key.startsWith('draft:')) void loadMessages(key);
+            });
+        }
+    }, [isConnected]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Tự động tham gia các phòng SignalR (JoinConversation) cho tất cả các khung chat đang mở
+    useEffect(() => {
+        const connection = connectionRef.current;
+        if (!connection || !isConnected || connection.state !== 'Connected') {
             return;
         }
 
-        let isDisposed = false;
-
-        async function loadInbox() {
-            setIsLoadingInbox(true);
-            try {
-                const response = await chatApi.getInbox();
-                if (!isDisposed && response.data) {
-                    setInbox(sortInbox(response.data));
-                }
-            } catch (err) {
-                console.error('Failed to load chat inbox:', err);
-            } finally {
-                if (!isDisposed) {
-                    setIsLoadingInbox(false);
-                }
+        openChatBoxes.forEach((key) => {
+            if (!key.startsWith('draft:')) {
+                void connection.invoke('JoinConversation', key).catch((err) => {
+                    console.error(`Failed to join SignalR conversation group for ${key}:`, err);
+                });
             }
-        }
+        });
+    }, [isConnected, openChatBoxes]);
 
-        void loadInbox();
-
-        return () => {
-            isDisposed = true;
+    // Reset inbox when logged out or token changes
+    useEffect(() => {
+        if (!accessToken) {
             setInbox([]);
-        };
-    }, [accessToken, isHydrated]);
+        }
+    }, [accessToken]);
 
-    const refreshInbox = useCallback(async () => {
+    const refreshInbox = useCallback(async (): Promise<ChatConversationSummary[]> => {
         setIsLoadingInbox(true);
         try {
             const response = await chatApi.getInbox();
             if (response.data) {
-                setInbox(sortInbox(response.data));
+                const normalized = (response.data as any[]).map(normalizeConversation);
+                const sorted = sortInbox(normalized);
+                setInbox(sorted);
+                return sorted;
             }
+            return [];
         } catch (err) {
             console.error('Failed to refresh inbox:', err);
+            return [];
         } finally {
             setIsLoadingInbox(false);
         }
     }, []);
 
-    const loadMessages = useCallback(async (conversationKey: string) => {
-        if (isLoadingMessages[conversationKey]) return;
+    const setNickName = useCallback(
+        async (conversationKey: string, nickName: string, userIdTarget?: number | null) => {
+            const trimmed = nickName.trim();
+            await chatApi.setNickName({
+                conversationKey,
+                nickName: trimmed,
+                userIdTarget,
+            });
 
-        setIsLoadingMessages((curr) => ({ ...curr, [conversationKey]: true }));
-        try {
             const connection = connectionRef.current;
-            if (connection && isConnected && connection.state === 'Connected') {
-                await connection.invoke('JoinConversation', conversationKey);
-                const nextMessages = (await connection.invoke(
-                    'GetMessages',
-                    conversationKey,
-                    50,
-                    null,
-                )) as ChatMessage[];
-
-                setMessages((curr) => ({
-                    ...curr,
-                    [conversationKey]: nextMessages.sort(
-                        (a, b) => getDateTimestamp(a.sentAtUtc) - getDateTimestamp(b.sentAtUtc),
-                    ),
-                }));
-                return;
+            if (!connection || connection.state !== 'Connected') {
+                await refreshInbox();
             }
 
-            const response = await chatApi.getMessages(conversationKey, 50);
-            const msgData = response.data;
-            if (msgData) {
-                setMessages((curr) => ({
-                    ...curr,
-                    [conversationKey]: [...msgData].sort(
-                        (a, b) => getDateTimestamp(a.sentAtUtc) - getDateTimestamp(b.sentAtUtc),
-                    ),
-                }));
-            }
-        } catch (err) {
-            console.error(`Failed to load messages for ${conversationKey}:`, err);
-        } finally {
-            setIsLoadingMessages((curr) => ({ ...curr, [conversationKey]: false }));
-        }
-    }, [isConnected, isLoadingMessages]);
+            // setInbox((current) =>
+            //     current.map((item) => {
+            //         if (item.conversationKey === conversationKey) {
+            //             return {
+            //                 ...item,
+            //                 nickName: trimmed || null,
+            //                 title: trimmed || item.title,
+            //             };
+            //         }
+            //         return item;
+            //     }),
+            // );
+        },
+        [refreshInbox],
+    );
 
-    const openChat = useCallback(async (conversationKey: string) => {
-        setOpenChatBoxes((prev) => {
-            if (prev.includes(conversationKey)) return prev;
-            // Limit to max 3 floating chatboxes
-            const next = [...prev, conversationKey];
-            if (next.length > 3) {
-                // Remove the oldest chatbox
-                return next.slice(next.length - 3);
-            }
-            return next;
-        });
-        setActiveChatBoxKey(conversationKey);
+    const loadMessages = useCallback(
+        async (conversationKey: string) => {
+            if (isLoadingMessages[conversationKey]) return;
 
-        // Load history messages if not already loaded
-        if (!messages[conversationKey]) {
-            await loadMessages(conversationKey);
-        }
-    }, [loadMessages, messages]);
-
-    const openDirectChatWithUser = useCallback(async (targetUserId: number, displayName: string, avatarUrl: string) => {
-        // Check if there is already an existing direct conversation with this user
-        const existing = inbox.find((c) => c.conversationType === 'Direct' && c.otherUserId === targetUserId);
-
-        if (existing) {
-            await openChat(existing.conversationKey);
-            return;
-        }
-
-        // Otherwise open a draft chat box
-        const draftKey = `draft:user:${targetUserId}`;
-        setDraftConversations((prev) => ({
-            ...prev,
-            [draftKey]: { targetUserId, displayName, avatarUrl },
-        }));
-
-        setOpenChatBoxes((prev) => {
-            if (prev.includes(draftKey)) return prev;
-            const next = [...prev, draftKey];
-            if (next.length > 3) {
-                return next.slice(next.length - 3);
-            }
-            return next;
-        });
-        setActiveChatBoxKey(draftKey);
-        setMessages((curr) => ({ ...curr, [draftKey]: [] }));
-    }, [inbox, openChat]);
-
-    const closeChat = useCallback((conversationKey: string) => {
-        setOpenChatBoxes((prev) => prev.filter((k) => k !== conversationKey));
-        if (activeChatBoxKey === conversationKey) {
-            setActiveChatBoxKey(null);
-        }
-
-        const connection = connectionRef.current;
-        if (connection && isConnected && connection.state === 'Connected' && !conversationKey.startsWith('draft:')) {
-            void connection.invoke('LeaveConversation', conversationKey).catch(() => undefined);
-        }
-    }, [activeChatBoxKey, isConnected]);
-
-    // 2. Gửi tin nhắn đi. Hỗ trợ gửi qua kênh SignalR trực tiếp hoặc fallback qua REST API nếu kết nối mất
-    const sendMessage = useCallback(async (key: string, content: string) => {
-        const trimmed = content.trim();
-        if (!trimmed) return;
-
-        const connection = connectionRef.current;
-        const isDraft = key.startsWith('draft:');
-
-        try {
-            if (isDraft) {
-                // Xử lý gửi tin nhắn đầu tiên cho cuộc hội thoại nháp (chưa tồn tại dưới DB)
-                const draftInfo = draftConversations[key];
-                if (!draftInfo) return;
-
-                const payload: SendDirectMessageRequest = {
-                    targetUserId: draftInfo.targetUserId,
-                    content: trimmed,
-                    clientMessageId: crypto.randomUUID(), // Tạo GUID định danh tin nhắn phía Client để phòng tránh trùng lặp
-                };
-
-                let result: ChatSendResult;
-                // Nếu đang kết nối SignalR, gọi qua Invoke; ngược lại fallback gọi REST API
+            setIsLoadingMessages((curr) => ({ ...curr, [conversationKey]: true }));
+            try {
+                const connection = connectionRef.current;
                 if (connection && isConnected && connection.state === 'Connected') {
-                    result = (await connection.invoke('SendDirectMessage', payload)) as ChatSendResult;
-                } else {
-                    const response = await chatApi.sendDirectMessage(payload);
-                    result = response.data as ChatSendResult;
-                }
-
-                // Tráo đổi khóa nháp (draft key) thành khóa cuộc hội thoại thực tế (real key) vừa được tạo từ DB
-                const realKey = result.conversationKey;
-
-                setOpenChatBoxes((prev) => prev.map((k) => (k === key ? realKey : k)));
-                if (activeChatBoxKey === key) {
-                    setActiveChatBoxKey(realKey);
-                }
-
-                setMessages((curr) => {
-                    const next = { ...curr };
-                    delete next[key];
-                    next[realKey] = [result.message];
-                    return next;
-                });
-
-                // Xóa thông tin nháp
-                setDraftConversations((prev) => {
-                    const next = { ...prev };
-                    delete next[key];
-                    return next;
-                });
-
-                // Cập nhật danh sách hội thoại gần đây (inbox)
-                const newConversation: ChatConversationSummary = {
-                    conversationKey: realKey,
-                    conversationType: 'Direct',
-                    otherUserId: draftInfo.targetUserId,
-                    title: draftInfo.displayName,
-                    lastMessagePreview: trimmed,
-                    lastMessageAtUtc: result.message.sentAtUtc,
-                };
-                setInbox((current) => upsertConversation(current, newConversation));
-
-                // Thực hiện join phòng chat thời gian thực nếu SignalR đang hoạt động
-                if (connection && isConnected && connection.state === 'Connected') {
-                    await connection.invoke('JoinConversation', realKey);
-                }
-            } else {
-                // Xử lý gửi tin nhắn cho cuộc hội thoại đã tồn tại
-                const isCommunity = inbox.find((c) => c.conversationKey === key)?.conversationType === 'Community';
-
-                if (isCommunity) {
-                    // Hội thoại nhóm
-                    const communityId = inbox.find((c) => c.conversationKey === key)?.communityId;
-                    if (!communityId) return;
-
-                    const payload: SendCommunityMessageRequest = {
-                        communityId,
-                        content: trimmed,
-                        clientMessageId: crypto.randomUUID(),
-                    };
-
-                    let result: ChatSendResult;
-                    if (connection && isConnected && connection.state === 'Connected') {
-                        result = (await connection.invoke('SendCommunityMessage', payload)) as ChatSendResult;
-                    } else {
-                        const response = await chatApi.sendCommunityMessage(payload);
-                        result = response.data as ChatSendResult;
-                    }
+                    await connection.invoke('JoinConversation', conversationKey);
+                    const nextMessages = (await connection.invoke(
+                        'GetMessages',
+                        conversationKey,
+                        50,
+                        null,
+                    )) as ChatMessage[];
 
                     setMessages((curr) => ({
                         ...curr,
-                        [key]: appendUniqueMessage(curr[key] ?? [], result.message),
+                        [conversationKey]: nextMessages.sort(
+                            (a, b) => getDateTimestamp(a.sentAtUtc) - getDateTimestamp(b.sentAtUtc),
+                        ),
                     }));
-                } else {
-                    // Hội thoại trực tiếp (1-1)
-                    const otherUserId = inbox.find((c) => c.conversationKey === key)?.otherUserId;
-                    if (!otherUserId) return;
+                    return;
+                }
+
+                const response = await chatApi.getMessages(conversationKey, 50);
+                const msgData = response.data;
+                if (msgData) {
+                    setMessages((curr) => ({
+                        ...curr,
+                        [conversationKey]: [...msgData].sort(
+                            (a, b) => getDateTimestamp(a.sentAtUtc) - getDateTimestamp(b.sentAtUtc),
+                        ),
+                    }));
+                }
+            } catch (err) {
+                console.error(`Failed to load messages for ${conversationKey}:`, err);
+            } finally {
+                setIsLoadingMessages((curr) => ({ ...curr, [conversationKey]: false }));
+            }
+        },
+        [isConnected, isLoadingMessages],
+    );
+
+    const openChat = useCallback(
+        async (conversationKey: string) => {
+            setOpenChatBoxes((prev) => {
+                if (prev.includes(conversationKey)) return prev;
+                // Limit to max 3 floating chatboxes
+                const next = [...prev, conversationKey];
+                if (next.length > 3) {
+                    // Remove the oldest chatbox
+                    return next.slice(next.length - 3);
+                }
+                return next;
+            });
+            setActiveChatBoxKey(conversationKey);
+
+            if (inbox.length === 0) {
+                await refreshInbox();
+            }
+
+            // Load history messages if not already loaded
+            if (!messages[conversationKey]) {
+                await loadMessages(conversationKey);
+            }
+        },
+        [loadMessages, messages, inbox.length, refreshInbox],
+    );
+
+    const openDirectChatWithUser = useCallback(
+        async (targetPublicId: string, displayName: string, avatarUrl: string) => {
+            let currentInbox = inbox;
+            if (currentInbox.length === 0) {
+                currentInbox = await refreshInbox();
+            }
+
+            // Check if there is already an existing direct conversation with this user
+            // publicTargetUserID là Guid string -> so sánh chuỗi, không ép Number() (Number(guid) = NaN)
+            const existing = currentInbox.find(
+                (c) =>
+                    c.conversationType === 'Direct' &&
+                    (c.publicTargetUserID ?? '').toLowerCase() === targetPublicId.toLowerCase(),
+            );
+
+            if (existing) {
+                await openChat(existing.conversationKey);
+                return;
+            }
+
+            // Otherwise open a draft chat box
+            const draftKey = `draft:user:${targetPublicId}`;
+            setDraftConversations((prev) => ({
+                ...prev,
+                [draftKey]: { targetPublicId, displayName, avatarUrl },
+            }));
+
+            setOpenChatBoxes((prev) => {
+                if (prev.includes(draftKey)) return prev;
+                const next = [...prev, draftKey];
+                if (next.length > 3) {
+                    return next.slice(next.length - 3);
+                }
+                return next;
+            });
+            setActiveChatBoxKey(draftKey);
+            setMessages((curr) => ({ ...curr, [draftKey]: [] }));
+        },
+        [inbox, openChat, refreshInbox],
+    );
+
+    const closeChat = useCallback(
+        (conversationKey: string) => {
+            setOpenChatBoxes((prev) => prev.filter((k) => k !== conversationKey));
+            if (activeChatBoxKey === conversationKey) {
+                setActiveChatBoxKey(null);
+            }
+
+            const connection = connectionRef.current;
+            if (
+                connection &&
+                isConnected &&
+                connection.state === 'Connected' &&
+                !conversationKey.startsWith('draft:')
+            ) {
+                void connection.invoke('LeaveConversation', conversationKey).catch(() => undefined);
+            }
+        },
+        [activeChatBoxKey, isConnected],
+    );
+
+    // 2. Gửi tin nhắn đi. Hỗ trợ gửi qua kênh SignalR trực tiếp hoặc fallback qua REST API nếu kết nối mất
+    const sendMessage = useCallback(
+        async (key: string, content: string) => {
+            const trimmed = content.trim();
+            if (!trimmed) return;
+            const connection = connectionRef.current;
+            const isDraft = key.startsWith('draft:');
+
+            try {
+                if (isDraft) {
+                    // Xử lý gửi tin nhắn đầu tiên cho cuộc hội thoại nháp (chưa tồn tại dưới DB)
+                    const draftInfo = draftConversations[key];
+                    if (!draftInfo) return;
 
                     const payload: SendDirectMessageRequest = {
-                        targetUserId: otherUserId,
+                        targetPublicId: draftInfo.targetPublicId,
                         content: trimmed,
-                        clientMessageId: crypto.randomUUID(),
+                        clientMessageId: crypto.randomUUID(), // Tạo GUID định danh tin nhắn phía Client để phòng tránh trùng lặp
                     };
 
                     let result: ChatSendResult;
+                    // Nếu đang kết nối SignalR, gọi qua Invoke; ngược lại fallback gọi REST API
                     if (connection && isConnected && connection.state === 'Connected') {
                         result = (await connection.invoke('SendDirectMessage', payload)) as ChatSendResult;
                     } else {
@@ -399,17 +509,121 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                         result = response.data as ChatSendResult;
                     }
 
-                    setMessages((curr) => ({
-                        ...curr,
-                        [key]: appendUniqueMessage(curr[key] ?? [], result.message),
-                    }));
+                    // Tráo đổi khóa nháp (draft key) thành khóa cuộc hội thoại thực tế (real key) vừa được tạo từ DB
+                    const realKey = result.conversationKey;
+
+                    setOpenChatBoxes((prev) => prev.map((k) => (k === key ? realKey : k)));
+                    if (activeChatBoxKey === key) {
+                        setActiveChatBoxKey(realKey);
+                    }
+
+                    setMessages((curr) => {
+                        const next = { ...curr };
+                        delete next[key];
+                        next[realKey] = [result.message];
+                        return next;
+                    });
+
+                    // Xóa thông tin nháp
+                    setDraftConversations((prev) => {
+                        const next = { ...prev };
+                        delete next[key];
+                        return next;
+                    });
+
+                    // Cập nhật danh sách hội thoại gần đây (inbox)
+                    const newConversation: ChatConversationSummary = {
+                        conversationKey: realKey,
+                        conversationType: 'Direct',
+                        publicTargetUserID: draftInfo.targetPublicId,
+                        title: draftInfo.displayName,
+                        lastMessagePreview: trimmed,
+                        lastMessageAtUtc: result.message.sentAtUtc,
+                    };
+                    setInbox((current) => upsertConversation(current, newConversation));
+
+                    // Thực hiện join phòng chat thời gian thực nếu SignalR đang hoạt động
+                    if (connection && isConnected && connection.state === 'Connected') {
+                        await connection.invoke('JoinConversation', realKey);
+                    }
+                } else {
+                    // Xử lý gửi tin nhắn cho cuộc hội thoại đã tồn tại
+                    let currentInbox = inbox;
+                    let convo = currentInbox.find((c) => c.conversationKey === key);
+                    if (!convo) {
+                        currentInbox = await refreshInbox();
+                        convo = currentInbox.find((c) => c.conversationKey === key);
+                    }
+
+                    const isCommunity = convo?.conversationType === 'Community';
+
+                    if (isCommunity) {
+                        // Hội thoại nhóm
+                        const communityId = convo?.communityId;
+                        if (!communityId) {
+                            console.error(
+                                `[Chat] Không thể gửi tin nhắn nhóm: thiếu communityId cho hội thoại ${key}`,
+                                convo,
+                            );
+                            throw new Error('Không tìm thấy thông tin nhóm trò chuyện.');
+                        }
+
+                        const payload: SendCommunityMessageRequest = {
+                            communityId,
+                            content: trimmed,
+                            clientMessageId: crypto.randomUUID(),
+                        };
+
+                        let result: ChatSendResult;
+                        if (connection && isConnected && connection.state === 'Connected') {
+                            result = (await connection.invoke('SendCommunityMessage', payload)) as ChatSendResult;
+                        } else {
+                            const response = await chatApi.sendCommunityMessage(payload);
+                            result = response.data as ChatSendResult;
+                        }
+
+                        setMessages((curr) => ({
+                            ...curr,
+                            [key]: appendUniqueMessage(curr[key] ?? [], result.message),
+                        }));
+                    } else {
+                        // Hội thoại trực tiếp (1-1)
+                        const publicTargetUserID = convo?.publicTargetUserID;
+                        if (!publicTargetUserID) {
+                            console.error(
+                                `[Chat] Không thể gửi tin nhắn direct: thiếu publicTargetUserID cho hội thoại ${key}`,
+                                convo,
+                            );
+                            throw new Error('Không tìm thấy thông tin người nhận tin nhắn.');
+                        }
+
+                        const payload: SendDirectMessageRequest = {
+                            targetPublicId: publicTargetUserID,
+                            content: trimmed,
+                            clientMessageId: crypto.randomUUID(),
+                        };
+
+                        let result: ChatSendResult;
+                        if (connection && isConnected && connection.state === 'Connected') {
+                            result = (await connection.invoke('SendDirectMessage', payload)) as ChatSendResult;
+                        } else {
+                            const response = await chatApi.sendDirectMessage(payload);
+                            result = response.data as ChatSendResult;
+                        }
+
+                        setMessages((curr) => ({
+                            ...curr,
+                            [key]: appendUniqueMessage(curr[key] ?? [], result.message),
+                        }));
+                    }
                 }
+            } catch (err) {
+                console.error('Failed to send message:', err);
+                throw err;
             }
-        } catch (err) {
-            console.error('Failed to send message:', err);
-            throw err;
-        }
-    }, [activeChatBoxKey, draftConversations, inbox, isConnected]);
+        },
+        [activeChatBoxKey, draftConversations, inbox, isConnected],
+    );
 
     const editMessage = useCallback(async (conversationKey: string, messageId: string, newContent: string) => {
         const trimmed = newContent.trim();
@@ -463,6 +677,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             searchCandidates,
             editMessage,
             deleteMessage,
+            setNickName,
         }),
         [
             isConnected,
@@ -482,6 +697,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
             searchCandidates,
             editMessage,
             deleteMessage,
+            setNickName,
         ],
     );
 

@@ -28,6 +28,8 @@ using SocialBackEnd.Application.Ports.Inbound.notification;
 using SocialBackEnd.Application.Ports.Inbound.Chat;
 using SocialBackEnd.Application.Ports.Outbound.Chat;
 using SocialBackEnd.Infrastructure.chat;
+using SocialBackEnd.Application.Ports.Outbound.UoW;
+using SocialBackEnd.Infrastructure.Persistence.Repositories;
 
 namespace SocialBackEnd.DependencyInjection;
 
@@ -50,6 +52,7 @@ public static class ServiceDependencyInjection
         services.AddScoped<INotification, InAppNotificationService>();
         services.AddSingleton<IApplicationEventPublisher, KafkaEventPublisher>();
         services.AddHostedService<KafkaEventConsumer>();
+        services.AddHostedService<KafkaCdcConsumer>();
         // Nhúng param vào template renderer để gửi mail 
         services.AddScoped<IEmailTemplateRenderer<WelcomeEmailModel>, WellcomeEmailRenderer>();
         services.AddScoped<IEmailTemplateRenderer<ForgetPasswordEmailModel>, ForgetPasswordEmailRenderer>();
@@ -65,11 +68,14 @@ public static class ServiceDependencyInjection
 
         services.AddScoped<IPasswordHashService, Argon2PasswordHashService>();
         services.AddScoped<IEntityMediaStorageService, MinioEntityMediaStorageService>();
+        services.AddScoped<IEntityMediaLocalStorageService, LocalEntityMediaStorageService>();
+        services.AddScoped<IMigrationsStorageFileHandler, MigrationsStorageFileHandler>();
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<IArticlePort, ArticleAdapterPort>();
         services.AddScoped<ICacheInternal, CacheAdapter>();
         services.AddSingleton<ICassandraSessionProvider, CassandraSessionProvider>();
         services.AddScoped<IChatMessageStore, CassandraChatMessageStore>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<ChatMessageSideEffectQueue>();
         services.AddSingleton<IChatMessageSideEffectQueue>(sp => sp.GetRequiredService<ChatMessageSideEffectQueue>());
         services.AddHostedService<ChatMessageSideEffectWorker>();

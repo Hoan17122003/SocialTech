@@ -5,10 +5,11 @@ namespace SocialBackEnd.Domain.Entities;
 public sealed class ChatConversation : EntityBase
 {
     public Guid PublicId { get; private set; }
-    public string ConversationKey { get; private set; } = string.Empty;
+    public string ConversationKey { get; private set; } = string.Empty; // Todo : Cân nhắc bỏ!
     public ChatConversationKind Kind { get; private set; }
     public int CreatedByUserId { get; private set; }
     public int? CommunityId { get; private set; }
+    public Community? Community { get; private set; }
     public int? DirectUserLowId { get; private set; }
     public int? DirectUserHighId { get; private set; }
     public string? Title { get; private set; }

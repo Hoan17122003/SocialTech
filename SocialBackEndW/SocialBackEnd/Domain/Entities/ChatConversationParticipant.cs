@@ -5,6 +5,8 @@ public sealed class ChatConversationParticipant : EntityBase
     public int ConversationId { get; set; }
     public ChatConversation Conversation { get; set; } = null!;
     public int UserId { get; set; }
+    public User User { get; set; } = null!;
+    public string? NickName { get; set; }
     public DateTime JoinedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? LeftAtUtc { get; set; }
     public DateTime? LastReadAtUtc { get; set; }

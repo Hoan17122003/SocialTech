@@ -4,7 +4,7 @@ export interface NotificationItem {
     description: string;
     time: string;
     isRead: boolean;
-    type: 'info' | 'success' | 'warning' | 'article';
+    type: 'info' | 'success' | 'warning' | 'article' | 'comment';
     href?: string | null;
 }
 
@@ -17,6 +17,8 @@ export type SignalRNotificationPayload = {
     body?: string | null;
     time?: string | null;
     createdAt?: string | null;
+    createdAtUtc?: string | null;
+    readAtUtc?: string | null;
     sentAt?: string | null;
     timestamp?: string | null;
     isRead?: boolean | null;
@@ -27,5 +29,6 @@ export type SignalRNotificationPayload = {
     url?: string | null;
     link?: string | null;
 };
+
 
 export type ToastNotification = NotificationItem & { toastId: string };

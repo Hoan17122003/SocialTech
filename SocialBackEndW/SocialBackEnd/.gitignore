@@ -27,7 +27,6 @@ mono_crash.*
 #minio
 minio-data/*
 
-
 #wwwwroot
 wwwroot/
 

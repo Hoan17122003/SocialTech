@@ -23,6 +23,15 @@ public sealed class ChatConversationConfiguration : IEntityTypeConfiguration<Cha
             .HasConversion<int>()
             .IsRequired();
 
+        builder.Property(x => x.CommunityId)
+            .IsRequired(false);
+
+        builder.Property(x => x.DirectUserLowId)
+            .IsRequired(false);
+
+        builder.Property(x => x.DirectUserHighId)
+            .IsRequired(false);
+
         builder.Property(x => x.Title)
             .HasMaxLength(200);
 
@@ -35,13 +44,19 @@ public sealed class ChatConversationConfiguration : IEntityTypeConfiguration<Cha
         builder.HasIndex(x => x.ConversationKey)
             .IsUnique();
 
-        builder.HasIndex(x => new { x.DirectUserLowId, x.DirectUserHighId });
+        builder.HasIndex(x => new { x.DirectUserLowId, x.DirectUserHighId })
+            .IsUnique();
 
         builder.HasIndex(x => x.CommunityId);
 
         builder.HasMany(x => x.Participants)
             .WithOne(x => x.Conversation)
             .HasForeignKey(x => x.ConversationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(x => x.Community)
+            .WithMany(x => x.ChatConversations)
+            .HasForeignKey(x => x.CommunityId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

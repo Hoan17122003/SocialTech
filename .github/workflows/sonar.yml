@@ -1,0 +1,69 @@
+name: SonarCloud Analysis
+
+on:
+  push:
+    branches:
+      - main
+      - features
+      - 'features/**'
+      - 'feature/**'
+      - develop
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  sonarcloud:
+    name: SonarCloud Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install SonarScanner .NET
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      # ===== TẤT CẢ CÁC STEP TỪ ĐÂY CHẠY TRONG SocialBackEndW =====
+      - name: Begin SonarScanner
+        working-directory: SocialBackEndW
+        run: |
+          dotnet sonarscanner begin \
+            /k:"hoan17122003_SocialTech" \
+            /o:"hoan17122003" \
+            /d:sonar.token="${{ secrets.SONAR_TOKEN }}" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.scanner.scanAll=false
+
+      - name: Restore dependencies
+        working-directory: SocialBackEndW
+        run: dotnet restore SocialTech.sln
+
+      - name: Build solution
+        working-directory: SocialBackEndW
+        run: dotnet build SocialTech.sln --no-restore --configuration Release
+
+      - name: End SonarScanner
+        working-directory: SocialBackEndW
+        run: dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
+
+      - name: Sonar Quality Gate check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

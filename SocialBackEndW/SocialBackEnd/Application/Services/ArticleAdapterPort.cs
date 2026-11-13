@@ -6,6 +6,7 @@ using SocialBackEnd.Application.Ports.Outbound.Events;
 using SocialBackEnd.Application.Ports.Outbound.LLM;
 using SocialBackEnd.Application.Ports.Outbound.Repositories;
 using SocialBackEnd.Common.Constants;
+using Microsoft.AspNetCore.SignalR;
 using SocialBackEnd.Common.DTOs;
 using SocialBackEnd.Common.DTOs.Article;
 using SocialBackEnd.Common.DTOs.Comment;
@@ -15,6 +16,9 @@ using SocialBackEnd.Common.Models.Article;
 using SocialBackEnd.Common.Models.Storage;
 using SocialBackEnd.Domain.Entities;
 using SocialBackEnd.Domain.Enums;
+using SocialBackend.Common.Events;
+using SocialBackEnd.Application.Ports.Outbound.UoW;
+using System.Text.Json;
 
 namespace SocialBackEnd.Application.Services;
 
@@ -23,19 +27,26 @@ public class ArticleAdapterPort : IArticlePort
     private readonly IPostRepository _repository;
     private readonly ICommentRepository _commentRepository;
     private readonly IEntityMediaStorageService _entityMediaStorageService;
+    private readonly IEntityMediaLocalStorageService _entityMediaLocalStorageService;
     private readonly IAttachmentRepository _attachmentRepository;
     private readonly IApplicationEventPublisher _applicationEventPublisher;
+
     private readonly ILogger _logger;
     private readonly IGeminiArticlePort _geminiArticlePort;
+
+    private readonly IUnitOfWork _unitOfWork;
 
 
     public ArticleAdapterPort(IPostRepository repository,
         ICommentRepository commentRepository,
         IEntityMediaStorageService entityMediaStorageService,
+        IEntityMediaLocalStorageService entityMediaLocalStorageService,
         IAttachmentRepository attachmentRepository,
         IApplicationEventPublisher applicationEventPublisher,
         ILogger<ArticleAdapterPort> logger,
-        IGeminiArticlePort geminiArticlePort)
+        IGeminiArticlePort geminiArticlePort,
+        IUnitOfWork unitOfWork
+    )
     {
         _repository = repository ?? throw new ArgumentException(nameof(repository));
         _commentRepository = commentRepository ?? throw new ArgumentException(nameof(commentRepository));
@@ -44,6 +55,8 @@ public class ArticleAdapterPort : IArticlePort
         _applicationEventPublisher = applicationEventPublisher ?? throw new ArgumentNullException(nameof(applicationEventPublisher));
         _logger = logger ?? throw new ArgumentException(nameof(logger));
         _geminiArticlePort = geminiArticlePort;
+        _unitOfWork = unitOfWork ?? throw new ArgumentException(nameof(unitOfWork));
+        _entityMediaLocalStorageService = entityMediaLocalStorageService ?? throw new ArgumentException(nameof(entityMediaLocalStorageService));
     }
     public async Task<int> CreateArticle(RequestCreateArticle requestCreateArticle, int userId)
     {
@@ -53,50 +66,68 @@ public class ArticleAdapterPort : IArticlePort
             Content = requestCreateArticle.Content,
             Attachments = requestCreateArticle.Attachments
         };
+
         var validateArticle = await _geminiArticlePort.ValidateArticle(articleValidateParam);
+
         if (!validateArticle)
         {
             _logger.LogInformation($"value of validate: {validateArticle}");
             return Constant.ResponseStatusArticle.BadParamOfArticle;
         }
-        var article = new Post
+        await _unitOfWork.BeginTransactionAsync();
+        try
         {
-            Title = requestCreateArticle.Title,
-            Body = requestCreateArticle.Content,
-            AuthorId = userId,
-            CommunityId = requestCreateArticle.ComunityId,
-            Status = requestCreateArticle.ArticleStatus
-        };
-        var articleEntity = await _repository.CreatePostAsync(article);
-
-        List<Attachments>? fileUploadUrls = new List<Attachments>();
-        if (requestCreateArticle.Attachments is not null && requestCreateArticle.Attachments.Count > 0)
-        {
-            var fileUrl = await _entityMediaStorageService.SavePostAttachmentsAsync(articleEntity.Id, requestCreateArticle.Attachments);
-            if (fileUrl is null || fileUrl.Count == 0)
+            var articleEntity = new Post
             {
-                await _repository.RemoveAsync(articleEntity);
-                _logger.LogError("Lưu tệp đính kèm thất bại, không thể lưu bài viết với id {ArticleId}", articleEntity.Id);
-                throw new Exception("Tạo bài viết thất bại, không thể lưu tệp đính kèm.");
-            }
+                Title = requestCreateArticle.Title,
+                Body = requestCreateArticle.Content,
+                AuthorId = userId,
+                CommunityId = requestCreateArticle.ComunityId,
+                Status = requestCreateArticle.ArticleStatus
+            };
 
-            fileUploadUrls = BuildAttachmentEntities(articleEntity.Id, fileUrl);
-            var attachmentCount = await _attachmentRepository.AddAttachmentsAsync(fileUploadUrls);
-            if (attachmentCount != requestCreateArticle.Attachments.Count)
+            await _unitOfWork.Articles.AddAsync(articleEntity);
+            await _unitOfWork.SaveChangesAsync();
+
+            List<Attachments>? fileUploadUrls = new List<Attachments>();
+            if (requestCreateArticle.Attachments is not null && requestCreateArticle.Attachments.Count > 0)
             {
-                _logger.LogError("Lưu tệp đính kèm thất bại, số lượng tệp đính kèm lưu không khớp với số lượng tệp đính kèm đã tải lên.");
-                throw new ConflicException("Lưu tệp đính kèm thất bại, số lượng tệp đính kèm lưu không khớp với số lượng tệp đính kèm đã tải lên.");
+                var fileUrl = await _entityMediaLocalStorageService.SavePostAttachmentsAsync(articleEntity.Id, requestCreateArticle.Attachments);
+                if (fileUrl.Count != requestCreateArticle.Attachments.Count)
+                {
+                    throw new ConflicException("somefiles lost of the phase handle");
+                }
+                fileUploadUrls = BuildAttachmentEntities(articleEntity.Id, fileUrl);
+                await _unitOfWork.Attachment.AddRangeAsync(fileUploadUrls);
+                var outBoxMessages = fileUploadUrls.Select(x => new OutBoxMessage
+                {
+                    AggregateId = articleEntity.Id,
+                    //AggregateType = nameof(Post),
+                    AggregateType = "social_service.SocialTechDatabase.OutBoxMessages",
+                    EventType = "ArticleCreated",
+                    Payload = JsonSerializer.Serialize(fileUploadUrls)
+
+                }).ToList();
+
+                await _unitOfWork.OutBoxMessages.AddRangeAsync(outBoxMessages);
             }
+            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.CommitAsync();
+            // không nên bỏ toàn bộ vào phía PublisArticleCreatedAsync nên bỏ luôn await tại vì nó sẽ bị buộc phải chờ kết quả 
+            var articleCreatedEvent = await _repository.GetArticleCreatedEventAsync(articleEntity.Id);
+            if (articleCreatedEvent is not null)
+            {
+                articleCreatedEvent.AvatarAuthor = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(articleCreatedEvent.AvatarAuthor);
+                articleCreatedEvent.Thumbnail = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(articleCreatedEvent.Thumbnail);
+                await _applicationEventPublisher.PublishArticleCreatedAsync(articleCreatedEvent);
+            }
+            return articleEntity.Id;
         }
-        // không nên bỏ toàn bộ vào phía PublisArticleCreatedAsync nên bỏ luôn await tại vì nó sẽ bị buộc phải chờ kết quả 
-        var articleCreatedEvent = await _repository.GetArticleCreatedEventAsync(articleEntity.Id);
-        if (articleCreatedEvent is not null)
+        catch (Exception ex)
         {
-            articleCreatedEvent.AvatarAuthor = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(articleCreatedEvent.AvatarAuthor);
-            articleCreatedEvent.Thumbnail = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(articleCreatedEvent.Thumbnail);
-            await _applicationEventPublisher.PublishArticleCreatedAsync(articleCreatedEvent);
+            await _unitOfWork.RollbackAsync();
+            throw;
         }
-        return articleEntity.Id;
     }
 
     public async Task<ArticleDetailModelView?> GetDetailArticle(int articleId, int userId)
@@ -128,7 +159,7 @@ public class ArticleAdapterPort : IArticlePort
     {
         var result = await _repository.GetArticlesAsync(paganation, cancellationToken);
 
-        return result.Select(x => new ArticleDetailModelView
+        var news = result.Select(x => new ArticleDetailModelView
         {
             Id = x.Id,
             Title = x.Title,
@@ -138,8 +169,12 @@ public class ArticleAdapterPort : IArticlePort
             CreateDate = x.CreatedAtUtc,
             NameAuthor = x.Author.DisplayName,
             PublicIdAuthor = x.Author.PublicId,
-            AvatarAuthor = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(x.Author.ProfileImageUrl) ?? string.Empty
+            AvatarAuthor = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(x.Author.ProfileImageUrl) ?? string.Empty,
+            CountComment = x.Comments.Count,
+            CountReact = x.Reactions.Count
+
         }).ToList();
+        return news;
     }
 
     public async Task<CommentView> CreateCommentOfArticle(int articleId, RequestCreateComment requestCreateComment, int userId)
@@ -149,6 +184,19 @@ public class ArticleAdapterPort : IArticlePort
         {
             throw new NotFoundException("Bài viết không tồn tại.");
         }
+        if (requestCreateComment.Depth > 0 && requestCreateComment.ParentCommentId is null)
+        {
+            throw new ValidationException("Depth lớn hơn 0 nhưng ParentCommentId là null.");
+        }
+        else if (requestCreateComment.Depth == 0 && requestCreateComment.ParentCommentId is not null)
+        {
+            throw new ValidationException("Depth bằng 0 nhưng ParentCommentId không phải là null.");
+        }
+
+        var parrentComment = requestCreateComment.ParentCommentId is not null && requestCreateComment.Depth > 0
+            ? await _commentRepository.GetByIdAsync(requestCreateComment.ParentCommentId.Value)
+            : null;
+
         var validateContentOfComment = await _geminiArticlePort.ValidateComment(requestCreateComment.Body);
 
         if (!validateContentOfComment)
@@ -162,8 +210,9 @@ public class ArticleAdapterPort : IArticlePort
             PostId = articleId,
             Body = requestCreateComment.Body,
             AuthorId = userId,
-            ParentCommentId = requestCreateComment.ParentCommentId == int.MinValue ? null : requestCreateComment.ParentCommentId,
-            Status = requestCreateComment.status
+            ParentCommentId = requestCreateComment.ParentCommentId,
+            Status = requestCreateComment.status,
+            Depth = requestCreateComment.Depth
         };
 
         var commentSaved = await _commentRepository.CreateCommentOfArticleAsync(comment);
@@ -186,6 +235,22 @@ public class ArticleAdapterPort : IArticlePort
                 throw new ConflicException("Lưu tệp đính kèm thất bại, số lượng tệp đính kèm lưu không khớp với số lượng tệp đính kèm đã tải lên.");
             }
         }
+        await _applicationEventPublisher.PublishCommentCreatedAsync(new CommentCreatedIntegrationEvent
+        {
+            CommentId = commentSaved.Id,
+            CommentAuthorId = commentSaved.AuthorId,
+            CommentAuthorDisplayName = commentSaved.Author.DisplayName,
+            CommentAuthorAvatarUrl = _entityMediaStorageService.GetAbsolutePathImageEcomsystem(commentSaved.Author.ProfileImageUrl) ?? string.Empty,
+            CommentBody = commentSaved.Body,
+            ParentCommentId = parrentComment?.Id,
+            ParentCommentAuthorId = parrentComment?.AuthorId,
+            ParentCommentAuthorDisplayName = parrentComment?.Author?.DisplayName,
+            ArticleId = existingArticle.Id,
+            ArticleAuthorId = existingArticle.AuthorId,
+            ArticleAuthorDisplayName = existingArticle.Author?.DisplayName ?? string.Empty,
+            CreateDate = DateTime.UtcNow
+        });
+
         return new CommentView
         {
             Id = commentSaved.Id,
@@ -227,7 +292,7 @@ public class ArticleAdapterPort : IArticlePort
 
         existingComment.Body = requestUpdateComment.Body ?? existingComment.Body;
         existingComment.UpdatedAtUtc = DateTime.UtcNow;
-        existingComment.Status = requestUpdateComment.status ?? existingComment.Status;
+        existingComment.Status = requestUpdateComment.Status ?? existingComment.Status;
 
         var updatedComment = await _commentRepository.UpdateCommentOfArticleAsync(existingComment);
         return new CommentView

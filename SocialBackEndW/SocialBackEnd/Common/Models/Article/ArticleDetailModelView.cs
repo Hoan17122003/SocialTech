@@ -9,6 +9,8 @@ public record ArticleDetailModelView
     public bool IsPermissionEdit { get; init; }
     public DateTime CreateDate { get; init; }
     public string NameAuthor { get; init; }
+    public int CountComment { get; init; } = 0;
+    public int CountReact { get; init; } = 0;
     public Guid PublicIdAuthor { get; init; }
     public string AvatarAuthor { get; init; }
 }

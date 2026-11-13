@@ -4,7 +4,7 @@ namespace SocialBackEnd.Common.Models;
 
 public record DetailUserFollow
 (
-    int Id,
+    Guid PublicId,
     string Avatar,
     string DisplayName
 );

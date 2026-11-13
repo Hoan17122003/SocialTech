@@ -4,6 +4,7 @@ using Minio;
 using Minio.DataModel.Args;
 using SocialBackEnd.Application.Ports.Outbound;
 using SocialBackEnd.Application.Ports.Outbound.Minio;
+using SocialBackEnd.Common.Constants;
 using SocialBackEnd.Common.Models.Storage;
 using SocialBackEnd.Infrastructure.Minio;
 
@@ -97,6 +98,24 @@ public sealed class MinioEntityMediaStorageService : IEntityMediaStorageService
         }
 
         return storedFiles;
+    }
+
+    public async Task SyncAttachmentData(
+       int postId,
+       IEnumerable<IFormFile> files,
+       CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+
+        var storedFiles = new List<StoredMediaFile>();
+
+        foreach (var file in files.Where(x => x is not null && x.Length > 0))
+        {
+            var objectKey = BuildObjectKey("/posts", postId.ToString(), file.FileName);
+
+            await using var stream = file.OpenReadStream();
+            await _minioFileStorage.UploadAsync(stream, objectKey, file.ContentType, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     public async Task DeleteFilesAsync(

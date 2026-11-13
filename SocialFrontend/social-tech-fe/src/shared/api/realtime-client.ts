@@ -12,7 +12,7 @@ function createHubConnection(path: string) {
             accessTokenFactory: () => tokenStorage.get() ?? '',
             withCredentials: true,
         })
-        .withAutomaticReconnect()
+        .withAutomaticReconnect([0, 2000, 10000, 30000, 30000, 60000])
         .build();
 }
 

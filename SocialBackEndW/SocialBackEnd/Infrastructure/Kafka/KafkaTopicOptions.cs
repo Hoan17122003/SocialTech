@@ -10,4 +10,6 @@ public sealed class KafkaTopicOptions
     public string DomainEvents { get; set; } = "socialtech.domain-events";
 
     public string ArticleCreate { set; get; } = "socialTech.article-create-event";
+    public string CommentCreate { set; get; } = "socialTech.comment-create-event";
+    public string DebeziumCdc { set; get; } = "social_service.SocialTechDatabase.OutBoxMessages";
 }

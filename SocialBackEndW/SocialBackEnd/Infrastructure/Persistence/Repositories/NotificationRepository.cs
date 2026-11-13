@@ -34,4 +34,16 @@ public sealed class NotificationRepository : RepositoryBase<Notification>, INoti
                     notificationIds.Contains(notification.Id))
             .ToListAsync(cancellationToken);
     }
+
+    public Task<int> MarkAsReadAsync(int userId, IReadOnlyCollection<int> notificationIds, CancellationToken cancellationToken = default)
+    {
+        // Todo : implement this method to mark notifications as read for the specified user and notification IDs.
+        return Task.FromResult(0);
+    }
+
+    public Task<int> SaveNotificationAsync(Notification notification, CancellationToken cancellationToken = default)
+    {
+        DbContext.Notifications.Add(notification);
+        return DbContext.SaveChangesAsync(cancellationToken);
+    }
 }
